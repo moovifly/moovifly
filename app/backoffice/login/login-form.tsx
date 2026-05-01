@@ -2,7 +2,6 @@
 
 import { ArrowRight, Lock, Mail, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { signIn, getUserProfile } from "@/lib/auth";
+import { publicUrlForPath } from "@/lib/public-site-url";
 
 function translateError(message: string): string {
   if (message.includes("Invalid login credentials")) return "E-mail ou senha incorretos.";
@@ -22,7 +22,6 @@ function translateError(message: string): string {
 }
 
 export function LoginForm() {
-  const router = useRouter();
   const { profile, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,9 +31,9 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && profile) {
-      router.replace("/backoffice/dashboard/");
+      window.location.assign(publicUrlForPath("/backoffice/dashboard/"));
     }
-  }, [authLoading, profile, router]);
+  }, [authLoading, profile]);
 
   useEffect(() => {
     try {
@@ -118,7 +117,7 @@ export function LoginForm() {
       })();
 
       toast.success("Bem-vindo!", { description: `Olá, ${userProfile.nome}.` });
-      router.replace("/backoffice/dashboard/");
+      window.location.assign(publicUrlForPath("/backoffice/dashboard/"));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const translated = translateError(message);

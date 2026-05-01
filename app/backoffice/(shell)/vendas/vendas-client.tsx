@@ -1,7 +1,7 @@
 "use client";
 
 import { CreditCard, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -276,9 +276,9 @@ export function VendasClient() {
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Link href={`/backoffice/checkout/?id=${v.id}`}>
+                            <BackofficeLink href={`/backoffice/checkout/?id=${v.id}`}>
                               <Button variant="ghost" size="icon" title="Checkout"><CreditCard className="h-4 w-4" /></Button>
-                            </Link>
+                            </BackofficeLink>
                             <Button variant="ghost" size="icon" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={() => handleDelete(v)} className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"><Trash2 className="h-4 w-4" /></Button>
                           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
@@ -284,9 +284,9 @@ export function DashboardClient() {
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>Distribuição de Receita</CardTitle>
-              <Link href="/backoffice/relatorios/" className="text-xs text-[var(--accent-600)] hover:underline">
+              <BackofficeLink href="/backoffice/relatorios/" className="text-xs text-[var(--accent-600)] hover:underline">
                 Ver detalhes
-              </Link>
+              </BackofficeLink>
             </CardHeader>
             <CardContent className="h-72">
               {loading ? (
@@ -304,9 +304,9 @@ export function DashboardClient() {
           <Card className="lg:col-span-2">
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>Últimas Vendas</CardTitle>
-              <Link href="/backoffice/vendas/" className="text-xs text-[var(--accent-600)] hover:underline">
+              <BackofficeLink href="/backoffice/vendas/" className="text-xs text-[var(--accent-600)] hover:underline">
                 Ver todas
-              </Link>
+              </BackofficeLink>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -446,9 +446,9 @@ function FinancialCard({ label, value, count, href, tone }: {
           {value === null ? <Skeleton className="mt-1 h-6 w-32" /> : <p className="text-lg font-semibold text-foreground">{value}</p>}
           {count === null ? <Skeleton className="mt-1 h-4 w-24" /> : <p className="text-xs text-[var(--text-secondary)]">{count}</p>}
         </div>
-        <Link href={href} className="rounded-md border border-[var(--border-subtle)] bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-[var(--bg-hover)]">
+        <BackofficeLink href={href} className="rounded-md border border-[var(--border-subtle)] bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-[var(--bg-hover)]">
           Ver
-        </Link>
+        </BackofficeLink>
       </CardContent>
     </Card>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutGrid,
@@ -20,6 +19,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/format";
 import { showConfirm } from "@/components/confirm-modal";
+import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 
 type NavItem = {
   href: string;
@@ -71,7 +71,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 z-20 hidden h-dvh w-20 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-card md:flex">
       <div className="flex h-16 items-center justify-center border-b border-[var(--border-subtle)]">
-        <Link href="/backoffice/dashboard/" aria-label="MooviFly Dashboard">
+        <BackofficeLink href="/backoffice/dashboard/" aria-label="MooviFly Dashboard">
           <Image
             src="/favicon.png"
             alt="MooviFly"
@@ -79,7 +79,7 @@ export function Sidebar() {
             height={40}
             className="h-10 w-10 rounded-md"
           />
-        </Link>
+        </BackofficeLink>
       </div>
 
       <nav className="flex flex-1 flex-col items-center gap-2 py-4">
@@ -87,7 +87,7 @@ export function Sidebar() {
           const active = pathname.startsWith(item.href.replace(/\/$/, ""));
           const Icon = item.icon;
           return (
-            <Link
+            <BackofficeLink
               key={item.href}
               href={item.href}
               title={item.label}
@@ -101,7 +101,7 @@ export function Sidebar() {
               <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md border border-[var(--border-subtle)] bg-card px-2 py-1 text-xs text-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                 {item.label}
               </span>
-            </Link>
+            </BackofficeLink>
           );
         })}
 
@@ -111,7 +111,7 @@ export function Sidebar() {
           const active = pathname.startsWith(item.href.replace(/\/$/, ""));
           const Icon = item.icon;
           return (
-            <Link
+            <BackofficeLink
               key={item.href}
               href={item.href}
               title={item.label}
@@ -125,7 +125,7 @@ export function Sidebar() {
               <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md border border-[var(--border-subtle)] bg-card px-2 py-1 text-xs text-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                 {item.label}
               </span>
-            </Link>
+            </BackofficeLink>
           );
         })}
       </nav>

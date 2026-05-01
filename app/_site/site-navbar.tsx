@@ -6,7 +6,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { publicUrlForPath } from "@/lib/public-site-url";
 
+const backofficeLoginHref = publicUrlForPath("/backoffice/login/");
 const NAV_LINKS = [
   { href: "#hero", label: "Home" },
   { href: "#quem-somos", label: "Quem Somos" },
@@ -70,13 +72,14 @@ export function SiteNavbar() {
             </li>
           ))}
           <li>
-            <Link
-              href="/backoffice/login/"
+            {/* <a> evita prefetch RSC que falha em export estático na Hostinger */}
+            <a
+              href={backofficeLoginHref}
               aria-label="Login Backoffice"
               className="ml-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <LogIn className="h-4 w-4" />
-            </Link>
+            </a>
           </li>
         </ul>
       </div>
@@ -96,14 +99,14 @@ export function SiteNavbar() {
               </li>
             ))}
             <li>
-              <Link
-                href="/backoffice/login/"
+              <a
+                href={backofficeLoginHref}
                 className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
                 onClick={() => setMobileOpen(false)}
               >
                 <LogIn className="h-4 w-4" />
                 Backoffice
-              </Link>
+              </a>
             </li>
           </ul>
         </div>

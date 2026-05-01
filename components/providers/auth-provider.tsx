@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { publicUrlForPath } from "@/lib/public-site-url";
 import { getUserProfile, signOut as authSignOut, type UserProfile } from "@/lib/auth";
 
 type AuthContextValue = {
@@ -29,6 +30,11 @@ const ADMIN_ONLY = ["/backoffice/configuracoes"];
 const MANAGER_PAGES = ["/backoffice/relatorios"];
 const PUBLIC_BACKOFFICE = ["/backoffice/login"];
 
+/** Navegação completa; usa NEXT_PUBLIC_APP_URL em produção para não trocar de origem (www vs apex), senão o Supabase perde a sessão. */
+function goBackoffice(path: string) {
+  if (typeof window !== "undefined") window.location.assign(publicUrlForPath(path));
+}
+
 function checkPagePermissions(pathname: string, profile: UserProfile): string | null {
   for (const page of ADMIN_ONLY) {
     if (pathname.startsWith(page) && profile.tipo !== "administrador") {
@@ -44,7 +50,6 @@ function checkPagePermissions(pathname: string, profile: UserProfile): string | 
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname() ?? "/";
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -63,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("userProfile");
         }
         if (isBackofficePage && !isLoginPage) {
-          router.replace("/backoffice/login/");
+          goBackoffice("/backoffice/login/");
         }
         return;
       }
@@ -80,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (typeof window !== "undefined") {
           localStorage.removeItem("userProfile");
         }
-        if (isBackofficePage) router.replace("/backoffice/login/");
+        if (isBackofficePage) goBackoffice("/backoffice/login/");
         return;
       }
 
@@ -92,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("userProfile");
           alert("Sua conta está inativa. Entre em contato com o administrador.");
         }
-        if (isBackofficePage) router.replace("/backoffice/login/");
+        if (isBackofficePage) goBackoffice("/backoffice/login/");
         return;
       }
 
@@ -102,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (isLoginPage) {
-        router.replace("/backoffice/dashboard/");
+        goBackoffice("/backoffice/dashboard/");
         return;
       }
 
@@ -111,10 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (typeof window !== "undefined") {
           alert("Você não tem permissão para acessar esta página.");
         }
-        router.replace(`${redirect}/`);
+        goBackoffice(`${redirect}/`);
       }
     },
-    [pathname, isBackofficePage, isLoginPage, router],
+    [pathname, isBackofficePage, isLoginPage],
   );
 
   const refreshProfile = useCallback(async () => {
@@ -131,15 +136,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabaseClient();
 
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!active) return;
-      await handleSession(data.session?.user?.id ?? null);
-      if (active) setLoading(false);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        await handleSession(data.session?.user?.id ?? null);
+      } catch (e) {
+        console.error("[auth] Falha ao iniciar sessão:", e);
+      } finally {
+        if (active) setLoading(false);
+      }
     })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (_event: unknown, session: { user?: { id?: string } } | null) => {
-        await handleSession(session?.user?.id ?? null);
+        try {
+          await handleSession(session?.user?.id ?? null);
+        } finally {
+          if (active) setLoading(false);
+        }
       },
     );
 
@@ -152,8 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!profile) return;
     const redirect = checkPagePermissions(pathname, profile);
-    if (redirect) router.replace(`${redirect}/`);
-  }, [pathname, profile, router]);
+    if (redirect) goBackoffice(`${redirect}/`);
+  }, [pathname, profile]);
 
   const signOut = useCallback(async () => {
     await authSignOut();
@@ -162,8 +176,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("userProfile");
     }
-    router.replace("/backoffice/login/");
-  }, [router]);
+    goBackoffice("/backoffice/login/");
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({ loading, profile, userId, refreshProfile, signOut }),
