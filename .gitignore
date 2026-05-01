@@ -33,3 +33,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# vscode chrome debug profile (dados do browser, não devem ir ao repo)
+.vscode/chrome-debug-profile/
+
+# supabase temp files
+supabase/.temp/
+
+# cursor
+.cursor/
