@@ -1,0 +1,50 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug: Site Principal",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug: Backoffice",
+      "url": "http://localhost:8080/backoffice/login.html",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug: Node.js (Live Server)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "live-server",
+        "--port=8080",
+        "--watch=./**/*.{html,css,js}",
+        "--verbose"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug: Site + Servidor",
+      "configurations": [
+        "Debug: Node.js (Live Server)",
+        "Debug: Site Principal"
+      ],
+      "preLaunchTask": "npm: debug"
+    }
+  ]
+}

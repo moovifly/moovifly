@@ -1,0 +1,2270 @@
+[
+  {
+    "codigo": "LA",
+    "nome": "LATAM Airlines Brasil",
+    "pais": "Brasil",
+    "icao": "TAM",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "G3",
+    "nome": "GOL Linhas Aéreas",
+    "pais": "Brasil",
+    "icao": "GLO",
+    "aliance": null
+  },
+  {
+    "codigo": "AD",
+    "nome": "Azul Linhas Aéreas",
+    "pais": "Brasil",
+    "icao": "AZU",
+    "aliance": null
+  },
+  {
+    "codigo": "2Z",
+    "nome": "Voepass (Passaredo)",
+    "pais": "Brasil",
+    "icao": "PTB",
+    "aliance": null
+  },
+  {
+    "codigo": "O6",
+    "nome": "Avianca Brasil",
+    "pais": "Brasil",
+    "icao": "ONE",
+    "aliance": null
+  },
+  {
+    "codigo": "T4",
+    "nome": "TRIP Linhas Aéreas",
+    "pais": "Brasil",
+    "icao": "TIB",
+    "aliance": null
+  },
+  {
+    "codigo": "JJ",
+    "nome": "LATAM Airlines Brasil (antigo TAM)",
+    "pais": "Brasil",
+    "icao": "TAM",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "8R",
+    "nome": "Sol Linhas Aéreas",
+    "pais": "Brasil",
+    "icao": "SOL",
+    "aliance": null
+  },
+  {
+    "codigo": "TF",
+    "nome": "MAP Linhas Aéreas",
+    "pais": "Brasil",
+    "icao": "MAP",
+    "aliance": null
+  },
+  {
+    "codigo": "2L",
+    "nome": "Oceanair",
+    "pais": "Brasil",
+    "icao": "ONE",
+    "aliance": null
+  },
+  {
+    "codigo": "AA",
+    "nome": "American Airlines",
+    "pais": "Estados Unidos",
+    "icao": "AAL",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "UA",
+    "nome": "United Airlines",
+    "pais": "Estados Unidos",
+    "icao": "UAL",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "DL",
+    "nome": "Delta Air Lines",
+    "pais": "Estados Unidos",
+    "icao": "DAL",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "WN",
+    "nome": "Southwest Airlines",
+    "pais": "Estados Unidos",
+    "icao": "SWA",
+    "aliance": null
+  },
+  {
+    "codigo": "B6",
+    "nome": "JetBlue Airways",
+    "pais": "Estados Unidos",
+    "icao": "JBU",
+    "aliance": null
+  },
+  {
+    "codigo": "AS",
+    "nome": "Alaska Airlines",
+    "pais": "Estados Unidos",
+    "icao": "ASA",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "NK",
+    "nome": "Spirit Airlines",
+    "pais": "Estados Unidos",
+    "icao": "NKS",
+    "aliance": null
+  },
+  {
+    "codigo": "F9",
+    "nome": "Frontier Airlines",
+    "pais": "Estados Unidos",
+    "icao": "FFT",
+    "aliance": null
+  },
+  {
+    "codigo": "HA",
+    "nome": "Hawaiian Airlines",
+    "pais": "Estados Unidos",
+    "icao": "HAL",
+    "aliance": null
+  },
+  {
+    "codigo": "G4",
+    "nome": "Allegiant Air",
+    "pais": "Estados Unidos",
+    "icao": "AAY",
+    "aliance": null
+  },
+  {
+    "codigo": "SY",
+    "nome": "Sun Country Airlines",
+    "pais": "Estados Unidos",
+    "icao": "SCX",
+    "aliance": null
+  },
+  {
+    "codigo": "VX",
+    "nome": "Virgin America",
+    "pais": "Estados Unidos",
+    "icao": "VRD",
+    "aliance": null
+  },
+  {
+    "codigo": "US",
+    "nome": "US Airways",
+    "pais": "Estados Unidos",
+    "icao": "USA",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "CO",
+    "nome": "Continental Airlines",
+    "pais": "Estados Unidos",
+    "icao": "COA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "NW",
+    "nome": "Northwest Airlines",
+    "pais": "Estados Unidos",
+    "icao": "NWA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "AC",
+    "nome": "Air Canada",
+    "pais": "Canadá",
+    "icao": "ACA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "WS",
+    "nome": "WestJet",
+    "pais": "Canadá",
+    "icao": "WJA",
+    "aliance": null
+  },
+  {
+    "codigo": "PD",
+    "nome": "Porter Airlines",
+    "pais": "Canadá",
+    "icao": "POE",
+    "aliance": null
+  },
+  {
+    "codigo": "TS",
+    "nome": "Air Transat",
+    "pais": "Canadá",
+    "icao": "TSC",
+    "aliance": null
+  },
+  {
+    "codigo": "W2",
+    "nome": "FlexFlight",
+    "pais": "Canadá",
+    "icao": "FXT",
+    "aliance": null
+  },
+  {
+    "codigo": "5T",
+    "nome": "Canadian North",
+    "pais": "Canadá",
+    "icao": "MPE",
+    "aliance": null
+  },
+  {
+    "codigo": "RS",
+    "nome": "Air Canada Rouge",
+    "pais": "Canadá",
+    "icao": "ROU",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "DV",
+    "nome": "Scat Airlines",
+    "pais": "Canadá",
+    "icao": "VSV",
+    "aliance": null
+  },
+  {
+    "codigo": "TP",
+    "nome": "TAP Air Portugal",
+    "pais": "Portugal",
+    "icao": "TAP",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "NI",
+    "nome": "Portugália Airlines",
+    "pais": "Portugal",
+    "icao": "PGA",
+    "aliance": null
+  },
+  {
+    "codigo": "WK",
+    "nome": "Edelweiss Air",
+    "pais": "Portugal",
+    "icao": "EDW",
+    "aliance": null
+  },
+  {
+    "codigo": "IB",
+    "nome": "Iberia",
+    "pais": "Espanha",
+    "icao": "IBE",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "UX",
+    "nome": "Air Europa",
+    "pais": "Espanha",
+    "icao": "AEA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "VY",
+    "nome": "Vueling Airlines",
+    "pais": "Espanha",
+    "icao": "VLG",
+    "aliance": null
+  },
+  {
+    "codigo": "I2",
+    "nome": "Iberia Express",
+    "pais": "Espanha",
+    "icao": "IBS",
+    "aliance": null
+  },
+  {
+    "codigo": "YW",
+    "nome": "Air Nostrum",
+    "pais": "Espanha",
+    "icao": "ANE",
+    "aliance": null
+  },
+  {
+    "codigo": "NT",
+    "nome": "Binter Canarias",
+    "pais": "Espanha",
+    "icao": "IBB",
+    "aliance": null
+  },
+  {
+    "codigo": "X5",
+    "nome": "Air Europa Express",
+    "pais": "Espanha",
+    "icao": "AEX",
+    "aliance": null
+  },
+  {
+    "codigo": "V7",
+    "nome": "Volotea",
+    "pais": "Espanha",
+    "icao": "VOE",
+    "aliance": null
+  },
+  {
+    "codigo": "AF",
+    "nome": "Air France",
+    "pais": "França",
+    "icao": "AFR",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "A5",
+    "nome": "HOP!",
+    "pais": "França",
+    "icao": "HOP",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "XK",
+    "nome": "Air Corsica",
+    "pais": "França",
+    "icao": "CCM",
+    "aliance": null
+  },
+  {
+    "codigo": "ZI",
+    "nome": "Aigle Azur",
+    "pais": "França",
+    "icao": "AAF",
+    "aliance": null
+  },
+  {
+    "codigo": "TO",
+    "nome": "Transavia France",
+    "pais": "França",
+    "icao": "TVF",
+    "aliance": null
+  },
+  {
+    "codigo": "FS",
+    "nome": "Salam Air",
+    "pais": "França",
+    "icao": "OMS",
+    "aliance": null
+  },
+  {
+    "codigo": "XN",
+    "nome": "Xpressair",
+    "pais": "França",
+    "icao": "LGX",
+    "aliance": null
+  },
+  {
+    "codigo": "GJ",
+    "nome": "Eurofly Service",
+    "pais": "França",
+    "icao": "EEU",
+    "aliance": null
+  },
+  {
+    "codigo": "BF",
+    "nome": "French Bee",
+    "pais": "França",
+    "icao": "FBU",
+    "aliance": null
+  },
+  {
+    "codigo": "BA",
+    "nome": "British Airways",
+    "pais": "Reino Unido",
+    "icao": "BAW",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "VS",
+    "nome": "Virgin Atlantic",
+    "pais": "Reino Unido",
+    "icao": "VIR",
+    "aliance": null
+  },
+  {
+    "codigo": "U2",
+    "nome": "easyJet",
+    "pais": "Reino Unido",
+    "icao": "EZY",
+    "aliance": null
+  },
+  {
+    "codigo": "BY",
+    "nome": "TUI Airways",
+    "pais": "Reino Unido",
+    "icao": "TOM",
+    "aliance": null
+  },
+  {
+    "codigo": "BE",
+    "nome": "Flybe",
+    "pais": "Reino Unido",
+    "icao": "BEE",
+    "aliance": null
+  },
+  {
+    "codigo": "LS",
+    "nome": "Jet2.com",
+    "pais": "Reino Unido",
+    "icao": "EXS",
+    "aliance": null
+  },
+  {
+    "codigo": "MT",
+    "nome": "Thomas Cook Airlines",
+    "pais": "Reino Unido",
+    "icao": "TCX",
+    "aliance": null
+  },
+  {
+    "codigo": "ZB",
+    "nome": "Monarch Airlines",
+    "pais": "Reino Unido",
+    "icao": "MON",
+    "aliance": null
+  },
+  {
+    "codigo": "EC",
+    "nome": "Flightline",
+    "pais": "Reino Unido",
+    "icao": "FLT",
+    "aliance": null
+  },
+  {
+    "codigo": "GW",
+    "nome": "Kuzu Airlines Cargo",
+    "pais": "Reino Unido",
+    "icao": "KGZ",
+    "aliance": null
+  },
+  {
+    "codigo": "BJ",
+    "nome": "Nouvelair Tunisie",
+    "pais": "Reino Unido",
+    "icao": "LBT",
+    "aliance": null
+  },
+  {
+    "codigo": "LH",
+    "nome": "Lufthansa",
+    "pais": "Alemanha",
+    "icao": "DLH",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "EW",
+    "nome": "Eurowings",
+    "pais": "Alemanha",
+    "icao": "EWG",
+    "aliance": null
+  },
+  {
+    "codigo": "DE",
+    "nome": "Condor",
+    "pais": "Alemanha",
+    "icao": "CFG",
+    "aliance": null
+  },
+  {
+    "codigo": "AB",
+    "nome": "Air Berlin",
+    "pais": "Alemanha",
+    "icao": "BER",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "XG",
+    "nome": "SunExpress Deutschland",
+    "pais": "Alemanha",
+    "icao": "SXD",
+    "aliance": null
+  },
+  {
+    "codigo": "HG",
+    "nome": "Niki",
+    "pais": "Alemanha",
+    "icao": "NLY",
+    "aliance": null
+  },
+  {
+    "codigo": "ST",
+    "nome": "Germania",
+    "pais": "Alemanha",
+    "icao": "GMI",
+    "aliance": null
+  },
+  {
+    "codigo": "4U",
+    "nome": "Germanwings",
+    "pais": "Alemanha",
+    "icao": "GWI",
+    "aliance": null
+  },
+  {
+    "codigo": "TU",
+    "nome": "Tunis Air",
+    "pais": "Alemanha",
+    "icao": "TAR",
+    "aliance": null
+  },
+  {
+    "codigo": "AZ",
+    "nome": "ITA Airways",
+    "pais": "Itália",
+    "icao": "ITY",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "IG",
+    "nome": "Air Italy",
+    "pais": "Itália",
+    "icao": "AZA",
+    "aliance": null
+  },
+  {
+    "codigo": "AP",
+    "nome": "AlbaStar",
+    "pais": "Itália",
+    "icao": "LAV",
+    "aliance": null
+  },
+  {
+    "codigo": "V0",
+    "nome": "Volare Airlines",
+    "pais": "Itália",
+    "icao": "VLE",
+    "aliance": null
+  },
+  {
+    "codigo": "AZA",
+    "nome": "Alitalia (antiga)",
+    "pais": "Itália",
+    "icao": "AZA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "EN",
+    "nome": "Air Dolomiti",
+    "pais": "Itália",
+    "icao": "DLA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "XM",
+    "nome": "Albastar",
+    "pais": "Itália",
+    "icao": "LAV",
+    "aliance": null
+  },
+  {
+    "codigo": "BV",
+    "nome": "Blue Panorama Airlines",
+    "pais": "Itália",
+    "icao": "BPA",
+    "aliance": null
+  },
+  {
+    "codigo": "DF",
+    "nome": "Neos",
+    "pais": "Itália",
+    "icao": "NOS",
+    "aliance": null
+  },
+  {
+    "codigo": "KL",
+    "nome": "KLM Royal Dutch Airlines",
+    "pais": "Holanda",
+    "icao": "KLM",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "HV",
+    "nome": "Transavia",
+    "pais": "Holanda",
+    "icao": "TRA",
+    "aliance": null
+  },
+  {
+    "codigo": "MP",
+    "nome": "Martinair",
+    "pais": "Holanda",
+    "icao": "MPH",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "SN",
+    "nome": "Brussels Airlines",
+    "pais": "Bélgica",
+    "icao": "BEL",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "TB",
+    "nome": "TUI fly Belgium",
+    "pais": "Bélgica",
+    "icao": "JAF",
+    "aliance": null
+  },
+  {
+    "codigo": "WA",
+    "nome": "KLM Cityhopper",
+    "pais": "Holanda",
+    "icao": "KLC",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "LX",
+    "nome": "Swiss International Air Lines",
+    "pais": "Suíça",
+    "icao": "SWR",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "OS",
+    "nome": "Austrian Airlines",
+    "pais": "Áustria",
+    "icao": "AUA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "LGL",
+    "nome": "Luxair",
+    "pais": "Luxemburgo",
+    "icao": "LGL",
+    "aliance": null
+  },
+  {
+    "codigo": "SK",
+    "nome": "SAS Scandinavian Airlines",
+    "pais": "Suécia",
+    "icao": "SAS",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "DY",
+    "nome": "Norwegian Air Shuttle",
+    "pais": "Noruega",
+    "icao": "NAX",
+    "aliance": null
+  },
+  {
+    "codigo": "AY",
+    "nome": "Finnair",
+    "pais": "Finlândia",
+    "icao": "FIN",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "FI",
+    "nome": "Icelandair",
+    "pais": "Islândia",
+    "icao": "ICE",
+    "aliance": null
+  },
+  {
+    "codigo": "WF",
+    "nome": "Widerøe",
+    "pais": "Noruega",
+    "icao": "WIF",
+    "aliance": null
+  },
+  {
+    "codigo": "RC",
+    "nome": "Atlantic Airways",
+    "pais": "Dinamarca",
+    "icao": "FLI",
+    "aliance": null
+  },
+  {
+    "codigo": "D8",
+    "nome": "Norwegian Air International",
+    "pais": "Noruega",
+    "icao": "IBK",
+    "aliance": null
+  },
+  {
+    "codigo": "WX",
+    "nome": "CityJet",
+    "pais": "Irlanda",
+    "icao": "BCY",
+    "aliance": null
+  },
+  {
+    "codigo": "OK",
+    "nome": "Czech Airlines",
+    "pais": "República Tcheca",
+    "icao": "CSA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "LO",
+    "nome": "LOT Polish Airlines",
+    "pais": "Polônia",
+    "icao": "LOT",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "TK",
+    "nome": "Turkish Airlines",
+    "pais": "Turquia",
+    "icao": "THY",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "A3",
+    "nome": "Aegean Airlines",
+    "pais": "Grécia",
+    "icao": "AEE",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "RO",
+    "nome": "TAROM",
+    "pais": "Romênia",
+    "icao": "ROT",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "JU",
+    "nome": "Air Serbia",
+    "pais": "Sérvia",
+    "icao": "ASL",
+    "aliance": null
+  },
+  {
+    "codigo": "JP",
+    "nome": "Adria Airways",
+    "pais": "Eslovênia",
+    "icao": "ADR",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "OU",
+    "nome": "Croatia Airlines",
+    "pais": "Croácia",
+    "icao": "CTN",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "FB",
+    "nome": "Bulgaria Air",
+    "pais": "Bulgária",
+    "icao": "LZB",
+    "aliance": null
+  },
+  {
+    "codigo": "BT",
+    "nome": "Air Baltic",
+    "pais": "Letônia",
+    "icao": "BTI",
+    "aliance": null
+  },
+  {
+    "codigo": "LY",
+    "nome": "El Al Israel Airlines",
+    "pais": "Israel",
+    "icao": "ELY",
+    "aliance": null
+  },
+  {
+    "codigo": "PC",
+    "nome": "Pegasus Airlines",
+    "pais": "Turquia",
+    "icao": "PGT",
+    "aliance": null
+  },
+  {
+    "codigo": "XC",
+    "nome": "Corendon Airlines",
+    "pais": "Turquia",
+    "icao": "CAI",
+    "aliance": null
+  },
+  {
+    "codigo": "XQ",
+    "nome": "SunExpress",
+    "pais": "Turquia",
+    "icao": "SXS",
+    "aliance": null
+  },
+  {
+    "codigo": "TL",
+    "nome": "Airnorth",
+    "pais": "Austrália",
+    "icao": "ANO",
+    "aliance": null
+  },
+  {
+    "codigo": "PS",
+    "nome": "Ukraine International Airlines",
+    "pais": "Ucrânia",
+    "icao": "AUI",
+    "aliance": null
+  },
+  {
+    "codigo": "AH",
+    "nome": "Air Algérie",
+    "pais": "Argélia",
+    "icao": "DAH",
+    "aliance": null
+  },
+  {
+    "codigo": "FR",
+    "nome": "Ryanair",
+    "pais": "Irlanda",
+    "icao": "RYR",
+    "aliance": null
+  },
+  {
+    "codigo": "W6",
+    "nome": "Wizz Air",
+    "pais": "Hungria",
+    "icao": "WZZ",
+    "aliance": null
+  },
+  {
+    "codigo": "EI",
+    "nome": "Aer Lingus",
+    "pais": "Irlanda",
+    "icao": "EIN",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "W4",
+    "nome": "Wizz Air Malta",
+    "pais": "Malta",
+    "icao": "WMT",
+    "aliance": null
+  },
+  {
+    "codigo": "W9",
+    "nome": "Wizz Air UK",
+    "pais": "Reino Unido",
+    "icao": "WUK",
+    "aliance": null
+  },
+  {
+    "codigo": "AR",
+    "nome": "Aerolíneas Argentinas",
+    "pais": "Argentina",
+    "icao": "ARG",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "FO",
+    "nome": "Flybondi",
+    "pais": "Argentina",
+    "icao": "FBZ",
+    "aliance": null
+  },
+  {
+    "codigo": "WJ",
+    "nome": "JetSMART Argentina",
+    "pais": "Argentina",
+    "icao": "JAT",
+    "aliance": null
+  },
+  {
+    "codigo": "A4",
+    "nome": "Azul Linhas Aéreas Argentinas",
+    "pais": "Argentina",
+    "icao": "AZU",
+    "aliance": null
+  },
+  {
+    "codigo": "AU",
+    "nome": "Austral Líneas Aéreas",
+    "pais": "Argentina",
+    "icao": "AUT",
+    "aliance": null
+  },
+  {
+    "codigo": "ZP",
+    "nome": "Paranair",
+    "pais": "Argentina",
+    "icao": "PNR",
+    "aliance": null
+  },
+  {
+    "codigo": "H2",
+    "nome": "SKY Airline",
+    "pais": "Chile",
+    "icao": "SKU",
+    "aliance": null
+  },
+  {
+    "codigo": "JA",
+    "nome": "JetSMART Chile",
+    "pais": "Chile",
+    "icao": "JAT",
+    "aliance": null
+  },
+  {
+    "codigo": "UC",
+    "nome": "LATAM Airlines Chile (antigo LAN)",
+    "pais": "Chile",
+    "icao": "LAN",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "PZ",
+    "nome": "LATAM Airlines Paraguay",
+    "pais": "Paraguai",
+    "icao": "LAP",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "AV",
+    "nome": "Avianca",
+    "pais": "Colômbia",
+    "icao": "AVA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "9R",
+    "nome": "SATENA",
+    "pais": "Colômbia",
+    "icao": "NSE",
+    "aliance": null
+  },
+  {
+    "codigo": "VE",
+    "nome": "EasyFly",
+    "pais": "Colômbia",
+    "icao": "EFY",
+    "aliance": null
+  },
+  {
+    "codigo": "P5",
+    "nome": "Wingo",
+    "pais": "Colômbia",
+    "icao": "RPB",
+    "aliance": null
+  },
+  {
+    "codigo": "VH",
+    "nome": "Viva Air Colombia",
+    "pais": "Colômbia",
+    "icao": "VVC",
+    "aliance": null
+  },
+  {
+    "codigo": "D7",
+    "nome": "Mandala Airlines",
+    "pais": "Colômbia",
+    "icao": "MDL",
+    "aliance": null
+  },
+  {
+    "codigo": "7C",
+    "nome": "Jeju Air",
+    "pais": "Coreia do Sul",
+    "icao": "JJA",
+    "aliance": null
+  },
+  {
+    "codigo": "LP",
+    "nome": "LATAM Airlines Peru",
+    "pais": "Peru",
+    "icao": "LPE",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "VZ",
+    "nome": "Viva Air Peru",
+    "pais": "Peru",
+    "icao": "VVP",
+    "aliance": null
+  },
+  {
+    "codigo": "OB",
+    "nome": "Boliviana de Aviación",
+    "pais": "Bolívia",
+    "icao": "BOV",
+    "aliance": null
+  },
+  {
+    "codigo": "XL",
+    "nome": "LATAM Airlines Ecuador",
+    "pais": "Equador",
+    "icao": "LNE",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "EQ",
+    "nome": "TAME",
+    "pais": "Equador",
+    "icao": "TAE",
+    "aliance": null
+  },
+  {
+    "codigo": "N3",
+    "nome": "Avianca Ecuador",
+    "pais": "Equador",
+    "icao": "LCT",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "AM",
+    "nome": "Aeroméxico",
+    "pais": "México",
+    "icao": "AMX",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "Y4",
+    "nome": "Volaris",
+    "pais": "México",
+    "icao": "VOI",
+    "aliance": null
+  },
+  {
+    "codigo": "4O",
+    "nome": "Interjet",
+    "pais": "México",
+    "icao": "AIJ",
+    "aliance": null
+  },
+  {
+    "codigo": "VB",
+    "nome": "VivaAerobus",
+    "pais": "México",
+    "icao": "VIV",
+    "aliance": null
+  },
+  {
+    "codigo": "5D",
+    "nome": "Aeromar",
+    "pais": "México",
+    "icao": "TAO",
+    "aliance": null
+  },
+  {
+    "codigo": "QA",
+    "nome": "Viva Aerobus",
+    "pais": "México",
+    "icao": "VIV",
+    "aliance": null
+  },
+  {
+    "codigo": "SLI",
+    "nome": "Aeroméxico Connect",
+    "pais": "México",
+    "icao": "SLI",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "5N",
+    "nome": "Nordavia",
+    "pais": "México",
+    "icao": "AUL",
+    "aliance": null
+  },
+  {
+    "codigo": "6D",
+    "nome": "Pelican Airlines",
+    "pais": "México",
+    "icao": "SLM",
+    "aliance": null
+  },
+  {
+    "codigo": "CM",
+    "nome": "Copa Airlines",
+    "pais": "Panamá",
+    "icao": "CMP",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "RZ",
+    "nome": "SANSA",
+    "pais": "Costa Rica",
+    "icao": "LRS",
+    "aliance": null
+  },
+  {
+    "codigo": "LR",
+    "nome": "Avianca Costa Rica",
+    "pais": "Costa Rica",
+    "icao": "LRC",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "TA",
+    "nome": "Avianca El Salvador",
+    "pais": "El Salvador",
+    "icao": "TAI",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "GU",
+    "nome": "Aviateca",
+    "pais": "Guatemala",
+    "icao": "GUG",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "AW",
+    "nome": "Aruba Airlines",
+    "pais": "Aruba",
+    "icao": "ARU",
+    "aliance": null
+  },
+  {
+    "codigo": "T0",
+    "nome": "TACA Peru",
+    "pais": "Peru",
+    "icao": "TPC",
+    "aliance": null
+  },
+  {
+    "codigo": "5U",
+    "nome": "Transportes Aéreos Guatemaltecos",
+    "pais": "Guatemala",
+    "icao": "TAG",
+    "aliance": null
+  },
+  {
+    "codigo": "BW",
+    "nome": "Caribbean Airlines",
+    "pais": "Trinidad e Tobago",
+    "icao": "BWA",
+    "aliance": null
+  },
+  {
+    "codigo": "3M",
+    "nome": "Silver Airways",
+    "pais": "Estados Unidos",
+    "icao": "SIL",
+    "aliance": null
+  },
+  {
+    "codigo": "JY",
+    "nome": "InterCaribbean Airways",
+    "pais": "Turks e Caicos",
+    "icao": "IWY",
+    "aliance": null
+  },
+  {
+    "codigo": "WM",
+    "nome": "Windward Islands Airways",
+    "pais": "Sint Maarten",
+    "icao": "WIA",
+    "aliance": null
+  },
+  {
+    "codigo": "CU",
+    "nome": "Cubana de Aviación",
+    "pais": "Cuba",
+    "icao": "CUB",
+    "aliance": null
+  },
+  {
+    "codigo": "AG",
+    "nome": "Aruba Airlines",
+    "pais": "Aruba",
+    "icao": "ARU",
+    "aliance": null
+  },
+  {
+    "codigo": "PY",
+    "nome": "Surinam Airways",
+    "pais": "Suriname",
+    "icao": "SLM",
+    "aliance": null
+  },
+  {
+    "codigo": "BN",
+    "nome": "Horizon Airlines",
+    "pais": "Estados Unidos",
+    "icao": "QXE",
+    "aliance": null
+  },
+  {
+    "codigo": "GY",
+    "nome": "Guyana Airways",
+    "pais": "Guiana",
+    "icao": "GUY",
+    "aliance": null
+  },
+  {
+    "codigo": "EK",
+    "nome": "Emirates",
+    "pais": "Emirados Árabes Unidos",
+    "icao": "UAE",
+    "aliance": null
+  },
+  {
+    "codigo": "EY",
+    "nome": "Etihad Airways",
+    "pais": "Emirados Árabes Unidos",
+    "icao": "ETD",
+    "aliance": null
+  },
+  {
+    "codigo": "QR",
+    "nome": "Qatar Airways",
+    "pais": "Catar",
+    "icao": "QTR",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "FZ",
+    "nome": "flydubai",
+    "pais": "Emirados Árabes Unidos",
+    "icao": "FDB",
+    "aliance": null
+  },
+  {
+    "codigo": "WY",
+    "nome": "Oman Air",
+    "pais": "Omã",
+    "icao": "OMA",
+    "aliance": null
+  },
+  {
+    "codigo": "G9",
+    "nome": "Air Arabia",
+    "pais": "Emirados Árabes Unidos",
+    "icao": "ABY",
+    "aliance": null
+  },
+  {
+    "codigo": "XY",
+    "nome": "flynas",
+    "pais": "Arábia Saudita",
+    "icao": "KNE",
+    "aliance": null
+  },
+  {
+    "codigo": "6H",
+    "nome": "Israir",
+    "pais": "Israel",
+    "icao": "ISR",
+    "aliance": null
+  },
+  {
+    "codigo": "IZ",
+    "nome": "Arkia Israeli Airlines",
+    "pais": "Israel",
+    "icao": "AIZ",
+    "aliance": null
+  },
+  {
+    "codigo": "RJ",
+    "nome": "Royal Jordanian",
+    "pais": "Jordânia",
+    "icao": "RJA",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "ME",
+    "nome": "Middle East Airlines",
+    "pais": "Líbano",
+    "icao": "MEA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "SV",
+    "nome": "Saudia",
+    "pais": "Arábia Saudita",
+    "icao": "SVA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "GF",
+    "nome": "Gulf Air",
+    "pais": "Bahrein",
+    "icao": "GFA",
+    "aliance": null
+  },
+  {
+    "codigo": "KU",
+    "nome": "Kuwait Airways",
+    "pais": "Kuwait",
+    "icao": "KAC",
+    "aliance": null
+  },
+  {
+    "codigo": "MS",
+    "nome": "EgyptAir",
+    "pais": "Egito",
+    "icao": "MSR",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "NP",
+    "nome": "Nile Air",
+    "pais": "Egito",
+    "icao": "NIA",
+    "aliance": null
+  },
+  {
+    "codigo": "SM",
+    "nome": "Air Cairo",
+    "pais": "Egito",
+    "icao": "MSC",
+    "aliance": null
+  },
+  {
+    "codigo": "CA",
+    "nome": "Air China",
+    "pais": "China",
+    "icao": "CCA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "MU",
+    "nome": "China Eastern Airlines",
+    "pais": "China",
+    "icao": "CES",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "CZ",
+    "nome": "China Southern Airlines",
+    "pais": "China",
+    "icao": "CSN",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "HU",
+    "nome": "Hainan Airlines",
+    "pais": "China",
+    "icao": "CHH",
+    "aliance": null
+  },
+  {
+    "codigo": "SC",
+    "nome": "Shandong Airlines",
+    "pais": "China",
+    "icao": "CDG",
+    "aliance": null
+  },
+  {
+    "codigo": "FM",
+    "nome": "Shanghai Airlines",
+    "pais": "China",
+    "icao": "CSH",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "ZH",
+    "nome": "Shenzhen Airlines",
+    "pais": "China",
+    "icao": "CSZ",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "3U",
+    "nome": "Sichuan Airlines",
+    "pais": "China",
+    "icao": "CSC",
+    "aliance": null
+  },
+  {
+    "codigo": "MF",
+    "nome": "Xiamen Airlines",
+    "pais": "China",
+    "icao": "CXA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "HO",
+    "nome": "Juneyao Airlines",
+    "pais": "China",
+    "icao": "DKH",
+    "aliance": null
+  },
+  {
+    "codigo": "PN",
+    "nome": "West Air",
+    "pais": "China",
+    "icao": "CHB",
+    "aliance": null
+  },
+  {
+    "codigo": "8L",
+    "nome": "Lucky Air",
+    "pais": "China",
+    "icao": "LKE",
+    "aliance": null
+  },
+  {
+    "codigo": "GS",
+    "nome": "Tianjin Airlines",
+    "pais": "China",
+    "icao": "GCR",
+    "aliance": null
+  },
+  {
+    "codigo": "EU",
+    "nome": "Chengdu Airlines",
+    "pais": "China",
+    "icao": "UEA",
+    "aliance": null
+  },
+  {
+    "codigo": "CX",
+    "nome": "Cathay Pacific",
+    "pais": "Hong Kong",
+    "icao": "CPA",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "KA",
+    "nome": "Cathay Dragon (antigo Dragonair)",
+    "pais": "Hong Kong",
+    "icao": "HDA",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "HX",
+    "nome": "Hong Kong Airlines",
+    "pais": "Hong Kong",
+    "icao": "CRK",
+    "aliance": null
+  },
+  {
+    "codigo": "UO",
+    "nome": "Hong Kong Express Airways",
+    "pais": "Hong Kong",
+    "icao": "HKE",
+    "aliance": null
+  },
+  {
+    "codigo": "NX",
+    "nome": "Air Macau",
+    "pais": "Macau",
+    "icao": "AMU",
+    "aliance": null
+  },
+  {
+    "codigo": "JL",
+    "nome": "Japan Airlines",
+    "pais": "Japão",
+    "icao": "JAL",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "NH",
+    "nome": "All Nippon Airways (ANA)",
+    "pais": "Japão",
+    "icao": "ANA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "BC",
+    "nome": "Skymark Airlines",
+    "pais": "Japão",
+    "icao": "SKY",
+    "aliance": null
+  },
+  {
+    "codigo": "JW",
+    "nome": "Vanilla Air",
+    "pais": "Japão",
+    "icao": "VNL",
+    "aliance": null
+  },
+  {
+    "codigo": "GK",
+    "nome": "Jetstar Japan",
+    "pais": "Japão",
+    "icao": "JJP",
+    "aliance": null
+  },
+  {
+    "codigo": "MM",
+    "nome": "Peach Aviation",
+    "pais": "Japão",
+    "icao": "APJ",
+    "aliance": null
+  },
+  {
+    "codigo": "NU",
+    "nome": "Japan Transocean Air",
+    "pais": "Japão",
+    "icao": "JTA",
+    "aliance": null
+  },
+  {
+    "codigo": "JC",
+    "nome": "JAL Express",
+    "pais": "Japão",
+    "icao": "JEX",
+    "aliance": null
+  },
+  {
+    "codigo": "HD",
+    "nome": "Air Do",
+    "pais": "Japão",
+    "icao": "ADO",
+    "aliance": null
+  },
+  {
+    "codigo": "7G",
+    "nome": "Star Flyer",
+    "pais": "Japão",
+    "icao": "SFJ",
+    "aliance": null
+  },
+  {
+    "codigo": "KE",
+    "nome": "Korean Air",
+    "pais": "Coreia do Sul",
+    "icao": "KAL",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "OZ",
+    "nome": "Asiana Airlines",
+    "pais": "Coreia do Sul",
+    "icao": "AAR",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "LJ",
+    "nome": "Jin Air",
+    "pais": "Coreia do Sul",
+    "icao": "JNA",
+    "aliance": null
+  },
+  {
+    "codigo": "TW",
+    "nome": "t'way Air",
+    "pais": "Coreia do Sul",
+    "icao": "TWB",
+    "aliance": null
+  },
+  {
+    "codigo": "BX",
+    "nome": "Air Busan",
+    "pais": "Coreia do Sul",
+    "icao": "ABL",
+    "aliance": null
+  },
+  {
+    "codigo": "ZE",
+    "nome": "Eastar Jet",
+    "pais": "Coreia do Sul",
+    "icao": "ESR",
+    "aliance": null
+  },
+  {
+    "codigo": "SQ",
+    "nome": "Singapore Airlines",
+    "pais": "Singapura",
+    "icao": "SIA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "TR",
+    "nome": "Scoot",
+    "pais": "Singapura",
+    "icao": "TGW",
+    "aliance": null
+  },
+  {
+    "codigo": "MI",
+    "nome": "SilkAir",
+    "pais": "Singapura",
+    "icao": "SLK",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "MH",
+    "nome": "Malaysia Airlines",
+    "pais": "Malásia",
+    "icao": "MAS",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "AK",
+    "nome": "AirAsia",
+    "pais": "Malásia",
+    "icao": "AXM",
+    "aliance": null
+  },
+  {
+    "codigo": "OD",
+    "nome": "Malindo Air",
+    "pais": "Malásia",
+    "icao": "MXD",
+    "aliance": null
+  },
+  {
+    "codigo": "FY",
+    "nome": "Firefly",
+    "pais": "Malásia",
+    "icao": "FFM",
+    "aliance": null
+  },
+  {
+    "codigo": "TG",
+    "nome": "Thai Airways",
+    "pais": "Tailândia",
+    "icao": "THA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "FD",
+    "nome": "Thai AirAsia",
+    "pais": "Tailândia",
+    "icao": "AIQ",
+    "aliance": null
+  },
+  {
+    "codigo": "SL",
+    "nome": "Thai Lion Air",
+    "pais": "Tailândia",
+    "icao": "TLM",
+    "aliance": null
+  },
+  {
+    "codigo": "DD",
+    "nome": "Nok Air",
+    "pais": "Tailândia",
+    "icao": "NOK",
+    "aliance": null
+  },
+  {
+    "codigo": "WE",
+    "nome": "Thai Smile",
+    "pais": "Tailândia",
+    "icao": "THD",
+    "aliance": null
+  },
+  {
+    "codigo": "PG",
+    "nome": "Bangkok Airways",
+    "pais": "Tailândia",
+    "icao": "BKP",
+    "aliance": null
+  },
+  {
+    "codigo": "XJ",
+    "nome": "Thai AirAsia X",
+    "pais": "Tailândia",
+    "icao": "TAX",
+    "aliance": null
+  },
+  {
+    "codigo": "GA",
+    "nome": "Garuda Indonesia",
+    "pais": "Indonésia",
+    "icao": "GIA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "JT",
+    "nome": "Lion Air",
+    "pais": "Indonésia",
+    "icao": "LNI",
+    "aliance": null
+  },
+  {
+    "codigo": "QZ",
+    "nome": "Indonesia AirAsia",
+    "pais": "Indonésia",
+    "icao": "AWQ",
+    "aliance": null
+  },
+  {
+    "codigo": "ID",
+    "nome": "Batik Air",
+    "pais": "Indonésia",
+    "icao": "BTK",
+    "aliance": null
+  },
+  {
+    "codigo": "IN",
+    "nome": "Nam Air",
+    "pais": "Indonésia",
+    "icao": "LKN",
+    "aliance": null
+  },
+  {
+    "codigo": "IW",
+    "nome": "Wings Air",
+    "pais": "Indonésia",
+    "icao": "WON",
+    "aliance": null
+  },
+  {
+    "codigo": "SJ",
+    "nome": "Sriwijaya Air",
+    "pais": "Indonésia",
+    "icao": "SJY",
+    "aliance": null
+  },
+  {
+    "codigo": "XT",
+    "nome": "Indonesia AirAsia X",
+    "pais": "Indonésia",
+    "icao": "IDX",
+    "aliance": null
+  },
+  {
+    "codigo": "PR",
+    "nome": "Philippine Airlines",
+    "pais": "Filipinas",
+    "icao": "PAL",
+    "aliance": null
+  },
+  {
+    "codigo": "5J",
+    "nome": "Cebu Pacific",
+    "pais": "Filipinas",
+    "icao": "CEB",
+    "aliance": null
+  },
+  {
+    "codigo": "Z2",
+    "nome": "Philippines AirAsia",
+    "pais": "Filipinas",
+    "icao": "APG",
+    "aliance": null
+  },
+  {
+    "codigo": "DG",
+    "nome": "Cebgo",
+    "pais": "Filipinas",
+    "icao": "SRQ",
+    "aliance": null
+  },
+  {
+    "codigo": "VN",
+    "nome": "Vietnam Airlines",
+    "pais": "Vietnã",
+    "icao": "HVN",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "VJ",
+    "nome": "VietJet Air",
+    "pais": "Vietnã",
+    "icao": "VJC",
+    "aliance": null
+  },
+  {
+    "codigo": "BL",
+    "nome": "Jetstar Pacific Airlines",
+    "pais": "Vietnã",
+    "icao": "PIC",
+    "aliance": null
+  },
+  {
+    "codigo": "QH",
+    "nome": "Bamboo Airways",
+    "pais": "Vietnã",
+    "icao": "BAV",
+    "aliance": null
+  },
+  {
+    "codigo": "K6",
+    "nome": "Cambodia Angkor Air",
+    "pais": "Camboja",
+    "icao": "KHV",
+    "aliance": null
+  },
+  {
+    "codigo": "QV",
+    "nome": "Lao Airlines",
+    "pais": "Laos",
+    "icao": "LAO",
+    "aliance": null
+  },
+  {
+    "codigo": "UB",
+    "nome": "Myanmar National Airlines",
+    "pais": "Mianmar",
+    "icao": "UBA",
+    "aliance": null
+  },
+  {
+    "codigo": "BI",
+    "nome": "Royal Brunei Airlines",
+    "pais": "Brunei",
+    "icao": "RBA",
+    "aliance": null
+  },
+  {
+    "codigo": "BR",
+    "nome": "EVA Air",
+    "pais": "Taiwan",
+    "icao": "EVA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "CI",
+    "nome": "China Airlines",
+    "pais": "Taiwan",
+    "icao": "CAL",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "AE",
+    "nome": "Mandarin Airlines",
+    "pais": "Taiwan",
+    "icao": "MDA",
+    "aliance": null
+  },
+  {
+    "codigo": "IT",
+    "nome": "Tigerair Taiwan",
+    "pais": "Taiwan",
+    "icao": "TTW",
+    "aliance": null
+  },
+  {
+    "codigo": "GE",
+    "nome": "TransAsia Airways",
+    "pais": "Taiwan",
+    "icao": "TNA",
+    "aliance": null
+  },
+  {
+    "codigo": "AI",
+    "nome": "Air India",
+    "pais": "Índia",
+    "icao": "AIC",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "6E",
+    "nome": "IndiGo",
+    "pais": "Índia",
+    "icao": "IGO",
+    "aliance": null
+  },
+  {
+    "codigo": "UK",
+    "nome": "Vistara",
+    "pais": "Índia",
+    "icao": "VTI",
+    "aliance": null
+  },
+  {
+    "codigo": "SG",
+    "nome": "SpiceJet",
+    "pais": "Índia",
+    "icao": "SEJ",
+    "aliance": null
+  },
+  {
+    "codigo": "IX",
+    "nome": "Air India Express",
+    "pais": "Índia",
+    "icao": "AXB",
+    "aliance": null
+  },
+  {
+    "codigo": "I5",
+    "nome": "AirAsia India",
+    "pais": "Índia",
+    "icao": "IAD",
+    "aliance": null
+  },
+  {
+    "codigo": "G8",
+    "nome": "Go First (GoAir)",
+    "pais": "Índia",
+    "icao": "GOW",
+    "aliance": null
+  },
+  {
+    "codigo": "9W",
+    "nome": "Jet Airways",
+    "pais": "Índia",
+    "icao": "JAI",
+    "aliance": null
+  },
+  {
+    "codigo": "QP",
+    "nome": "Akasa Air",
+    "pais": "Índia",
+    "icao": "AKJ",
+    "aliance": null
+  },
+  {
+    "codigo": "PK",
+    "nome": "Pakistan International Airlines",
+    "pais": "Paquistão",
+    "icao": "PIA",
+    "aliance": null
+  },
+  {
+    "codigo": "PA",
+    "nome": "Airblue",
+    "pais": "Paquistão",
+    "icao": "ABQ",
+    "aliance": null
+  },
+  {
+    "codigo": "ER",
+    "nome": "Serene Air",
+    "pais": "Paquistão",
+    "icao": "SEP",
+    "aliance": null
+  },
+  {
+    "codigo": "UL",
+    "nome": "SriLankan Airlines",
+    "pais": "Sri Lanka",
+    "icao": "ALK",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "BM",
+    "nome": "Buddha Air",
+    "pais": "Nepal",
+    "icao": "BHA",
+    "aliance": null
+  },
+  {
+    "codigo": "RA",
+    "nome": "Nepal Airlines",
+    "pais": "Nepal",
+    "icao": "RNA",
+    "aliance": null
+  },
+  {
+    "codigo": "BS",
+    "nome": "US-Bangla Airlines",
+    "pais": "Bangladesh",
+    "icao": "UBG",
+    "aliance": null
+  },
+  {
+    "codigo": "BG",
+    "nome": "Biman Bangladesh Airlines",
+    "pais": "Bangladesh",
+    "icao": "BBC",
+    "aliance": null
+  },
+  {
+    "codigo": "8M",
+    "nome": "Myanmar Airways International",
+    "pais": "Mianmar",
+    "icao": "MMM",
+    "aliance": null
+  },
+  {
+    "codigo": "QF",
+    "nome": "Qantas",
+    "pais": "Austrália",
+    "icao": "QFA",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "VA",
+    "nome": "Virgin Australia",
+    "pais": "Austrália",
+    "icao": "VOZ",
+    "aliance": null
+  },
+  {
+    "codigo": "JQ",
+    "nome": "Jetstar Airways",
+    "pais": "Austrália",
+    "icao": "JST",
+    "aliance": null
+  },
+  {
+    "codigo": "FP",
+    "nome": "Pelican Airlines",
+    "pais": "Austrália",
+    "icao": "PEL",
+    "aliance": null
+  },
+  {
+    "codigo": "QK",
+    "nome": "Air Australia",
+    "pais": "Austrália",
+    "icao": "AUZ",
+    "aliance": null
+  },
+  {
+    "codigo": "DJ",
+    "nome": "Virgin Blue",
+    "pais": "Austrália",
+    "icao": "VBL",
+    "aliance": null
+  },
+  {
+    "codigo": "TT",
+    "nome": "Tiger Airways Australia",
+    "pais": "Austrália",
+    "icao": "TGG",
+    "aliance": null
+  },
+  {
+    "codigo": "NZ",
+    "nome": "Air New Zealand",
+    "pais": "Nova Zelândia",
+    "icao": "ANZ",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "FJ",
+    "nome": "Fiji Airways",
+    "pais": "Fiji",
+    "icao": "FJI",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "PW",
+    "nome": "Precision Air",
+    "pais": "Tanzânia",
+    "icao": "PRF",
+    "aliance": null
+  },
+  {
+    "codigo": "TE",
+    "nome": "FlyNas",
+    "pais": "Arábia Saudita",
+    "icao": "KNE",
+    "aliance": null
+  },
+  {
+    "codigo": "TN",
+    "nome": "Air Tahiti Nui",
+    "pais": "Polinésia Francesa",
+    "icao": "THT",
+    "aliance": null
+  },
+  {
+    "codigo": "VT",
+    "nome": "Air Tahiti",
+    "pais": "Polinésia Francesa",
+    "icao": "VTA",
+    "aliance": null
+  },
+  {
+    "codigo": "SB",
+    "nome": "Aircalin",
+    "pais": "Nova Caledônia",
+    "icao": "ACI",
+    "aliance": null
+  },
+  {
+    "codigo": "IJ",
+    "nome": "Spring Airlines Japan",
+    "pais": "Japão",
+    "icao": "SJO",
+    "aliance": null
+  },
+  {
+    "codigo": "SA",
+    "nome": "South African Airways",
+    "pais": "África do Sul",
+    "icao": "SAA",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "MN",
+    "nome": "Comair",
+    "pais": "África do Sul",
+    "icao": "CAW",
+    "aliance": null
+  },
+  {
+    "codigo": "4Z",
+    "nome": "SA Airlink",
+    "pais": "África do Sul",
+    "icao": "LNK",
+    "aliance": null
+  },
+  {
+    "codigo": "FA",
+    "nome": "Safair",
+    "pais": "África do Sul",
+    "icao": "SFR",
+    "aliance": null
+  },
+  {
+    "codigo": "JE",
+    "nome": "Mango",
+    "pais": "África do Sul",
+    "icao": "MNO",
+    "aliance": null
+  },
+  {
+    "codigo": "FN",
+    "nome": "Fastjet",
+    "pais": "África do Sul",
+    "icao": "FTZ",
+    "aliance": null
+  },
+  {
+    "codigo": "AT",
+    "nome": "Royal Air Maroc",
+    "pais": "Marrocos",
+    "icao": "RAM",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "3O",
+    "nome": "Air Arabia Maroc",
+    "pais": "Marrocos",
+    "icao": "MAC",
+    "aliance": null
+  },
+  {
+    "codigo": "TU",
+    "nome": "Tunisair",
+    "pais": "Tunísia",
+    "icao": "TAR",
+    "aliance": null
+  },
+  {
+    "codigo": "LN",
+    "nome": "Libyan Airlines",
+    "pais": "Líbia",
+    "icao": "LAA",
+    "aliance": null
+  },
+  {
+    "codigo": "ET",
+    "nome": "Ethiopian Airlines",
+    "pais": "Etiópia",
+    "icao": "ETH",
+    "aliance": "Star Alliance"
+  },
+  {
+    "codigo": "KQ",
+    "nome": "Kenya Airways",
+    "pais": "Quênia",
+    "icao": "KQA",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "QU",
+    "nome": "Azman Air",
+    "pais": "Nigéria",
+    "icao": "AZM",
+    "aliance": null
+  },
+  {
+    "codigo": "W3",
+    "nome": "Arik Air",
+    "pais": "Nigéria",
+    "icao": "ARA",
+    "aliance": null
+  },
+  {
+    "codigo": "KC",
+    "nome": "Air Astana",
+    "pais": "Cazaquistão",
+    "icao": "KZR",
+    "aliance": null
+  },
+  {
+    "codigo": "FW",
+    "nome": "IBEX Airlines",
+    "pais": "Japão",
+    "icao": "IBX",
+    "aliance": null
+  },
+  {
+    "codigo": "MK",
+    "nome": "Air Mauritius",
+    "pais": "Maurício",
+    "icao": "MAU",
+    "aliance": null
+  },
+  {
+    "codigo": "HM",
+    "nome": "Air Seychelles",
+    "pais": "Seychelles",
+    "icao": "SEY",
+    "aliance": null
+  },
+  {
+    "codigo": "MD",
+    "nome": "Air Madagascar",
+    "pais": "Madagascar",
+    "icao": "MDG",
+    "aliance": null
+  },
+  {
+    "codigo": "TC",
+    "nome": "Air Tanzania",
+    "pais": "Tanzânia",
+    "icao": "ATC",
+    "aliance": null
+  },
+  {
+    "codigo": "8U",
+    "nome": "Afriqiyah Airways",
+    "pais": "Líbia",
+    "icao": "AAW",
+    "aliance": null
+  },
+  {
+    "codigo": "GH",
+    "nome": "Ghana International Airlines",
+    "pais": "Gana",
+    "icao": "GHB",
+    "aliance": null
+  },
+  {
+    "codigo": "SU",
+    "nome": "Aeroflot",
+    "pais": "Rússia",
+    "icao": "AFL",
+    "aliance": "SkyTeam"
+  },
+  {
+    "codigo": "S7",
+    "nome": "S7 Airlines",
+    "pais": "Rússia",
+    "icao": "SBI",
+    "aliance": "Oneworld"
+  },
+  {
+    "codigo": "UT",
+    "nome": "UTair Aviation",
+    "pais": "Rússia",
+    "icao": "UTA",
+    "aliance": null
+  },
+  {
+    "codigo": "FV",
+    "nome": "Rossiya Airlines",
+    "pais": "Rússia",
+    "icao": "SDM",
+    "aliance": null
+  },
+  {
+    "codigo": "HY",
+    "nome": "Uzbekistan Airways",
+    "pais": "Uzbequistão",
+    "icao": "UZB",
+    "aliance": null
+  },
+  {
+    "codigo": "B2",
+    "nome": "Belavia",
+    "pais": "Bielorrússia",
+    "icao": "BRU",
+    "aliance": null
+  },
+  {
+    "codigo": "UN",
+    "nome": "Transaero Airlines",
+    "pais": "Rússia",
+    "icao": "TSO",
+    "aliance": null
+  },
+  {
+    "codigo": "DP",
+    "nome": "Pobeda",
+    "pais": "Rússia",
+    "icao": "PBD",
+    "aliance": null
+  }
+]

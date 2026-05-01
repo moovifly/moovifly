@@ -1,0 +1,454 @@
+"use client";
+
+import { FilePlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { toast } from "sonner";
+
+import { Topbar } from "@/components/backoffice/topbar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Autocomplete } from "@/components/autocomplete";
+import { showConfirm } from "@/components/confirm-modal";
+import { useAuth } from "@/components/providers/auth-provider";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatCurrency, formatDate } from "@/lib/format";
+import {
+  loadAeroportos,
+  loadCompanhias,
+  searchAeroportos,
+  searchCompanhias,
+  type Aeroporto,
+  type Companhia,
+} from "@/lib/datasets";
+
+type Voo = {
+  tipo: "ida" | "volta";
+  origem: string;
+  destino: string;
+  data: string;
+  horario_saida: string;
+  horario_chegada: string;
+  companhia: string;
+  numero_voo: string;
+};
+
+type Orcamento = {
+  id: string;
+  numero_orcamento?: string | null;
+  cliente_id: string | null;
+  vendedor_id: string | null;
+  data_orcamento: string;
+  adultos: number;
+  criancas: number;
+  bebes: number;
+  com_bagagem: boolean;
+  voos: Voo[];
+  valor_total: number | string;
+  forma_pagamento: string | null;
+  observacoes: string | null;
+  status: string;
+  cliente?: { id: string; nome: string } | null;
+  vendedor?: { id: string; nome: string } | null;
+};
+
+type Cliente = { id: string; nome: string; email: string | null };
+
+type FormState = {
+  id: string | null;
+  cliente_id: string | null;
+  cliente_nome: string;
+  data_orcamento: string;
+  adultos: number;
+  criancas: number;
+  bebes: number;
+  com_bagagem: boolean;
+  voos: Voo[];
+  valor_total: string;
+  forma_pagamento: string;
+  observacoes: string;
+  status: string;
+};
+
+const STATUS_OPTIONS = [
+  { value: "pendente", label: "Pendente", variant: "warning" as const },
+  { value: "enviado", label: "Enviado", variant: "info" as const },
+  { value: "aprovado", label: "Aprovado", variant: "success" as const },
+  { value: "recusado", label: "Recusado", variant: "destructive" as const },
+  { value: "convertido", label: "Convertido", variant: "default" as const },
+];
+
+const PAGAMENTO_PADRAO =
+  "Em até 4x sem juros, nos cartões Amex, Diners, Elo, Hipercard, Mastercard e Visa, Pix ou transferência bancária.";
+
+const emptyForm = (): FormState => ({
+  id: null,
+  cliente_id: null,
+  cliente_nome: "",
+  data_orcamento: new Date().toISOString().slice(0, 10),
+  adultos: 1,
+  criancas: 0,
+  bebes: 0,
+  com_bagagem: true,
+  voos: [{ tipo: "ida", origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }],
+  valor_total: "",
+  forma_pagamento: PAGAMENTO_PADRAO,
+  observacoes: "",
+  status: "pendente",
+});
+
+export function OrcamentosClient() {
+  const supabase = useMemo(() => getSupabaseClient(), []);
+  const { profile } = useAuth();
+  const [items, setItems] = useState<Orcamento[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm());
+  const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
+  const [companhias, setCompanhias] = useState<Companhia[]>([]);
+
+  useEffect(() => {
+    loadAeroportos().then(setAeroportos).catch(() => undefined);
+    loadCompanhias().then(setCompanhias).catch(() => undefined);
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      let q = supabase.from("orcamentos").select("*").order("data_orcamento", { ascending: false });
+      if (profile?.tipo === "vendedor") q = q.eq("vendedor_id", profile.id);
+
+      const [{ data: orcs, error }, { data: clientesList }] = await Promise.all([
+        q,
+        supabase.from("clientes").select("id, nome, email").eq("status", "ativo").order("nome"),
+      ]);
+      if (error) throw error;
+
+      const list = (orcs ?? []) as Orcamento[];
+      const clienteIds = [...new Set(list.map((o) => o.cliente_id).filter(Boolean))] as string[];
+      const vendedorIds = [...new Set(list.map((o) => o.vendedor_id).filter(Boolean))] as string[];
+
+      const [{ data: cliRel }, { data: vendRel }] = await Promise.all([
+        clienteIds.length ? supabase.from("clientes").select("id, nome").in("id", clienteIds) : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
+        vendedorIds.length ? supabase.from("usuarios").select("id, nome").in("id", vendedorIds) : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
+      ]);
+
+      const cliMap = new Map((cliRel ?? []).map((c: { id: string; nome: string }) => [c.id, c]));
+      const venMap = new Map((vendRel ?? []).map((v: { id: string; nome: string }) => [v.id, v]));
+
+      setItems(list.map((o) => ({ ...o, cliente: o.cliente_id ? (cliMap.get(o.cliente_id) ?? null) as { id: string; nome: string } | null : null, vendedor: o.vendedor_id ? (venMap.get(o.vendedor_id) ?? null) as { id: string; nome: string } | null : null })) as Orcamento[]);
+      setClientes((clientesList ?? []) as Cliente[]);
+    } catch (err) {
+      toast.error("Erro ao carregar orçamentos", { description: String(err) });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (profile) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return items.filter((o) => {
+      const matchesTerm = !term || o.cliente?.nome.toLowerCase().includes(term) || (o.numero_orcamento ?? "").toLowerCase().includes(term);
+      const matchesStatus = !statusFilter || o.status === statusFilter;
+      return matchesTerm && matchesStatus;
+    });
+  }, [items, search, statusFilter]);
+
+  function openNew() { setForm(emptyForm()); setOpen(true); }
+
+  function openEdit(o: Orcamento) {
+    setForm({
+      id: o.id,
+      cliente_id: o.cliente_id,
+      cliente_nome: o.cliente?.nome ?? "",
+      data_orcamento: o.data_orcamento.slice(0, 10),
+      adultos: o.adultos ?? 1,
+      criancas: o.criancas ?? 0,
+      bebes: o.bebes ?? 0,
+      com_bagagem: !!o.com_bagagem,
+      voos: o.voos?.length ? o.voos : emptyForm().voos,
+      valor_total: String(o.valor_total ?? ""),
+      forma_pagamento: o.forma_pagamento ?? PAGAMENTO_PADRAO,
+      observacoes: o.observacoes ?? "",
+      status: o.status ?? "pendente",
+    });
+    setOpen(true);
+  }
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault();
+    if (!form.cliente_id) { toast.error("Selecione um cliente válido."); return; }
+    if (!form.valor_total || Number(form.valor_total) <= 0) { toast.error("Informe um valor total maior que zero."); return; }
+    setSaving(true);
+    try {
+      const payload = {
+        cliente_id: form.cliente_id,
+        vendedor_id: profile?.id ?? null,
+        data_orcamento: form.data_orcamento,
+        adultos: form.adultos,
+        criancas: form.criancas,
+        bebes: form.bebes,
+        com_bagagem: form.com_bagagem,
+        voos: form.voos,
+        valor_total: Number(form.valor_total),
+        forma_pagamento: form.forma_pagamento.trim() || null,
+        observacoes: form.observacoes.trim() || null,
+        status: form.status,
+      };
+      if (form.id) {
+        const { error } = await supabase.from("orcamentos").update(payload).eq("id", form.id);
+        if (error) throw error;
+        toast.success("Orçamento atualizado!");
+      } else {
+        const { error } = await supabase.from("orcamentos").insert([payload]);
+        if (error) throw error;
+        toast.success("Orçamento cadastrado!");
+      }
+      setOpen(false);
+      await load();
+    } catch (err) {
+      toast.error("Erro ao salvar", { description: String(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(o: Orcamento) {
+    const ok = await showConfirm({ title: "Excluir orçamento", message: `Excluir orçamento ${o.numero_orcamento ?? "#" + o.id.slice(0, 6)}?`, destructive: true, confirmText: "Excluir" });
+    if (!ok) return;
+    try {
+      const { error } = await supabase.from("orcamentos").delete().eq("id", o.id);
+      if (error) throw error;
+      toast.success("Orçamento excluído.");
+      await load();
+    } catch (err) {
+      toast.error("Erro ao excluir", { description: String(err) });
+    }
+  }
+
+  function addVoo(tipo: "ida" | "volta") {
+    setForm((f) => ({ ...f, voos: [...f.voos, { tipo, origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }] }));
+  }
+
+  function removeVoo(i: number) { setForm((f) => ({ ...f, voos: f.voos.filter((_, idx) => idx !== i) })); }
+
+  function updateVoo(i: number, patch: Partial<Voo>) {
+    setForm((f) => ({ ...f, voos: f.voos.map((v, idx) => idx === i ? { ...v, ...patch } : v) }));
+  }
+
+  return (
+    <>
+      <Topbar
+        title="Orçamentos"
+        subtitle={`${filtered.length} orçamento${filtered.length !== 1 ? "s" : ""}`}
+        actions={<Button onClick={openNew}><FilePlus className="h-4 w-4" />Novo Orçamento</Button>}
+      />
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <Card>
+          <CardHeader className="flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>Lista de Orçamentos</CardTitle>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" />
+                <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente ou número..." className="pl-10 sm:w-72" />
+              </div>
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
+                <option value="">Todos status</option>
+                {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : filtered.length === 0 ? (
+              <p className="py-12 text-center text-sm text-[var(--text-secondary)]">Nenhum orçamento encontrado.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Pax</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Vendedor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((o) => {
+                    const sb = STATUS_OPTIONS.find((s) => s.value === o.status) ?? STATUS_OPTIONS[0];
+                    return (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-mono text-xs">{o.numero_orcamento ?? `#${o.id.slice(0, 6)}`}</TableCell>
+                        <TableCell>{formatDate(o.data_orcamento)}</TableCell>
+                        <TableCell className="font-medium">{o.cliente?.nome ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-[var(--text-secondary)]">{o.adultos}A · {o.criancas}C · {o.bebes}B</TableCell>
+                        <TableCell className="font-semibold">{formatCurrency(Number(o.valor_total))}</TableCell>
+                        <TableCell className="text-[var(--text-secondary)]">{o.vendedor?.nome ?? "—"}</TableCell>
+                        <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(o)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(o)} className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{form.id ? "Editar orçamento" : "Novo orçamento"}</DialogTitle>
+            <DialogDescription>Preencha os dados do orçamento.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Cliente *</Label>
+                <Autocomplete
+                  value={form.cliente_nome}
+                  onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
+                  onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as Cliente).id }))}
+                  options={clientes.filter((c) => c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase())).map((c) => ({ value: c, label: c.nome, description: c.email ?? "" }))}
+                  placeholder="Digite o nome do cliente..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Data do orçamento *</Label>
+                <Input type="date" value={form.data_orcamento} onChange={(e) => setForm({ ...form, data_orcamento: e.target.value })} required />
+              </div>
+            </div>
+
+            <fieldset className="space-y-3 rounded-md border border-[var(--border-subtle)] p-4">
+              <legend className="px-2 text-sm font-semibold text-foreground">Passageiros</legend>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label>Adultos (12+)</Label>
+                  <Input type="number" min={1} value={form.adultos} onChange={(e) => setForm({ ...form, adultos: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Crianças (2-11)</Label>
+                  <Input type="number" min={0} value={form.criancas} onChange={(e) => setForm({ ...form, criancas: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Bebês (0-23m)</Label>
+                  <Input type="number" min={0} value={form.bebes} onChange={(e) => setForm({ ...form, bebes: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Bagagem</Label>
+                <Select value={form.com_bagagem ? "true" : "false"} onChange={(e) => setForm({ ...form, com_bagagem: e.target.value === "true" })}>
+                  <option value="true">Com bagagem</option>
+                  <option value="false">Sem bagagem</option>
+                </Select>
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-4 rounded-md border border-[var(--border-subtle)] p-4">
+              <legend className="px-2 text-sm font-semibold text-foreground">Voos</legend>
+              {["ida", "volta"].map((tipo) => {
+                const voosDoTipo = form.voos.map((v, i) => ({ v, i })).filter((x) => x.v.tipo === tipo);
+                return (
+                  <div key={tipo} className="space-y-3">
+                    <p className="text-sm font-semibold text-foreground">Voos de {tipo.toUpperCase()}</p>
+                    {voosDoTipo.length === 0 && <p className="text-xs text-[var(--text-secondary)]">Nenhum voo adicionado.</p>}
+                    {voosDoTipo.map(({ v, i }) => (
+                      <div key={i} className="space-y-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-[var(--text-secondary)]">Voo #{i + 1}</span>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeVoo(i)} className="text-[var(--danger-text)]">
+                            <X className="h-3 w-3" /> Remover
+                          </Button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div><Label>Origem</Label>
+                            <Autocomplete value={v.origem} onValueChange={(t) => updateVoo(i, { origem: t })} onSelect={(opt) => updateVoo(i, { origem: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` })} options={searchAeroportos(v.origem, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))} placeholder="Aeroporto de origem" />
+                          </div>
+                          <div><Label>Destino</Label>
+                            <Autocomplete value={v.destino} onValueChange={(t) => updateVoo(i, { destino: t })} onSelect={(opt) => updateVoo(i, { destino: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` })} options={searchAeroportos(v.destino, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))} placeholder="Aeroporto de destino" />
+                          </div>
+                          <div><Label>Data</Label><Input type="date" value={v.data} onChange={(e) => updateVoo(i, { data: e.target.value })} /></div>
+                          <div><Label>Companhia</Label>
+                            <Autocomplete value={v.companhia} onValueChange={(t) => updateVoo(i, { companhia: t })} onSelect={(opt) => updateVoo(i, { companhia: (opt.value as Companhia).nome })} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
+                          </div>
+                          <div><Label>Saída</Label><Input type="time" value={v.horario_saida} onChange={(e) => updateVoo(i, { horario_saida: e.target.value })} /></div>
+                          <div><Label>Chegada</Label><Input type="time" value={v.horario_chegada} onChange={(e) => updateVoo(i, { horario_chegada: e.target.value })} /></div>
+                          <div className="sm:col-span-2"><Label>Número do voo</Label><Input value={v.numero_voo} onChange={(e) => updateVoo(i, { numero_voo: e.target.value })} placeholder="LA1234" /></div>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => addVoo(tipo as "ida" | "volta")}>
+                      <Plus className="h-4 w-4" /> Adicionar voo de {tipo.toUpperCase()}
+                    </Button>
+                    {tipo === "ida" && <div className="h-px w-full bg-[var(--border-subtle)]" />}
+                  </div>
+                );
+              })}
+            </fieldset>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Valor total *</Label>
+                <Input type="number" step="0.01" min="0" value={form.valor_total} onChange={(e) => setForm({ ...form, valor_total: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                  {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Formas de pagamento</Label>
+              <Textarea rows={3} value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Observações</Label>
+              <Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Cadastrar"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

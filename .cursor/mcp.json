@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp?project_ref=axrkvvjnubjxgejvrbmf"
+    },
+    "abacatepay": {
+      "url": "https://mcp.abacatepay.com/mcp",
+      "headers": {
+        "Authorization": "abc_dev_HNd3P0mUaJTK6eeBhCBnk3bg"
+      }
+    },
+    "hostinger-api": {
+      "command": "C:\\Users\\glaub\\AppData\\Roaming\\npm\\hostinger-api-mcp.cmd",
+      "env": {
+        "DEBUG": "false",
+        "API_TOKEN": "uPjnQ2HnVfMoNNeRZ8sPof2q6uiAdDhaO4WuPSrv503afafe"
+      }
+    }
+  }
+}
