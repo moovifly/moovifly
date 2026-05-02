@@ -1,6 +1,6 @@
 "use client";
 
-import { FilePlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { FilePlus, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -52,6 +52,8 @@ type Orcamento = {
   numero_orcamento?: string | null;
   cliente_id: string | null;
   vendedor_id: string | null;
+  venda_id?: string | null;
+  convertido_venda?: boolean | null;
   data_orcamento: string;
   adultos: number;
   criancas: number;
@@ -94,6 +96,17 @@ const STATUS_OPTIONS = [
 
 const PAGAMENTO_PADRAO =
   "Em até 4x sem juros, nos cartões Amex, Diners, Elo, Hipercard, Mastercard e Visa, Pix ou transferência bancária.";
+
+function voosToVendaCampos(voovs: Voo[] | undefined) {
+  const ida = voovs?.find((v) => v.tipo === "ida");
+  const volta = voovs?.find((v) => v.tipo === "volta");
+  return {
+    origem: ida?.origem?.trim() || null,
+    destino: ida?.destino?.trim() || null,
+    data_ida: ida?.data?.trim() || null,
+    data_volta: volta?.data?.trim() || null,
+  };
+}
 
 /** Mensagem legível para PostgrestError / Error genérico (evita "[object Object]" no toast). */
 function formatSupabaseError(err: unknown): string {
@@ -143,6 +156,7 @@ export function OrcamentosClient() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
   const [companhias, setCompanhias] = useState<Companhia[]>([]);
+  const [convertingId, setConvertingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAeroportos().then(setAeroportos).catch(() => undefined);
@@ -181,6 +195,7 @@ export function OrcamentosClient() {
           vendedor: o.vendedor_id ? ((venMap.get(o.vendedor_id) ?? null) as { id: string; nome: string } | null) : null,
         })),
       );
+
       setClientes((clientesList ?? []) as Cliente[]);
     } catch (err) {
       toast.error("Erro ao carregar orçamentos", { description: formatSupabaseError(err) });
@@ -263,6 +278,74 @@ export function OrcamentosClient() {
     }
   }
 
+  function podeGerarVenda(o: Orcamento) {
+    if (!o.cliente_id) return false;
+    if (o.status === "convertido" || o.status === "recusado") return false;
+    if (o.convertido_venda || o.venda_id) return false;
+    return true;
+  }
+
+  async function handleGerarVenda(o: Orcamento) {
+    if (!podeGerarVenda(o)) return;
+    if (!profile?.id) { toast.error("Sessão inválida. Faça login novamente."); return; }
+    const ok = await showConfirm({
+      title: "Gerar venda",
+      message: `Criar uma venda a partir do orçamento ${o.numero_orcamento ?? o.id.slice(0, 8)}? O orçamento será marcado como convertido.`,
+      confirmText: "Gerar venda",
+    });
+    if (!ok) return;
+    setConvertingId(o.id);
+    try {
+      const { origem, destino, data_ida, data_volta } = voosToVendaCampos(o.voos);
+      const fp = (o.forma_pagamento ?? "").trim() || null;
+      const numOrc = o.numero_orcamento?.trim();
+      const descricao = destino
+        ? `Passagem — ${destino}`
+        : origem
+          ? `Passagem — ${origem}`
+          : numOrc
+            ? `Venda — orçamento ${numOrc}`
+            : "Venda a partir de orçamento";
+      const passageiros = Math.max(1, (o.adultos ?? 0) + (o.criancas ?? 0) + (o.bebes ?? 0));
+      const payload = {
+        cliente_id: o.cliente_id,
+        vendedor_id: o.vendedor_id ?? profile.id,
+        descricao,
+        tipo: "passagem",
+        origem,
+        destino,
+        data_partida: data_ida || null,
+        data_retorno: data_volta || null,
+        data_venda: new Date().toISOString().slice(0, 10),
+        passageiros,
+        adultos: o.adultos ?? 1,
+        criancas: o.criancas ?? 0,
+        bebes: o.bebes ?? 0,
+        valor_total: Number(o.valor_total),
+        taxa_rav: 0,
+        taxa_du: 0,
+        comissao_vendedor: 0,
+        status: "pendente",
+        forma_pagamento: fp,
+        observacoes: o.observacoes?.trim() || null,
+      };
+      const { data: inserted, error: insErr } = await supabase.from("vendas").insert([payload]).select("id, numero_venda").maybeSingle();
+      if (insErr) throw insErr;
+      if (!inserted?.id) throw new Error("Resposta da venda sem id.");
+      const { error: updErr } = await supabase
+        .from("orcamentos")
+        .update({ status: "convertido", convertido_venda: true, venda_id: inserted.id })
+        .eq("id", o.id);
+      if (updErr) throw updErr;
+      toast.success("Venda criada!", { description: inserted?.numero_venda ? `Número: ${inserted.numero_venda}` : undefined });
+      await load();
+    } catch (err) {
+      toast.error("Não foi possível gerar a venda", { description: formatSupabaseError(err) });
+    } finally {
+      setConvertingId(null);
+    }
+  }
+
   async function handleDelete(o: Orcamento) {
     const ok = await showConfirm({ title: "Excluir orçamento", message: `Excluir orçamento ${o.numero_orcamento ?? "#" + o.id.slice(0, 6)}?`, destructive: true, confirmText: "Excluir" });
     if (!ok) return;
@@ -341,8 +424,21 @@ export function OrcamentosClient() {
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(o)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(o)} className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"><Trash2 className="h-4 w-4" /></Button>
+                            {podeGerarVenda(o) ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                title="Gerar venda a partir deste orçamento"
+                                disabled={convertingId === o.id}
+                                onClick={() => handleGerarVenda(o)}
+                                className="text-[var(--accent-600)] hover:bg-[var(--accent-50)]"
+                              >
+                                <ShoppingCart className="h-4 w-4" />
+                              </Button>
+                            ) : null}
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(o)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(o)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
