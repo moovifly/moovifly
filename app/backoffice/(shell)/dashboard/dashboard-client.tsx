@@ -186,14 +186,22 @@ async function loadSalesByDay(profile: UserProfile, days = 7) {
 
 async function loadRevenueByCategory(profile: UserProfile) {
   const supabase = getSupabaseClient();
-  let q = supabase.from("vendas").select("tipo, valor_total, status").in("status", ["confirmada", "concluida"]);
+  /* tipo = categoria comercial; classe = econômica/executiva… fallback para dados antigos sem tipo */
+  let q = supabase
+    .from("vendas")
+    .select("tipo, classe, valor_total, status")
+    .in("status", ["confirmada", "concluida"]);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
     q = q.eq("vendedor_id", profile.id);
   }
   const { data } = await q;
   const grupos = new Map<string, number>();
-  for (const v of (data ?? []) as Array<{ tipo: string | null; valor_total: number | string | null }>) {
-    const key = v.tipo ?? "Outros";
+  for (const v of (data ?? []) as Array<{
+    tipo: string | null;
+    classe: string | null;
+    valor_total: number | string | null;
+  }>) {
+    const key = v.tipo?.trim() || v.classe?.trim() || "Outros";
     grupos.set(key, (grupos.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
   }
   return [...grupos.entries()].map(([name, value]) => ({ name, value }));
