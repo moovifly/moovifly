@@ -95,6 +95,25 @@ const STATUS_OPTIONS = [
 const PAGAMENTO_PADRAO =
   "Em até 4x sem juros, nos cartões Amex, Diners, Elo, Hipercard, Mastercard e Visa, Pix ou transferência bancária.";
 
+/** Mensagem legível para PostgrestError / Error genérico (evita "[object Object]" no toast). */
+function formatSupabaseError(err: unknown): string {
+  if (err && typeof err === "object" && "message" in err) {
+    const o = err as { message?: string; details?: string; hint?: string };
+    const parts = [o.message, o.details, o.hint].filter((s): s is string => typeof s === "string" && s.length > 0);
+    if (parts.length) return parts.join(" — ");
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** Normaliza linha do Postgres (tem_bagagem / formas_pagamento) para o modelo do formulário. */
+function rowToOrcamento(raw: Record<string, unknown>): Orcamento {
+  return {
+    ...(raw as unknown as Orcamento),
+    com_bagagem: Boolean(raw.tem_bagagem ?? raw.com_bagagem),
+    forma_pagamento: (raw.formas_pagamento ?? raw.forma_pagamento) as string | null,
+  };
+}
+
 const emptyForm = (): FormState => ({
   id: null,
   cliente_id: null,
@@ -142,9 +161,10 @@ export function OrcamentosClient() {
       ]);
       if (error) throw error;
 
-      const list = (orcs ?? []) as Orcamento[];
-      const clienteIds = [...new Set(list.map((o) => o.cliente_id).filter(Boolean))] as string[];
-      const vendedorIds = [...new Set(list.map((o) => o.vendedor_id).filter(Boolean))] as string[];
+      const rawOrcs = (orcs ?? []) as Record<string, unknown>[];
+      const list = rawOrcs.map(rowToOrcamento);
+      const clienteIds = [...new Set(list.map((o: Orcamento) => o.cliente_id).filter(Boolean))] as string[];
+      const vendedorIds = [...new Set(list.map((o: Orcamento) => o.vendedor_id).filter(Boolean))] as string[];
 
       const [{ data: cliRel }, { data: vendRel }] = await Promise.all([
         clienteIds.length ? supabase.from("clientes").select("id, nome").in("id", clienteIds) : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
@@ -154,10 +174,16 @@ export function OrcamentosClient() {
       const cliMap = new Map((cliRel ?? []).map((c: { id: string; nome: string }) => [c.id, c]));
       const venMap = new Map((vendRel ?? []).map((v: { id: string; nome: string }) => [v.id, v]));
 
-      setItems(list.map((o) => ({ ...o, cliente: o.cliente_id ? (cliMap.get(o.cliente_id) ?? null) as { id: string; nome: string } | null : null, vendedor: o.vendedor_id ? (venMap.get(o.vendedor_id) ?? null) as { id: string; nome: string } | null : null })) as Orcamento[]);
+      setItems(
+        list.map((o: Orcamento) => ({
+          ...o,
+          cliente: o.cliente_id ? ((cliMap.get(o.cliente_id) ?? null) as { id: string; nome: string } | null) : null,
+          vendedor: o.vendedor_id ? ((venMap.get(o.vendedor_id) ?? null) as { id: string; nome: string } | null) : null,
+        })),
+      );
       setClientes((clientesList ?? []) as Cliente[]);
     } catch (err) {
-      toast.error("Erro ao carregar orçamentos", { description: String(err) });
+      toast.error("Erro ao carregar orçamentos", { description: formatSupabaseError(err) });
     } finally {
       setLoading(false);
     }
@@ -201,20 +227,21 @@ export function OrcamentosClient() {
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (!form.cliente_id) { toast.error("Selecione um cliente válido."); return; }
+    if (!profile?.id) { toast.error("Sessão inválida. Faça login novamente."); return; }
     if (!form.valor_total || Number(form.valor_total) <= 0) { toast.error("Informe um valor total maior que zero."); return; }
     setSaving(true);
     try {
       const payload = {
         cliente_id: form.cliente_id,
-        vendedor_id: profile?.id ?? null,
+        vendedor_id: profile.id,
         data_orcamento: form.data_orcamento,
         adultos: form.adultos,
         criancas: form.criancas,
         bebes: form.bebes,
-        com_bagagem: form.com_bagagem,
+        tem_bagagem: form.com_bagagem,
         voos: form.voos,
         valor_total: Number(form.valor_total),
-        forma_pagamento: form.forma_pagamento.trim() || null,
+        formas_pagamento: form.forma_pagamento.trim() || "",
         observacoes: form.observacoes.trim() || null,
         status: form.status,
       };
@@ -230,7 +257,7 @@ export function OrcamentosClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: String(err) });
+      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
     } finally {
       setSaving(false);
     }
@@ -245,7 +272,7 @@ export function OrcamentosClient() {
       toast.success("Orçamento excluído.");
       await load();
     } catch (err) {
-      toast.error("Erro ao excluir", { description: String(err) });
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
     }
   }
 
