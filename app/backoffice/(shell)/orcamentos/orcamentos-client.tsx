@@ -108,6 +108,14 @@ function voosToVendaCampos(voovs: Voo[] | undefined) {
   };
 }
 
+const VENDA_FORMA_PAGAMENTO_MAX = 100;
+const VENDA_DESTINO_MAX = 255;
+
+function clipVarchar(value: string, max: number): string {
+  if (value.length <= max) return value;
+  return value.slice(0, max);
+}
+
 /** Mensagem legível para PostgrestError / Error genérico (evita "[object Object]" no toast). */
 function formatSupabaseError(err: unknown): string {
   if (err && typeof err === "object" && "message" in err) {
@@ -296,8 +304,16 @@ export function OrcamentosClient() {
     if (!ok) return;
     setConvertingId(o.id);
     try {
-      const { origem, destino, data_ida, data_volta } = voosToVendaCampos(o.voos);
-      const fp = (o.forma_pagamento ?? "").trim() || null;
+      const { origem: origemRaw, destino: destinoRaw, data_ida, data_volta } = voosToVendaCampos(o.voos);
+      const origem = origemRaw ? clipVarchar(origemRaw, VENDA_DESTINO_MAX) : null;
+      const destino = destinoRaw ? clipVarchar(destinoRaw, VENDA_DESTINO_MAX) : null;
+      const fpFull = (o.forma_pagamento ?? "").trim();
+      const formaPagamentoVenda = fpFull ? clipVarchar(fpFull, VENDA_FORMA_PAGAMENTO_MAX) : null;
+      let observacoes = o.observacoes?.trim() ?? "";
+      if (fpFull.length > VENDA_FORMA_PAGAMENTO_MAX) {
+        const nota = `Formas de pagamento (texto completo): ${fpFull}`;
+        observacoes = observacoes ? `${observacoes}\n\n${nota}` : nota;
+      }
       const numOrc = o.numero_orcamento?.trim();
       const descricao = destino
         ? `Passagem — ${destino}`
@@ -326,8 +342,8 @@ export function OrcamentosClient() {
         taxa_du: 0,
         comissao_vendedor: 0,
         status: "pendente",
-        forma_pagamento: fp,
-        observacoes: o.observacoes?.trim() || null,
+        forma_pagamento: formaPagamentoVenda,
+        observacoes: observacoes.trim() || null,
       };
       const { data: inserted, error: insErr } = await supabase.from("vendas").insert([payload]).select("id, numero_venda").maybeSingle();
       if (insErr) throw insErr;
