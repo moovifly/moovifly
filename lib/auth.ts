@@ -35,13 +35,38 @@ export async function getSession() {
 }
 
 export async function getUserProfile(userId: string) {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from("usuarios")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return { data: data as UserProfile | null, error };
+  try {
+    const res = await fetch("/api/profile", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const json = (await res.json()) as {
+      data: UserProfile | null;
+      error: string | null;
+    };
+
+    if (!res.ok) {
+      return {
+        data: null,
+        error: new Error(json.error || `HTTP ${res.status}`),
+      };
+    }
+
+    if (json.data && json.data.user_id !== userId) {
+      return {
+        data: null,
+        error: new Error("session_profile_mismatch"),
+      };
+    }
+
+    return {
+      data: json.data,
+      error: json.error ? new Error(json.error) : null,
+    };
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    return { data: null, error: err };
+  }
 }
 
 export const ROLE_LABELS: Record<string, string> = {
