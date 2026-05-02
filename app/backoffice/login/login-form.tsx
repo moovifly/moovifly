@@ -18,6 +18,12 @@ function translateError(message: string): string {
   if (message.includes("Email not confirmed")) {
     return "E-mail não confirmado. Verifique sua caixa de entrada.";
   }
+  if (message.includes("demorou demais para responder")) {
+    return (
+      "A conexão com o login estourou o tempo limite. Feche outras abas do site, recarregue a página ou desative VPN/bloqueador. " +
+      "Na Vercel, confira se NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY existem na produção."
+    );
+  }
   return message || "Erro ao fazer login. Tente novamente.";
 }
 
@@ -70,7 +76,7 @@ export function LoginForm() {
     try {
       const { data, error: signInError } = await withTimeout(
         signIn(email.trim(), password),
-        15000,
+        30000,
         "Login",
       );
       if (signInError) throw new Error(signInError.message);
@@ -80,7 +86,7 @@ export function LoginForm() {
 
       const { data: userProfile, error: profileError } = await withTimeout(
         getUserProfile(userId),
-        15000,
+        30000,
         "Carregamento do perfil",
       );
       if (profileError) {
