@@ -7,9 +7,17 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Sidebar } from "./sidebar";
 
 export function BackofficeShell({ children }: { children: ReactNode }) {
-  const { loading, profile } = useAuth();
+  const { loading, profile, userId } = useAuth();
 
   if (loading) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--accent-600)]" />
+      </div>
+    );
+  }
+
+  if (userId && !profile) {
     return (
       <div className="flex h-dvh items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-[var(--accent-600)]" />

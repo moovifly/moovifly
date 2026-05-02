@@ -30,6 +30,23 @@ const ADMIN_ONLY = ["/backoffice/configuracoes"];
 const MANAGER_PAGES = ["/backoffice/relatorios"];
 const PUBLIC_BACKOFFICE = ["/backoffice/login"];
 
+const PROFILE_FETCH_MS = 25_000;
+
+/** Evita getUserProfile pendurado indefinidamente (rede/RLS), que deixava loading eterno no dashboard. */
+async function getUserProfileWithTimeout(userId: string) {
+  try {
+    return await Promise.race([
+      getUserProfile(userId),
+      new Promise<{ data: null; error: Error }>((_, reject) =>
+        setTimeout(() => reject(new Error("profile_fetch_timeout")), PROFILE_FETCH_MS),
+      ),
+    ]);
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    return { data: null, error: err };
+  }
+}
+
 /** Navegação completa; usa NEXT_PUBLIC_APP_URL em produção para não trocar de origem (www vs apex), senão o Supabase perde a sessão. */
 function goBackoffice(path: string) {
   if (typeof window !== "undefined") window.location.assign(publicUrlForPath(path));
@@ -75,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUserId(sessionUserId);
 
-      const { data: nextProfile, error } = await getUserProfile(sessionUserId);
+      const { data: nextProfile, error } = await getUserProfileWithTimeout(sessionUserId);
 
       if (error || !nextProfile) {
         console.error("[auth] Falha ao carregar perfil:", error);
@@ -139,10 +156,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data } = await supabase.auth.getSession();
         if (!active) return;
-        await handleSession(data.session?.user?.id ?? null);
+        const uid = data.session?.user?.id ?? null;
+        if (uid) setUserId(uid);
+        if (active) setLoading(false);
+        await handleSession(uid);
       } catch (e) {
         console.error("[auth] Falha ao iniciar sessão:", e);
-      } finally {
         if (active) setLoading(false);
       }
     })();
