@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 type ContaReceber = { id: string; descricao: string | null; valor: number | string; data_vencimento: string | null; status: string };
@@ -44,7 +45,7 @@ export function FinanceiroClient() {
         setPagar((pag ?? []) as ContaPagar[]);
       }
     } catch (err) {
-      toast.error("Erro ao carregar financeiro", { description: String(err) });
+      toast.error("Erro ao carregar financeiro", { description: formatSupabaseError(err) });
     } finally {
       setLoading(false);
     }

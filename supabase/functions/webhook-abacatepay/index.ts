@@ -51,7 +51,7 @@ Deno.serve(async (req: Request) => {
         if (!existing) {
           const { data: venda } = await supabase
             .from("vendas")
-            .select("valor_total, numero_venda, data_venda, usuario_id")
+            .select("valor_total, numero_venda, data_venda, vendedor_id")
             .eq("id", pag.venda_id)
             .single();
 

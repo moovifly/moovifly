@@ -26,6 +26,7 @@ import { Autocomplete } from "@/components/autocomplete";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   loadAeroportos,
@@ -98,32 +99,46 @@ const PAGAMENTO_PADRAO =
   "Em até 4x sem juros, nos cartões Amex, Diners, Elo, Hipercard, Mastercard e Visa, Pix ou transferência bancária.";
 
 function voosToVendaCampos(voovs: Voo[] | undefined) {
-  const ida = voovs?.find((v) => v.tipo === "ida");
-  const volta = voovs?.find((v) => v.tipo === "volta");
+  const idas = voovs?.filter((v) => v.tipo === "ida") ?? [];
+  const voltas = voovs?.filter((v) => v.tipo === "volta") ?? [];
+  const firstIda = idas[0];
+  const lastIda = idas.at(-1);
+  const lastVolta = voltas.at(-1);
   return {
-    origem: ida?.origem?.trim() || null,
-    destino: ida?.destino?.trim() || null,
-    data_ida: ida?.data?.trim() || null,
-    data_volta: volta?.data?.trim() || null,
+    origem: firstIda?.origem?.trim() || null,
+    destino: lastIda?.destino?.trim() || null,
+    data_ida: firstIda?.data?.trim() || null,
+    data_volta: lastVolta?.data?.trim() || voltas[0]?.data?.trim() || null,
+    companhia: firstIda?.companhia?.trim() || null,
   };
+}
+
+function formatVoosParaObservacao(voovs: Voo[] | undefined): string {
+  if (!voovs?.length) return "";
+  let nIda = 0;
+  let nVolta = 0;
+  return voovs
+    .map((v) => {
+      const trecho = v.tipo === "ida" ? "Ida" : "Volta";
+      const idx = v.tipo === "ida" ? ++nIda : ++nVolta;
+      const parts = [
+        `${trecho} #${idx}: ${v.origem?.trim() || "—"} → ${v.destino?.trim() || "—"}`,
+        v.data ? `Data ${v.data}` : null,
+        [v.horario_saida, v.horario_chegada].filter(Boolean).length ? `Saída/chegada ${v.horario_saida || "—"} / ${v.horario_chegada || "—"}` : null,
+        [v.companhia, v.numero_voo].filter(Boolean).join(" ").trim() || null,
+      ].filter(Boolean);
+      return parts.join(" | ");
+    })
+    .join("\n");
 }
 
 const VENDA_FORMA_PAGAMENTO_MAX = 100;
 const VENDA_DESTINO_MAX = 255;
+const VENDA_DESCRICAO_MAX = 500;
 
 function clipVarchar(value: string, max: number): string {
   if (value.length <= max) return value;
   return value.slice(0, max);
-}
-
-/** Mensagem legível para PostgrestError / Error genérico (evita "[object Object]" no toast). */
-function formatSupabaseError(err: unknown): string {
-  if (err && typeof err === "object" && "message" in err) {
-    const o = err as { message?: string; details?: string; hint?: string };
-    const parts = [o.message, o.details, o.hint].filter((s): s is string => typeof s === "string" && s.length > 0);
-    if (parts.length) return parts.join(" — ");
-  }
-  return err instanceof Error ? err.message : String(err);
 }
 
 /** Normaliza linha do Postgres (tem_bagagem / formas_pagamento) para o modelo do formulário. */
@@ -304,43 +319,60 @@ export function OrcamentosClient() {
     if (!ok) return;
     setConvertingId(o.id);
     try {
-      const { origem: origemRaw, destino: destinoRaw, data_ida, data_volta } = voosToVendaCampos(o.voos);
+      const { origem: origemRaw, destino: destinoRaw, data_ida, data_volta, companhia: companhiaRaw } = voosToVendaCampos(o.voos);
       const origem = origemRaw ? clipVarchar(origemRaw, VENDA_DESTINO_MAX) : null;
       const destino = destinoRaw ? clipVarchar(destinoRaw, VENDA_DESTINO_MAX) : null;
+      const companhia = companhiaRaw ? clipVarchar(companhiaRaw, VENDA_DESTINO_MAX) : null;
       const fpFull = (o.forma_pagamento ?? "").trim();
       const formaPagamentoVenda = fpFull ? clipVarchar(fpFull, VENDA_FORMA_PAGAMENTO_MAX) : null;
+      const numOrc = o.numero_orcamento?.trim();
+      const dataOrcamento = o.data_orcamento?.slice(0, 10);
+      const voosTexto = formatVoosParaObservacao(o.voos);
+      const paxLine = `Passageiros (orçamento): ${o.adultos ?? 0} adulto(s), ${o.criancas ?? 0} criança(s), ${o.bebes ?? 0} bebê(s).`;
+      const bagLine = o.com_bagagem ? "Bagagem: com bagagem (conforme orçamento)." : "Bagagem: sem bagagem (conforme orçamento).";
       let observacoes = o.observacoes?.trim() ?? "";
       if (fpFull.length > VENDA_FORMA_PAGAMENTO_MAX) {
         const nota = `Formas de pagamento (texto completo): ${fpFull}`;
         observacoes = observacoes ? `${observacoes}\n\n${nota}` : nota;
       }
-      const numOrc = o.numero_orcamento?.trim();
-      const descricao = destino
-        ? `Passagem — ${destino}`
-        : origem
-          ? `Passagem — ${origem}`
-          : numOrc
-            ? `Venda — orçamento ${numOrc}`
-            : "Venda a partir de orçamento";
+      const blocosExtras = [
+        numOrc ? `Referência: orçamento ${numOrc}.` : null,
+        dataOrcamento ? `Data do orçamento: ${dataOrcamento}.` : null,
+        voosTexto ? `Detalhe dos voos:\n${voosTexto}` : null,
+        paxLine,
+        bagLine,
+      ].filter(Boolean);
+      if (blocosExtras.length) {
+        observacoes = observacoes ? `${observacoes}\n\n${blocosExtras.join("\n\n")}` : blocosExtras.join("\n\n");
+      }
       const passageiros = Math.max(1, (o.adultos ?? 0) + (o.criancas ?? 0) + (o.bebes ?? 0));
+      const dataVenda = new Date().toISOString().slice(0, 10);
+      const descricaoVenda = clipVarchar(
+        [
+          numOrc ? `Orç. ${numOrc}` : null,
+          origem && destino ? `${origem} – ${destino}` : destino || origem || null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "Passagem (orçamento)",
+        VENDA_DESCRICAO_MAX,
+      );
       const payload = {
+        orcamento_id: o.id,
         cliente_id: o.cliente_id,
         vendedor_id: o.vendedor_id ?? profile.id,
-        descricao,
         tipo: "passagem",
+        descricao: descricaoVenda,
         origem,
         destino,
-        data_partida: data_ida || null,
-        data_retorno: data_volta || null,
-        data_venda: new Date().toISOString().slice(0, 10),
+        data_ida: data_ida || null,
+        data_volta: data_volta || null,
+        data_venda: dataVenda,
         passageiros,
-        adultos: o.adultos ?? 1,
-        criancas: o.criancas ?? 0,
-        bebes: o.bebes ?? 0,
+        companhia,
         valor_total: Number(o.valor_total),
         taxa_rav: 0,
         taxa_du: 0,
-        comissao_vendedor: 0,
+        comissao_percentual: 0,
         status: "pendente",
         forma_pagamento: formaPagamentoVenda,
         observacoes: observacoes.trim() || null,

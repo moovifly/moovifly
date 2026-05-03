@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 type Venda = {
@@ -53,7 +54,7 @@ export function RelatoriosClient() {
       if (error) throw error;
       setItems((data ?? []) as unknown as Venda[]);
     } catch (err) {
-      toast.error("Erro ao carregar relatório", { description: String(err) });
+      toast.error("Erro ao carregar relatório", { description: formatSupabaseError(err) });
     } finally {
       setLoading(false);
     }

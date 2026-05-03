@@ -24,6 +24,7 @@ import {
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatDate, formatPhoneBR, formatCpfCnpj } from "@/lib/format";
 
 type Cliente = {
@@ -83,7 +84,7 @@ export function ClientesClient() {
       if (error) throw error;
       setItems((data ?? []) as Cliente[]);
     } catch (err) {
-      toast.error("Erro ao carregar clientes", { description: String(err) });
+      toast.error("Erro ao carregar clientes", { description: formatSupabaseError(err) });
     } finally {
       setLoading(false);
     }
@@ -164,7 +165,7 @@ export function ClientesClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: String(err) });
+      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
     } finally {
       setSaving(false);
     }
@@ -184,7 +185,7 @@ export function ClientesClient() {
       toast.success("Cliente excluído.");
       await load();
     } catch (err) {
-      toast.error("Erro ao excluir", { description: String(err) });
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
     }
   }
 

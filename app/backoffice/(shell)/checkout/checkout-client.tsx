@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 
 type Pagamento = {
@@ -75,7 +76,7 @@ export function CheckoutClient() {
       if (json.url) window.open(json.url, "_blank");
       await loadPagamentos();
     } catch (err) {
-      toast.error("Erro ao gerar checkout", { description: String(err) });
+      toast.error("Erro ao gerar checkout", { description: formatSupabaseError(err) });
     } finally {
       setCriando(false);
     }

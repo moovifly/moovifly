@@ -22,6 +22,7 @@ import { Autocomplete } from "@/components/autocomplete";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 type Venda = {
@@ -110,7 +111,10 @@ export function VendasClient() {
   async function load() {
     setLoading(true);
     try {
-      let q = supabase.from("vendas").select("*, clientes(nome), usuarios(nome)").order("created_at", { ascending: false });
+      let q = supabase
+        .from("vendas")
+        .select("*, cliente:clientes(nome), vendedor:usuarios(nome)")
+        .order("created_at", { ascending: false });
       if (profile?.tipo === "vendedor") q = q.eq("vendedor_id", profile.id);
       const { data, error } = await q;
       if (error) throw error;
@@ -119,7 +123,7 @@ export function VendasClient() {
       const { data: cliData } = await supabase.from("clientes").select("id, nome").eq("status", "ativo").order("nome");
       setClientes((cliData ?? []) as Cliente[]);
     } catch (err) {
-      toast.error("Erro ao carregar vendas", { description: String(err) });
+      toast.error("Erro ao carregar vendas", { description: formatSupabaseError(err) });
     } finally {
       setLoading(false);
     }
@@ -171,10 +175,15 @@ export function VendasClient() {
     if (!form.valor_total || Number(form.valor_total) <= 0) { toast.error("Informe um valor total válido."); return; }
     setSaving(true);
     try {
+      const descricao =
+        [form.tipo, form.origem && form.destino ? `${form.origem} → ${form.destino}` : form.destino || form.origem]
+          .filter(Boolean)
+          .join(" — ") || "Venda";
       const payload = {
         cliente_id: form.cliente_id,
         vendedor_id: profile?.id ?? null,
         tipo: form.tipo || null,
+        descricao,
         origem: form.origem || null,
         destino: form.destino || null,
         data_ida: form.data_ida || null,
@@ -200,7 +209,7 @@ export function VendasClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: String(err) });
+      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
     } finally {
       setSaving(false);
     }
@@ -215,7 +224,7 @@ export function VendasClient() {
       toast.success("Venda excluída.");
       await load();
     } catch (err) {
-      toast.error("Erro ao excluir", { description: String(err) });
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
     }
   }
 

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { showConfirm } from "@/components/confirm-modal";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { ROLE_LABELS } from "@/lib/auth";
 
 type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean };
@@ -66,7 +67,7 @@ export function ConfiguracoesClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: String(err) });
+      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
     } finally {
       setSaving(false);
     }
