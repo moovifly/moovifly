@@ -8,6 +8,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
@@ -48,6 +49,11 @@ export function DefinirSenhaForm() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(translatePasswordError(error.message));
       toast.success("Senha criada! Redirecionando…");
+      try {
+        sessionStorage.removeItem(MOOVIFLY_POS_CONVITE_KEY);
+      } catch {
+        /* ignore */
+      }
       window.location.assign(publicUrlForPath("/backoffice/dashboard/"));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { showConfirm } from "@/components/confirm-modal";
+import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { ROLE_LABELS } from "@/lib/auth";
@@ -29,6 +30,7 @@ const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vend
 
 export function ConfiguracoesClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
+  const { profile } = useAuth();
   const [items, setItems] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -87,11 +89,41 @@ export function ConfiguracoesClient() {
   }
 
   async function toggleAtivo(u: Usuario) {
-    const ok = await showConfirm({ title: u.ativo ? "Inativar usuário" : "Ativar usuário", message: `${u.ativo ? "Inativar" : "Ativar"} o usuário "${u.nome}"?`, confirmText: u.ativo ? "Inativar" : "Ativar" });
+    const ok = await showConfirm({
+      title: u.ativo ? "Inativar usuário" : "Ativar usuário",
+      message: `${u.ativo ? "Inativar" : "Ativar"} o usuário "${u.nome}"?`,
+      confirmText: u.ativo ? "Inativar" : "Ativar",
+    });
     if (!ok) return;
     await supabase.from("usuarios").update({ ativo: !u.ativo }).eq("id", u.id);
     toast.success("Status do usuário atualizado.");
     load();
+  }
+
+  async function excluirUsuario(u: Usuario) {
+    if (profile?.id === u.id) {
+      toast.error("Você não pode excluir a si mesmo.");
+      return;
+    }
+    const ok = await showConfirm({
+      title: "Excluir usuário",
+      message: `Remover "${u.nome}" (${u.email}) do backoffice e da autenticação? Orçamentos, vendas e clientes vinculados ficarão sem vendedor. Esta ação não pode ser desfeita.`,
+      confirmText: "Excluir",
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      const res = await fetch(publicUrlForPath(`/api/backoffice/usuarios/${u.id}`), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || "Falha ao excluir.");
+      toast.success("Usuário excluído.");
+      await load();
+    } catch (err) {
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
+    }
   }
 
   return (
@@ -126,7 +158,19 @@ export function ConfiguracoesClient() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(u)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(u)} title="Editar">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => excluirUsuario(u)}
+                          title="Excluir usuário"
+                          disabled={profile?.id === u.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

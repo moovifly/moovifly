@@ -32,6 +32,8 @@ export function getSupabaseClient() {
         fetch: fetchWithTimeout,
       },
       auth: {
+        flowType: "pkce",
+        detectSessionInUrl: true,
         // GoTrue (auth-js): libera lock órfão mais cedo; tipos do pacote podem não expor ainda.
         // @ts-expect-error — suportado em runtime por @supabase/auth-js
         lockAcquireTimeout: 2500,

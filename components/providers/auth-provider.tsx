@@ -15,6 +15,7 @@ import {
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
 import { getUserProfile, signOut as authSignOut, type UserProfile } from "@/lib/auth";
+import { MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
 
 type AuthContextValue = {
   loading: boolean;
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const ADMIN_ONLY = ["/backoffice/configuracoes"];
 const MANAGER_PAGES = ["/backoffice/relatorios"];
 const PUBLIC_BACKOFFICE = ["/backoffice/login"];
+
 
 const PROFILE_FETCH_MS = 25_000;
 
@@ -124,6 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (isLoginPage) {
+        if (typeof window !== "undefined") {
+          try {
+            if (sessionStorage.getItem(MOOVIFLY_POS_CONVITE_KEY) === "1") {
+              sessionStorage.removeItem(MOOVIFLY_POS_CONVITE_KEY);
+              goBackoffice("/backoffice/definir-senha/");
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
+        }
         goBackoffice("/backoffice/dashboard/");
         return;
       }
