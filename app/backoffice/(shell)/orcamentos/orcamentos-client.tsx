@@ -395,7 +395,12 @@ export function OrcamentosClient() {
   }
 
   async function handleDelete(o: Orcamento) {
-    const ok = await showConfirm({ title: "Excluir orçamento", message: `Excluir orçamento ${o.numero_orcamento ?? "#" + o.id.slice(0, 6)}?`, destructive: true, confirmText: "Excluir" });
+    const numero = o.numero_orcamento ?? "#" + o.id.slice(0, 6);
+    const msg =
+      o.status === "convertido" || o.venda_id || o.convertido_venda
+        ? `Excluir orçamento ${numero}? A venda gerada a partir dele continua cadastrada; apenas o vínculo com este orçamento será removido.`
+        : `Excluir orçamento ${numero}?`;
+    const ok = await showConfirm({ title: "Excluir orçamento", message: msg, destructive: true, confirmText: "Excluir" });
     if (!ok) return;
     try {
       const { error } = await supabase.from("orcamentos").delete().eq("id", o.id);
