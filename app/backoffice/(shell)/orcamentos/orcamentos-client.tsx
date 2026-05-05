@@ -1,6 +1,6 @@
 "use client";
 
-import { FilePlus, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import { FilePlus, FileText, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -28,14 +28,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
-import {
-  loadAeroportos,
-  loadCompanhias,
-  searchAeroportos,
-  searchCompanhias,
-  type Aeroporto,
-  type Companhia,
-} from "@/lib/datasets";
+import { loadAeroportos, loadCompanhias, searchAeroportos, searchCompanhias, type Aeroporto, type Companhia } from "@/lib/datasets";
+import { downloadOrcamentoPdf } from "@/lib/orcamento-pdf";
 
 type Voo = {
   tipo: "ida" | "volta";
@@ -97,6 +91,12 @@ const STATUS_OPTIONS = [
 
 const PAGAMENTO_PADRAO =
   "Em até 4x sem juros, nos cartões Amex, Diners, Elo, Hipercard, Mastercard e Visa, Pix ou transferência bancária.";
+
+function firstName(fullName: string | null | undefined) {
+  const n = (fullName ?? "").trim();
+  if (!n) return "—";
+  return n.split(/\s+/)[0] ?? n;
+}
 
 function voosToVendaCampos(voovs: Voo[] | undefined) {
   const idas = voovs?.filter((v) => v.tipo === "ida") ?? [];
@@ -180,6 +180,52 @@ export function OrcamentosClient() {
   const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
   const [companhias, setCompanhias] = useState<Companhia[]>([]);
   const [convertingId, setConvertingId] = useState<string | null>(null);
+
+  async function ensureRelations(o: Orcamento) {
+    const clienteId = o.cliente_id;
+    const vendedorId = o.vendedor_id;
+    const needsCli = clienteId && !o.cliente;
+    const needsVen = vendedorId && !o.vendedor;
+    if (!needsCli && !needsVen) return o;
+
+    const [{ data: cliRel }, { data: venRel }] = await Promise.all([
+      needsCli ? supabase.from("clientes").select("id, nome").eq("id", clienteId).maybeSingle() : Promise.resolve({ data: null as { id: string; nome: string } | null }),
+      needsVen ? supabase.from("usuarios").select("id, nome").eq("id", vendedorId).maybeSingle() : Promise.resolve({ data: null as { id: string; nome: string } | null }),
+    ]);
+
+    return {
+      ...o,
+      cliente: o.cliente ?? (cliRel ? { id: cliRel.id, nome: cliRel.nome } : null),
+      vendedor: o.vendedor ?? (venRel ? { id: venRel.id, nome: venRel.nome } : null),
+    };
+  }
+
+  async function gerarPdf(oRaw: Orcamento) {
+    try {
+      const o = await ensureRelations(oRaw);
+      const numero = o.numero_orcamento ?? `#${o.id.slice(0, 6)}`;
+      const clienteNome = o.cliente?.nome ?? "—";
+
+      downloadOrcamentoPdf(
+        {
+          numero_orcamento: o.numero_orcamento ?? undefined,
+          data_orcamento: o.data_orcamento,
+          adultos: o.adultos ?? 0,
+          criancas: o.criancas ?? 0,
+          bebes: o.bebes ?? 0,
+          com_bagagem: o.com_bagagem,
+          voos: o.voos ?? [],
+          valor_total: o.valor_total,
+          forma_pagamento: o.forma_pagamento,
+          observacoes: o.observacoes,
+        },
+        `Orcamento-${numero.replace(/[^\w\-#]+/g, "_")}-${firstName(clienteNome)}.pdf`,
+      );
+      toast.success("PDF gerado!");
+    } catch (err) {
+      toast.error("Não foi possível gerar o PDF", { description: formatSupabaseError(err) });
+    }
+  }
 
   useEffect(() => {
     loadAeroportos().then(setAeroportos).catch(() => undefined);
@@ -288,9 +334,17 @@ export function OrcamentosClient() {
         if (error) throw error;
         toast.success("Orçamento atualizado!");
       } else {
-        const { error } = await supabase.from("orcamentos").insert([payload]);
+        const { data: inserted, error } = await supabase.from("orcamentos").insert([payload]).select("*").single();
         if (error) throw error;
         toast.success("Orçamento cadastrado!");
+        if (inserted) {
+          const created = rowToOrcamento(inserted as unknown as Record<string, unknown>);
+          await gerarPdf({
+            ...created,
+            cliente: form.cliente_id ? { id: form.cliente_id, nome: form.cliente_nome || "—" } : null,
+            vendedor: profile?.id ? { id: profile.id, nome: profile?.nome ?? "—" } : null,
+          });
+        }
       }
       setOpen(false);
       await load();
@@ -477,6 +531,15 @@ export function OrcamentosClient() {
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              title="Baixar PDF do orçamento"
+                              onClick={() => gerarPdf(o)}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
                             {podeGerarVenda(o) ? (
                               <Button
                                 type="button"

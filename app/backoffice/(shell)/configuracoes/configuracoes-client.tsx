@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -19,12 +19,13 @@ import { showConfirm } from "@/components/confirm-modal";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { ROLE_LABELS } from "@/lib/auth";
+import { publicUrlForPath } from "@/lib/public-site-url";
 
 type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean };
 
-type FormState = { id: string | null; nome: string; email: string; tipo: string; ativo: boolean; senha: string };
+type FormState = { id: string | null; nome: string; email: string; tipo: string; ativo: boolean };
 
-const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true, senha: "" });
+const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true });
 
 export function ConfiguracoesClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -47,14 +48,13 @@ export function ConfiguracoesClient() {
   function openNew() { setForm(emptyForm()); setOpen(true); }
 
   function openEdit(u: Usuario) {
-    setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo, senha: "" });
+    setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo });
     setOpen(true);
   }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (!form.nome.trim() || !form.email.trim()) { toast.error("Preencha nome e email."); return; }
-    if (!form.id && !form.senha) { toast.error("Informe uma senha para o novo usuário."); return; }
     setSaving(true);
     try {
       if (form.id) {
@@ -62,7 +62,20 @@ export function ConfiguracoesClient() {
         if (error) throw error;
         toast.success("Usuário atualizado!");
       } else {
-        toast.info("Para criar usuários, use o painel do Supabase Auth e depois vincule o perfil na tabela usuarios.");
+        const res = await fetch(publicUrlForPath("/api/backoffice/usuarios/invite"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            nome: form.nome.trim(),
+            email: form.email.trim(),
+            tipo: form.tipo,
+            ativo: form.ativo,
+          }),
+        });
+        const json = (await res.json()) as { error?: string };
+        if (!res.ok) throw new Error(json.error || "Falha ao enviar convite.");
+        toast.success("Convite enviado! O usuário receberá um e-mail para criar a senha.");
       }
       setOpen(false);
       await load();
@@ -127,8 +140,10 @@ export function ConfiguracoesClient() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Editar usuário" : "Novo usuário"}</DialogTitle>
-            <DialogDescription>Gerencie os dados do usuário.</DialogDescription>
+            <DialogTitle>{form.id ? "Editar usuário" : "Convidar usuário"}</DialogTitle>
+            <DialogDescription>
+              {form.id ? "Gerencie os dados do usuário." : "Um convite será enviado por e-mail; o usuário define a senha ao aceitar."}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-1.5">
@@ -154,7 +169,7 @@ export function ConfiguracoesClient() {
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
-              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Criar"}</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Enviar convite"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
