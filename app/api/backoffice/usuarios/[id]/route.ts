@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -6,6 +7,26 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function columnMissingInCache(message: string, column: string): boolean {
+  const m = message.toLowerCase();
+  return m.includes("schema cache") && m.includes(column.toLowerCase());
+}
+
+/** Produção pode usar `vendedor_id`; bases antigas ainda têm `usuario_id`. */
+async function nullifyComissoesForUsuario(
+  admin: SupabaseClient,
+  profileId: string,
+): Promise<{ error: string | null }> {
+  const a = await admin.from("comissoes").update({ vendedor_id: null }).eq("vendedor_id", profileId);
+  if (!a.error) return { error: null };
+  const m = a.error.message ?? "";
+  if (columnMissingInCache(m, "vendedor_id")) {
+    const b = await admin.from("comissoes").update({ usuario_id: null }).eq("usuario_id", profileId);
+    return { error: b.error?.message ?? null };
+  }
+  return { error: m };
+}
 
 /**
  * Remove o perfil em `public.usuarios` e o usuário em `auth.users` (via Admin API).
@@ -70,8 +91,8 @@ export async function DELETE(
     const { error: e3 } = await admin.from("clientes").update({ vendedor_id: null }).eq("vendedor_id", targetProfileId);
     if (e3) return NextResponse.json({ error: `Clientes: ${e3.message}` }, { status: 500 });
 
-    const { error: e4 } = await admin.from("comissoes").update({ usuario_id: null }).eq("usuario_id", targetProfileId);
-    if (e4) return NextResponse.json({ error: `Comissões: ${e4.message}` }, { status: 500 });
+    const { error: comErr } = await nullifyComissoesForUsuario(admin, targetProfileId);
+    if (comErr) return NextResponse.json({ error: `Comissões: ${comErr}` }, { status: 500 });
 
     const { error: e5 } = await admin.from("atividades").update({ usuario_id: null }).eq("usuario_id", targetProfileId);
     if (e5) return NextResponse.json({ error: `Atividades: ${e5.message}` }, { status: 500 });
