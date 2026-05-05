@@ -28,10 +28,12 @@ export type VooPdf = {
 export type OrcamentoPdfInput = {
   numero_orcamento?: string | null;
   data_orcamento: string;
+  tipo_viagem?: "nacional" | "internacional";
   adultos: number;
   criancas: number;
   bebes: number;
   com_bagagem: boolean;
+  bagagens?: { bolsa?: number; mao?: number; grande?: number } | null;
   voos: VooPdf[];
   valor_total: number | string;
   forma_pagamento: string | null;
@@ -127,6 +129,30 @@ function textoBagagem(comBagagem: boolean): string {
   return TEXTO_BAGAGEM_COM;
 }
 
+function clampInt(n: number, { min, max }: { min: number; max: number }) {
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(n)));
+}
+
+function normalizeBagagens(input: OrcamentoPdfInput["bagagens"]): { bolsa: number; mao: number; grande: number } {
+  return {
+    bolsa: clampInt(Number(input?.bolsa ?? 0), { min: 0, max: 99 }),
+    mao: clampInt(Number(input?.mao ?? 0), { min: 0, max: 99 }),
+    grande: clampInt(Number(input?.grande ?? 0), { min: 0, max: 99 }),
+  };
+}
+
+function textoBagagensDetalhado(input: OrcamentoPdfInput): string {
+  const b = normalizeBagagens(input.bagagens);
+  const total = b.bolsa + b.mao + b.grande;
+  if (!total) return textoBagagem(false);
+  const parts: string[] = [];
+  if (b.grande) parts.push(`${b.grande} mala${b.grande === 1 ? "" : "s"} grande${b.grande === 1 ? "" : "s"} (até 23kg)`);
+  if (b.mao) parts.push(`${b.mao} mala${b.mao === 1 ? "" : "s"} de mão`);
+  if (b.bolsa) parts.push(`${b.bolsa} bolsa/mochila`);
+  return parts.join(" + ");
+}
+
 function drawFooter(doc: jsPDF, pageWidth: number, pageHeight: number) {
   const total = doc.getNumberOfPages();
   doc.setFontSize(9);
@@ -179,7 +205,7 @@ export function buildOrcamentoPdf(input: OrcamentoPdfInput): jsPDF {
   doc.text(linhaPassageiros(input.adultos, input.criancas, input.bebes), margin, y);
   y += 16;
 
-  const bagLines = doc.splitTextToSize(textoBagagem(input.com_bagagem), contentW);
+  const bagLines = doc.splitTextToSize(textoBagagensDetalhado(input), contentW);
   doc.text(bagLines, margin, y);
   y += bagLines.length * 13 + 18;
 

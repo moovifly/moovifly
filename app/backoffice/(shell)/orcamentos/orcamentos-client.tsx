@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Autocomplete } from "@/components/autocomplete";
 import { showConfirm } from "@/components/confirm-modal";
+import { BolsaMochilaIcon, MalaGrandeIcon, MalaMaoIcon } from "@/components/icons/bagagem";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
@@ -50,10 +51,12 @@ type Orcamento = {
   venda_id?: string | null;
   convertido_venda?: boolean | null;
   data_orcamento: string;
+  tipo_viagem?: "nacional" | "internacional" | string | null;
   adultos: number;
   criancas: number;
   bebes: number;
   com_bagagem: boolean;
+  bagagens?: { bolsa?: number; mao?: number; grande?: number } | null;
   voos: Voo[];
   valor_total: number | string;
   forma_pagamento: string | null;
@@ -70,10 +73,12 @@ type FormState = {
   cliente_id: string | null;
   cliente_nome: string;
   data_orcamento: string;
+  tipo_viagem: "nacional" | "internacional";
   adultos: number;
   criancas: number;
   bebes: number;
   com_bagagem: boolean;
+  bagagens: { bolsa: number; mao: number; grande: number };
   voos: Voo[];
   valor_total: string;
   forma_pagamento: string;
@@ -143,10 +148,17 @@ function clipVarchar(value: string, max: number): string {
 
 /** Normaliza linha do Postgres (tem_bagagem / formas_pagamento) para o modelo do formulário. */
 function rowToOrcamento(raw: Record<string, unknown>): Orcamento {
+  const bagagensRaw = raw.bagagens;
+  const bagagens =
+    bagagensRaw && typeof bagagensRaw === "object"
+      ? (bagagensRaw as { bolsa?: number; mao?: number; grande?: number })
+      : null;
   return {
     ...(raw as unknown as Orcamento),
     com_bagagem: Boolean(raw.tem_bagagem ?? raw.com_bagagem),
     forma_pagamento: (raw.formas_pagamento ?? raw.forma_pagamento) as string | null,
+    tipo_viagem: (raw.tipo_viagem as string | null) ?? "nacional",
+    bagagens,
   };
 }
 
@@ -155,16 +167,42 @@ const emptyForm = (): FormState => ({
   cliente_id: null,
   cliente_nome: "",
   data_orcamento: new Date().toISOString().slice(0, 10),
+  tipo_viagem: "nacional",
   adultos: 1,
   criancas: 0,
   bebes: 0,
   com_bagagem: true,
+  bagagens: { bolsa: 1, mao: 1, grande: 1 },
   voos: [{ tipo: "ida", origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }],
   valor_total: "",
   forma_pagamento: PAGAMENTO_PADRAO,
   observacoes: "",
   status: "pendente",
 });
+
+function clampInt(n: number, { min, max }: { min: number; max: number }) {
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(n)));
+}
+
+function normalizeBagagens(input: Partial<FormState["bagagens"]> | null | undefined): FormState["bagagens"] {
+  const bolsa = clampInt(Number(input?.bolsa ?? 0), { min: 0, max: 9 });
+  const mao = clampInt(Number(input?.mao ?? 0), { min: 0, max: 9 });
+  const grande = clampInt(Number(input?.grande ?? 0), { min: 0, max: 9 });
+  return { bolsa, mao, grande };
+}
+
+function temAlgumaBagagem(b: FormState["bagagens"]) {
+  return (b.bolsa ?? 0) + (b.mao ?? 0) + (b.grande ?? 0) > 0;
+}
+
+function descricaoBagagens(b: FormState["bagagens"]) {
+  const parts: string[] = [];
+  if (b.grande) parts.push(`${b.grande} mala${b.grande === 1 ? "" : "s"} grande${b.grande === 1 ? "" : "s"} (até 23kg)`);
+  if (b.mao) parts.push(`${b.mao} mala${b.mao === 1 ? "" : "s"} de mão`);
+  if (b.bolsa) parts.push(`${b.bolsa} bolsa/mochila`);
+  return parts.length ? parts.join(" + ") : "Sem bagagem incluída neste orçamento.";
+}
 
 export function OrcamentosClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -206,14 +244,19 @@ export function OrcamentosClient() {
       const numero = o.numero_orcamento ?? `#${o.id.slice(0, 6)}`;
       const clienteNome = o.cliente?.nome ?? "—";
 
+      const bagagens = normalizeBagagens(
+        o.bagagens ?? (o.com_bagagem ? { bolsa: 1, mao: 1, grande: 1 } : { bolsa: 0, mao: 0, grande: 0 }),
+      );
       downloadOrcamentoPdf(
         {
           numero_orcamento: o.numero_orcamento ?? undefined,
           data_orcamento: o.data_orcamento,
+          tipo_viagem: (o.tipo_viagem === "internacional" ? "internacional" : "nacional") as "nacional" | "internacional",
           adultos: o.adultos ?? 0,
           criancas: o.criancas ?? 0,
           bebes: o.bebes ?? 0,
-          com_bagagem: o.com_bagagem,
+          com_bagagem: temAlgumaBagagem(bagagens),
+          bagagens,
           voos: o.voos ?? [],
           valor_total: o.valor_total,
           forma_pagamento: o.forma_pagamento,
@@ -290,15 +333,20 @@ export function OrcamentosClient() {
   function openNew() { setForm(emptyForm()); setOpen(true); }
 
   function openEdit(o: Orcamento) {
+    const bagagens = normalizeBagagens(
+      o.bagagens ?? (o.com_bagagem ? { bolsa: 1, mao: 1, grande: 1 } : { bolsa: 0, mao: 0, grande: 0 }),
+    );
     setForm({
       id: o.id,
       cliente_id: o.cliente_id,
       cliente_nome: o.cliente?.nome ?? "",
       data_orcamento: o.data_orcamento.slice(0, 10),
+      tipo_viagem: (o.tipo_viagem === "internacional" ? "internacional" : "nacional") as "nacional" | "internacional",
       adultos: o.adultos ?? 1,
       criancas: o.criancas ?? 0,
       bebes: o.bebes ?? 0,
-      com_bagagem: !!o.com_bagagem,
+      com_bagagem: temAlgumaBagagem(bagagens),
+      bagagens,
       voos: o.voos?.length ? o.voos : emptyForm().voos,
       valor_total: String(o.valor_total ?? ""),
       forma_pagamento: o.forma_pagamento ?? PAGAMENTO_PADRAO,
@@ -315,14 +363,19 @@ export function OrcamentosClient() {
     if (!form.valor_total || Number(form.valor_total) <= 0) { toast.error("Informe um valor total maior que zero."); return; }
     setSaving(true);
     try {
+      const bagagensNorm = normalizeBagagens(form.bagagens);
+      const comBagagem = temAlgumaBagagem(bagagensNorm);
       const payload = {
         cliente_id: form.cliente_id,
         vendedor_id: profile.id,
         data_orcamento: form.data_orcamento,
+        tipo_viagem: form.tipo_viagem,
         adultos: form.adultos,
         criancas: form.criancas,
         bebes: form.bebes,
-        tem_bagagem: form.com_bagagem,
+        tem_bagagem: comBagagem,
+        bagagens: bagagensNorm,
+        descricao_bagagem: descricaoBagagens(bagagensNorm),
         voos: form.voos,
         valor_total: Number(form.valor_total),
         formas_pagamento: form.forma_pagamento.trim() || "",
@@ -591,6 +644,44 @@ export function OrcamentosClient() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label>Tipo de viagem</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    { value: "nacional" as const, label: "Nacional" },
+                    { value: "internacional" as const, label: "Internacional" },
+                  ] as const
+                ).map((opt) => {
+                  const active = form.tipo_viagem === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, tipo_viagem: opt.value }))}
+                      className={[
+                        "flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition",
+                        active
+                          ? "border-[var(--accent-600)] bg-[var(--accent-50)] text-[var(--accent-700)]"
+                          : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-muted)]",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={[
+                          "grid h-4 w-4 place-items-center rounded-full border",
+                          active ? "border-[var(--accent-600)]" : "border-[var(--border-subtle)]",
+                        ].join(" ")}
+                        aria-hidden="true"
+                      >
+                        <span className={["h-2 w-2 rounded-full", active ? "bg-[var(--accent-600)]" : "bg-transparent"].join(" ")} />
+                      </span>
+                      <span className="font-medium">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <fieldset className="space-y-3 rounded-md border border-[var(--border-subtle)] p-4">
               <legend className="px-2 text-sm font-semibold text-foreground">Passageiros</legend>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -609,10 +700,37 @@ export function OrcamentosClient() {
               </div>
               <div className="space-y-1.5">
                 <Label>Bagagem</Label>
-                <Select value={form.com_bagagem ? "true" : "false"} onChange={(e) => setForm({ ...form, com_bagagem: e.target.value === "true" })}>
-                  <option value="true">Com bagagem</option>
-                  <option value="false">Sem bagagem</option>
-                </Select>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {(
+                    [
+                      { key: "bolsa" as const, label: "Bolsa/Mochila", Icon: BolsaMochilaIcon },
+                      { key: "mao" as const, label: "Mala de mão", Icon: MalaMaoIcon },
+                      { key: "grande" as const, label: "Mala grande", Icon: MalaGrandeIcon },
+                    ] as const
+                  ).map((item) => (
+                    <div key={item.key} className="flex items-center gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2">
+                      <div className="grid h-8 w-8 place-items-center rounded-md bg-[var(--bg-muted)] text-[var(--accent-700)]" aria-hidden="true">
+                        <item.Icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-foreground">{item.label}</p>
+                        <p className="text-[11px] text-[var(--text-secondary)]">Qtd.</p>
+                      </div>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={9}
+                        value={form.bagagens[item.key]}
+                        onChange={(e) => {
+                          const nextBagagens = normalizeBagagens({ ...form.bagagens, [item.key]: Number(e.target.value) });
+                          setForm((f) => ({ ...f, bagagens: nextBagagens, com_bagagem: temAlgumaBagagem(nextBagagens) }));
+                        }}
+                        className="w-20"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </fieldset>
 
