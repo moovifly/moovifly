@@ -42,3 +42,6 @@ supabase/.temp/
 
 # cursor
 .cursor/
+
+# claude (config local)
+.claude/
