@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   CreditCard,
+  PlaneTakeoff,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -33,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/backoffice/clientes/", label: "Clientes", icon: Users, roles: ["administrador", "gerente"] },
   { href: "/backoffice/orcamentos/", label: "Orçamentos", icon: FileText },
   { href: "/backoffice/vendas/", label: "Vendas", icon: ShoppingCart },
+  { href: "/backoffice/embarques/", label: "Embarques", icon: PlaneTakeoff },
   { href: "/backoffice/relatorios/", label: "Relatórios", icon: BarChart3 },
   { href: "/backoffice/financeiro/", label: "Financeiro", icon: Wallet, roles: ["administrador", "gerente"] },
   { href: "/backoffice/checkout/", label: "Checkout", icon: CreditCard, roles: ["administrador", "gerente"] },

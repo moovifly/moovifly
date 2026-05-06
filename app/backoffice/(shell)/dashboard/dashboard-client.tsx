@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  X,
   Loader2,
   ShoppingCart,
   TrendingDown,
@@ -21,6 +22,14 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/format";
 import type { UserProfile } from "@/lib/auth";
 import { SalesBarChart, RevenueDonut } from "./dashboard-charts";
+import {
+  EMBARQUE_ALERT_OFFSETS,
+  diffDaysFromToday,
+  embarqueAlertTitle,
+  parseDateOnlyToLocal,
+  startOfLocalDay,
+  type EmbarqueAlertOffsetDays,
+} from "@/lib/embarques";
 
 type RecentSale = {
   id: string;
@@ -48,6 +57,15 @@ type Financial = {
   comissaoPendenteCount: number | null;
 };
 
+type EmbarqueAlert = {
+  venda_id: string;
+  numero_venda: string;
+  destino: string | null;
+  data_ida: string;
+  cliente_nome: string | null;
+  diffDays: EmbarqueAlertOffsetDays;
+};
+
 const initialStats: Stats = { totalClientes: 0, totalVendas: 0, faturamentoTotal: 0 };
 const initialFinancial: Financial = {
   contasReceberValor: 0,
@@ -57,6 +75,81 @@ const initialFinancial: Financial = {
   comissaoPendenteValor: null,
   comissaoPendenteCount: null,
 };
+
+function relClienteNome(rel: { nome: string } | { nome: string }[] | null | undefined) {
+  if (!rel) return null;
+  if (Array.isArray(rel)) return rel[0]?.nome ?? null;
+  return rel.nome ?? null;
+}
+
+async function loadEmbarqueAlerts(profile: UserProfile): Promise<EmbarqueAlert[]> {
+  const supabase = getSupabaseClient();
+  const now = new Date();
+  const today = startOfLocalDay(now);
+  const end = new Date(today);
+  end.setDate(end.getDate() + 7);
+
+  let q = supabase
+    .from("vendas")
+    .select("id, numero_venda, destino, data_ida, clientes(nome), vendedor_id, status")
+    .in("status", ["confirmada", "concluida"])
+    .not("data_ida", "is", null)
+    .gte("data_ida", today.toISOString().slice(0, 10))
+    .lte("data_ida", end.toISOString().slice(0, 10))
+    .order("data_ida", { ascending: true });
+
+  if (!["administrador", "gerente"].includes(profile.tipo)) {
+    q = q.eq("vendedor_id", profile.id);
+  }
+
+  const { data, error } = await q;
+  if (error) throw error;
+
+  const list = (data ?? []) as unknown as Array<{
+    id: string;
+    numero_venda: string;
+    destino: string | null;
+    data_ida: string | null;
+    clientes?: { nome: string } | { nome: string }[] | null;
+  }>;
+
+  const alerts: EmbarqueAlert[] = [];
+  for (const v of list) {
+    if (!v.data_ida) continue;
+    const diff = diffDaysFromToday(v.data_ida, now);
+    if (!EMBARQUE_ALERT_OFFSETS.includes(diff as EmbarqueAlertOffsetDays)) continue;
+    // sanity: ignora qualquer data com shift estranho
+    const d = startOfLocalDay(parseDateOnlyToLocal(v.data_ida));
+    const diff2 = Math.round((d.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    if (diff2 !== diff) continue;
+    alerts.push({
+      venda_id: v.id,
+      numero_venda: v.numero_venda,
+      destino: v.destino,
+      data_ida: v.data_ida,
+      cliente_nome: relClienteNome(v.clientes),
+      diffDays: diff as EmbarqueAlertOffsetDays,
+    });
+  }
+
+  // Prioriza mais urgente (0, 3, 5, 7) e mais próximo
+  const priority = new Map<number, number>([
+    [0, 0],
+    [3, 1],
+    [5, 2],
+    [7, 3],
+  ]);
+  return alerts.sort((a, b) => {
+    const pa = priority.get(a.diffDays) ?? 9;
+    const pb = priority.get(b.diffDays) ?? 9;
+    if (pa !== pb) return pa - pb;
+    return a.data_ida.localeCompare(b.data_ida);
+  });
+}
+
+function dismissKey(a: EmbarqueAlert) {
+  return `mf:embarque_alert:dismissed:${a.venda_id}:${a.diffDays}`;
+}
 
 async function loadStats(profile: UserProfile): Promise<Stats> {
   const supabase = getSupabaseClient();
@@ -249,17 +342,20 @@ export function DashboardClient() {
   const [sellers, setSellers] = useState<TopSeller[]>([]);
   const [chartData, setChartData] = useState<{ label: string; valor: number }[]>([]);
   const [donutData, setDonutData] = useState<{ name: string; value: number }[]>([]);
+  const [embarqueAlerts, setEmbarqueAlerts] = useState<EmbarqueAlert[]>([]);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const loadAll = useCallback(async () => {
     if (!profile) return;
     try {
-      const [s, f, r, t, c, d] = await Promise.all([
+      const [s, f, r, t, c, d, e] = await Promise.all([
         loadStats(profile),
         loadFinancial(profile),
         loadRecentSales(profile),
         loadTopSellers(profile),
         loadSalesByDay(profile),
         loadRevenueByCategory(profile),
+        loadEmbarqueAlerts(profile),
       ]);
       setStats(s);
       setFinancial(f);
@@ -267,6 +363,7 @@ export function DashboardClient() {
       setSellers(t);
       setChartData(c);
       setDonutData(d);
+      setEmbarqueAlerts(e);
     } catch (err) {
       console.error("[dashboard] erro:", err);
     } finally {
@@ -280,12 +377,77 @@ export function DashboardClient() {
     return () => clearInterval(id);
   }, [loadAll]);
 
+  useEffect(() => {
+    // carrega dismisseds do localStorage
+    const next = new Set<string>();
+    try {
+      for (const a of embarqueAlerts) {
+        const k = dismissKey(a);
+        if (typeof window !== "undefined" && window.localStorage.getItem(k) === "1") next.add(k);
+      }
+    } catch {
+      // ignore
+    }
+    setDismissed(next);
+  }, [embarqueAlerts]);
+
   const totalDonut = useMemo(() => donutData.reduce((sum, d) => sum + d.value, 0), [donutData]);
+  const visibleAlerts = useMemo(
+    () => embarqueAlerts.filter((a) => !dismissed.has(dismissKey(a))).slice(0, 3),
+    [embarqueAlerts, dismissed],
+  );
+
+  const handleDismiss = (a: EmbarqueAlert) => {
+    const k = dismissKey(a);
+    setDismissed((prev) => new Set(prev).add(k));
+    try {
+      window.localStorage.setItem(k, "1");
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     <>
       <Topbar />
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        {!loading && visibleAlerts.length > 0 && (
+          <div className="space-y-2">
+            {visibleAlerts.map((a) => {
+              const title = embarqueAlertTitle(a.diffDays);
+              const subtitle = [a.cliente_nome ?? a.destino ?? "—", `#${a.numero_venda}`, a.data_ida].filter(Boolean).join(" · ");
+              return (
+                <div
+                  key={`${a.venda_id}:${a.diffDays}`}
+                  className="flex items-start justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-glow)] px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--accent-700)]">{title}</p>
+                    <p className="truncate text-xs text-[var(--accent-700)]/80">{subtitle}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <BackofficeLink
+                      href="/backoffice/embarques/"
+                      className="rounded-md bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-[var(--shadow-xs)] transition-colors hover:bg-[var(--bg-hover)]"
+                    >
+                      Ver embarques
+                    </BackofficeLink>
+                    <button
+                      type="button"
+                      onClick={() => handleDismiss(a)}
+                      className="rounded-md p-2 text-[var(--accent-700)]/70 transition-colors hover:bg-black/5 hover:text-[var(--accent-700)]"
+                      aria-label="Fechar aviso"
+                      title="Fechar"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <section className="grid gap-4 md:grid-cols-3">
           <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" trend={20} />
           <StatCard label="Vendas no mês" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={-8} />
