@@ -98,6 +98,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error || !nextProfile) {
         console.error("[auth] Falha ao carregar perfil:", error);
+        if (typeof window !== "undefined" && isBackofficePage && !error && !nextProfile) {
+          alert(
+            "Sua conta autenticou, mas não há cadastro vinculado no backoffice. Peça a um administrador para vincular em Configurações → Novo usuário → opção «Já existe no Auth — vincular só ao backoffice».",
+          );
+        }
         await authSignOut();
         setProfile(null);
         setUserId(null);

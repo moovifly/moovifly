@@ -28,6 +28,8 @@ type FormState = { id: string | null; nome: string; email: string; tipo: string;
 
 const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true });
 
+type NovoFluxo = "invite" | "link";
+
 export function ConfiguracoesClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile } = useAuth();
@@ -35,6 +37,7 @@ export function ConfiguracoesClient() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [novoFluxo, setNovoFluxo] = useState<NovoFluxo>("invite");
   const [form, setForm] = useState<FormState>(emptyForm());
 
   async function load() {
@@ -47,7 +50,11 @@ export function ConfiguracoesClient() {
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function openNew() { setForm(emptyForm()); setOpen(true); }
+  function openNew() {
+    setForm(emptyForm());
+    setNovoFluxo("invite");
+    setOpen(true);
+  }
 
   function openEdit(u: Usuario) {
     setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo });
@@ -64,7 +71,11 @@ export function ConfiguracoesClient() {
         if (error) throw error;
         toast.success("Usuário atualizado!");
       } else {
-        const res = await fetch(publicUrlForPath("/api/backoffice/usuarios/invite"), {
+        const path =
+          novoFluxo === "link"
+            ? "/api/backoffice/usuarios/link"
+            : "/api/backoffice/usuarios/invite";
+        const res = await fetch(publicUrlForPath(path), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -76,8 +87,12 @@ export function ConfiguracoesClient() {
           }),
         });
         const json = (await res.json()) as { error?: string };
-        if (!res.ok) throw new Error(json.error || "Falha ao enviar convite.");
-        toast.success("Convite enviado! O usuário receberá um e-mail para criar a senha.");
+        if (!res.ok) throw new Error(json.error || "Falha ao salvar usuário.");
+        toast.success(
+          novoFluxo === "link"
+            ? "Usuário vinculado. Ele já pode entrar com o e-mail e senha do Auth."
+            : "Convite enviado! O usuário receberá um e-mail para criar a senha.",
+        );
       }
       setOpen(false);
       await load();
@@ -184,12 +199,30 @@ export function ConfiguracoesClient() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Editar usuário" : "Convidar usuário"}</DialogTitle>
+            <DialogTitle>
+              {form.id ? "Editar usuário" : novoFluxo === "link" ? "Vincular ao Auth existente" : "Convidar usuário"}
+            </DialogTitle>
             <DialogDescription>
-              {form.id ? "Gerencie os dados do usuário." : "Um convite será enviado por e-mail; o usuário define a senha ao aceitar."}
+              {form.id
+                ? "Gerencie os dados do usuário."
+                : novoFluxo === "invite"
+                  ? "Um convite será enviado por e-mail; o usuário define a senha ao aceitar."
+                  : "Use quando o usuário já existir em Supabase → Authentication → Users. Nenhum e-mail é enviado."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
+            {!form.id && (
+              <div className="space-y-1.5">
+                <Label>Modo</Label>
+                <Select
+                  value={novoFluxo}
+                  onChange={(e) => setNovoFluxo(e.target.value as NovoFluxo)}
+                >
+                  <option value="invite">Convite por e-mail</option>
+                  <option value="link">Já existe no Auth — vincular só ao backoffice</option>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Nome *</Label>
               <Input value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} required />
@@ -213,7 +246,15 @@ export function ConfiguracoesClient() {
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
-              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Enviar convite"}</Button>
+              <Button type="submit" disabled={saving}>
+                {saving
+                  ? "Salvando..."
+                  : form.id
+                    ? "Atualizar"
+                    : novoFluxo === "link"
+                      ? "Vincular usuário"
+                      : "Enviar convite"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
