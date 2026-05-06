@@ -28,7 +28,7 @@ type Venda = {
 
 type Comissao = {
   id: string;
-  valor: number | string;
+  valor_comissao: number | string;
   status: string;
   created_at: string;
   vendas?: { numero_venda: string; destino: string | null } | { numero_venda: string; destino: string | null }[] | null;
@@ -98,7 +98,7 @@ export function RelatoriosVendedor() {
 
       const { data: comissoesData, error: comErr } = await supabase
         .from("comissoes")
-        .select("id, valor, status, created_at, vendas(numero_venda, destino)")
+        .select("id, valor_comissao, status, created_at, vendas(numero_venda, destino)")
         .order("created_at", { ascending: false })
         .limit(50);
       if (comErr) throw comErr;
@@ -150,14 +150,14 @@ export function RelatoriosVendedor() {
   );
   const ticketMedio = vendasConfirmadas.length ? faturamento / vendasConfirmadas.length : 0;
   const comissaoTotal = useMemo(
-    () => comissoes.reduce((sum, c) => sum + Number(c.valor ?? 0), 0),
+    () => comissoes.reduce((sum, c) => sum + Number(c.valor_comissao ?? 0), 0),
     [comissoes],
   );
   const comissaoPendente = useMemo(
     () =>
       comissoes
         .filter((c) => c.status === "pendente")
-        .reduce((sum, c) => sum + Number(c.valor ?? 0), 0),
+        .reduce((sum, c) => sum + Number(c.valor_comissao ?? 0), 0),
     [comissoes],
   );
 
@@ -319,7 +319,7 @@ export function RelatoriosVendedor() {
                       <TableCell className="font-mono text-xs">{venda?.numero_venda ?? "—"}</TableCell>
                       <TableCell>{venda?.destino ?? "—"}</TableCell>
                       <TableCell>{formatDate(c.created_at)}</TableCell>
-                      <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                       <TableCell>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(c.status)}`}>
                           {statusLabel(c.status)}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Plus, Trash2 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,23 +12,44 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-type ContaReceber = { id: string; descricao: string | null; valor: number | string; data_vencimento: string | null; status: string };
-type ContaPagar = { id: string; fornecedor: string | null; descricao: string | null; valor: number | string; data_vencimento: string | null; status: string };
+type ContaReceber = {
+  id: string;
+  descricao: string | null;
+  valor: number | string;
+  data_vencimento: string | null;
+  data_recebimento?: string | null;
+  status: string;
+};
+type ContaPagar = {
+  id: string;
+  fornecedor: string | null;
+  descricao: string | null;
+  valor: number | string;
+  data_vencimento: string | null;
+  data_pagamento?: string | null;
+  status: string;
+};
 type Comissao = {
   id: string;
   venda_id: string | null;
-  valor: number | string;
-  percentual: number | string | null;
+  valor_venda: number | string;
+  base_calculo: number | string | null;
+  percentual_comissao: number | string;
+  valor_comissao: number | string;
   status: string;
   data_pagamento: string | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
+
+type Usuario = { id: string; nome: string; tipo: string };
 
 function vendorName(c: Comissao): string {
   const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
@@ -42,6 +63,7 @@ export function FinanceiroClient() {
   const [receber, setReceber] = useState<ContaReceber[]>([]);
   const [pagar, setPagar] = useState<ContaPagar[]>([]);
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal de pagamento de comissão
@@ -49,17 +71,38 @@ export function FinanceiroClient() {
   const [payDate, setPayDate] = useState("");
   const [paying, setPaying] = useState(false);
 
+  // Modais de criação manual
+  const [addReceberOpen, setAddReceberOpen] = useState(false);
+  const [addPagarOpen, setAddPagarOpen] = useState(false);
+  const [addPagasOpen, setAddPagasOpen] = useState(false);
+  const [addComissaoOpen, setAddComissaoOpen] = useState(false);
+
+  const [recForm, setRecForm] = useState({ descricao: "", valor: "", data_vencimento: "" });
+  const [pagForm, setPagForm] = useState({ fornecedor: "", descricao: "", valor: "", data_vencimento: "" });
+  const [pagaForm, setPagaForm] = useState({ fornecedor: "", descricao: "", valor: "", data_pagamento: "" });
+  const [comForm, setComForm] = useState({
+    vendedor_id: "",
+    valor_venda: "",
+    base_calculo: "",
+    percentual_comissao: "",
+    status: "pendente",
+    data_pagamento: "",
+  });
+  const [saving, setSaving] = useState(false);
+
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
 
   async function load() {
     setLoading(true);
     try {
-      const [{ data: rec }, { data: com }] = await Promise.all([
+      const [{ data: rec }, { data: com }, { data: usr }] = await Promise.all([
         supabase.from("contas_receber").select("*").order("data_vencimento"),
         supabase.from("comissoes").select("*, usuarios(nome)").order("created_at", { ascending: false }),
+        isManager ? supabase.from("usuarios").select("id, nome, tipo").order("nome") : Promise.resolve({ data: [] }),
       ]);
       setReceber((rec ?? []) as ContaReceber[]);
       setComissoes((com ?? []) as unknown as Comissao[]);
+      setUsuarios((usr ?? []) as Usuario[]);
 
       if (isManager) {
         const { data: pag } = await supabase.from("contas_pagar").select("*").order("data_vencimento");
@@ -91,7 +134,7 @@ export function FinanceiroClient() {
 
   function abrirModalPagamentoComissao(c: Comissao) {
     setPayDate(new Date().toISOString().slice(0, 10));
-    setPayModal({ id: c.id, nome: vendorName(c), valor: Number(c.valor) });
+    setPayModal({ id: c.id, nome: vendorName(c), valor: Number(c.valor_comissao) });
   }
 
   async function confirmarPagamentoComissao() {
@@ -113,8 +156,174 @@ export function FinanceiroClient() {
     }
   }
 
+  async function criarContaReceber() {
+    setSaving(true);
+    try {
+      const payload = {
+        descricao: recForm.descricao.trim(),
+        valor: Number(recForm.valor),
+        data_vencimento: recForm.data_vencimento,
+        status: "pendente",
+      };
+      if (!payload.descricao || !payload.data_vencimento || !Number.isFinite(payload.valor)) {
+        toast.error("Preencha descrição, valor e vencimento.");
+        return;
+      }
+      const { error } = await supabase.from("contas_receber").insert(payload);
+      if (error) throw error;
+      toast.success("Conta a receber adicionada!");
+      setAddReceberOpen(false);
+      setRecForm({ descricao: "", valor: "", data_vencimento: "" });
+      load();
+    } catch (err) {
+      toast.error("Erro ao adicionar", { description: formatSupabaseError(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function criarContaPagar(status: "pendente" | "pago") {
+    setSaving(true);
+    try {
+      const base = status === "pago" ? pagaForm : pagForm;
+      const payload: Record<string, unknown> = {
+        fornecedor: (base.fornecedor ?? "").trim(),
+        descricao: (base.descricao ?? "").trim(),
+        valor: Number(base.valor),
+        status,
+      };
+      if (!payload.fornecedor || !payload.descricao || !Number.isFinite(payload.valor)) {
+        toast.error("Preencha fornecedor, descrição e valor.");
+        return;
+      }
+      if (status === "pendente") {
+        payload.data_vencimento = (pagForm.data_vencimento ?? "").trim();
+        if (!payload.data_vencimento) {
+          toast.error("Informe o vencimento.");
+          return;
+        }
+      } else {
+        const dt = (pagaForm.data_pagamento ?? "").trim();
+        payload.data_vencimento = dt || new Date().toISOString().slice(0, 10);
+        payload.data_pagamento = dt || new Date().toISOString().slice(0, 10);
+      }
+
+      const { error } = await supabase.from("contas_pagar").insert(payload);
+      if (error) throw error;
+      toast.success(status === "pago" ? "Conta paga adicionada!" : "Conta a pagar adicionada!");
+      if (status === "pago") {
+        setAddPagasOpen(false);
+        setPagaForm({ fornecedor: "", descricao: "", valor: "", data_pagamento: "" });
+      } else {
+        setAddPagarOpen(false);
+        setPagForm({ fornecedor: "", descricao: "", valor: "", data_vencimento: "" });
+      }
+      load();
+    } catch (err) {
+      toast.error("Erro ao adicionar", { description: formatSupabaseError(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function criarComissaoManual() {
+    setSaving(true);
+    try {
+      const valor_venda = Number(comForm.valor_venda);
+      const base_calculo = comForm.base_calculo ? Number(comForm.base_calculo) : valor_venda;
+      const percentual = Number(comForm.percentual_comissao);
+      const valor_comissao = Math.round(((base_calculo * percentual) / 100) * 100) / 100;
+
+      if (!comForm.vendedor_id) {
+        toast.error("Selecione um vendedor.");
+        return;
+      }
+      if (!Number.isFinite(valor_venda) || valor_venda < 0) {
+        toast.error("Informe o valor da venda.");
+        return;
+      }
+      if (!Number.isFinite(base_calculo) || base_calculo < 0) {
+        toast.error("Informe a base de cálculo.");
+        return;
+      }
+      if (!Number.isFinite(percentual) || percentual < 0) {
+        toast.error("Informe o percentual de comissão.");
+        return;
+      }
+
+      const payload: Record<string, unknown> = {
+        vendedor_id: comForm.vendedor_id,
+        valor_venda,
+        base_calculo,
+        percentual_comissao: percentual,
+        valor_comissao,
+        status: comForm.status,
+        data_pagamento: comForm.status === "pago" ? (comForm.data_pagamento || new Date().toISOString().slice(0, 10)) : null,
+      };
+
+      const { error } = await supabase.from("comissoes").insert(payload);
+      if (error) throw error;
+      toast.success("Comissão adicionada!");
+      setAddComissaoOpen(false);
+      setComForm({
+        vendedor_id: "",
+        valor_venda: "",
+        base_calculo: "",
+        percentual_comissao: "",
+        status: "pendente",
+        data_pagamento: "",
+      });
+      load();
+    } catch (err) {
+      toast.error("Erro ao adicionar comissão", { description: formatSupabaseError(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function excluirContaReceber(id: string) {
+    const ok = await showConfirm({ title: "Excluir conta a receber", message: "Tem certeza que deseja excluir este lançamento?", destructive: true, confirmText: "Excluir" });
+    if (!ok) return;
+    try {
+      const { error } = await supabase.from("contas_receber").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Conta excluída.");
+      load();
+    } catch (err) {
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
+    }
+  }
+
+  async function excluirContaPagar(id: string) {
+    const ok = await showConfirm({ title: "Excluir conta", message: "Tem certeza que deseja excluir este lançamento?", destructive: true, confirmText: "Excluir" });
+    if (!ok) return;
+    try {
+      const { error } = await supabase.from("contas_pagar").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Conta excluída.");
+      load();
+    } catch (err) {
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
+    }
+  }
+
+  async function excluirComissao(id: string) {
+    const ok = await showConfirm({ title: "Excluir comissão", message: "Tem certeza que deseja excluir esta comissão?", destructive: true, confirmText: "Excluir" });
+    if (!ok) return;
+    try {
+      const { error } = await supabase.from("comissoes").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Comissão excluída.");
+      load();
+    } catch (err) {
+      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
+    }
+  }
+
   const comissoesPendentes = useMemo(() => comissoes.filter((c) => c.status === "pendente"), [comissoes]);
   const comissoesPagas = useMemo(() => comissoes.filter((c) => c.status === "pago"), [comissoes]);
+  const contasPagarPendentes = useMemo(() => pagar.filter((c) => c.status === "pendente"), [pagar]);
+  const contasPagarPagas = useMemo(() => pagar.filter((c) => c.status === "pago"), [pagar]);
 
   function statusBadge(status: string, map: Record<string, string>) {
     return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${map[status] ?? "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>{status}</span>;
@@ -139,7 +348,14 @@ export function FinanceiroClient() {
           {/* A RECEBER */}
           <TabsContent value="receber">
             <Card>
-              <CardHeader><CardTitle>Contas a Receber</CardTitle></CardHeader>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle>Contas a Receber</CardTitle>
+                {isManager && (
+                  <Button size="sm" onClick={() => { setAddReceberOpen(true); setRecForm({ descricao: "", valor: "", data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
+                    <Plus className="h-4 w-4" /> Adicionar
+                  </Button>
+                )}
+              </CardHeader>
               <CardContent>
                 {loading ? (
                   <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -164,11 +380,24 @@ export function FinanceiroClient() {
                           <TableCell>{formatDate(c.data_vencimento)}</TableCell>
                           <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
                           <TableCell className="text-right">
-                            {c.status === "pendente" && (
-                              <Button size="sm" variant="outline" onClick={() => marcarRecebido(c.id)}>
-                                <CheckCircle className="h-4 w-4" /> Recebido
-                              </Button>
-                            )}
+                            <div className="flex justify-end gap-2">
+                              {c.status === "pendente" && (
+                                <Button size="sm" variant="outline" onClick={() => marcarRecebido(c.id)}>
+                                  <CheckCircle className="h-4 w-4" /> Recebido
+                                </Button>
+                              )}
+                              {isManager && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => excluirContaReceber(c.id)}
+                                  title="Excluir"
+                                  className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -184,11 +413,16 @@ export function FinanceiroClient() {
             <TabsContent value="pagar">
               <div className="space-y-4">
                 <Card>
-                  <CardHeader><CardTitle>Contas a Pagar</CardTitle></CardHeader>
+                  <CardHeader className="flex-row items-center justify-between space-y-0">
+                    <CardTitle>Contas a Pagar</CardTitle>
+                    <Button size="sm" onClick={() => { setAddPagarOpen(true); setPagForm({ fornecedor: "", descricao: "", valor: "", data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
+                      <Plus className="h-4 w-4" /> Adicionar
+                    </Button>
+                  </CardHeader>
                   <CardContent>
                     {loading ? (
                       <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-                    ) : pagar.filter((c) => c.status === "pendente").length === 0 ? (
+                    ) : contasPagarPendentes.length === 0 ? (
                       <p className="py-4 text-center text-sm text-[var(--text-secondary)]">Nenhuma conta a pagar.</p>
                     ) : (
                       <Table>
@@ -203,7 +437,7 @@ export function FinanceiroClient() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {pagar.filter((c) => c.status === "pendente").map((c) => (
+                          {contasPagarPendentes.map((c) => (
                             <TableRow key={c.id}>
                               <TableCell>{c.fornecedor ?? "—"}</TableCell>
                               <TableCell>{c.descricao ?? "—"}</TableCell>
@@ -211,9 +445,20 @@ export function FinanceiroClient() {
                               <TableCell>{formatDate(c.data_vencimento)}</TableCell>
                               <TableCell>{statusBadge(c.status, pagarBadge)}</TableCell>
                               <TableCell className="text-right">
-                                <Button size="sm" variant="outline" onClick={() => marcarPago(c.id)}>
-                                  <CheckCircle className="h-4 w-4" /> Pago
-                                </Button>
+                                <div className="flex justify-end gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => marcarPago(c.id)}>
+                                    <CheckCircle className="h-4 w-4" /> Pago
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => excluirContaPagar(c.id)}
+                                    title="Excluir"
+                                    className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -224,7 +469,12 @@ export function FinanceiroClient() {
                 </Card>
 
                 <Card>
-                  <CardHeader><CardTitle>Comissões Pendentes</CardTitle></CardHeader>
+                  <CardHeader className="flex-row items-center justify-between space-y-0">
+                    <CardTitle>Comissões Pendentes</CardTitle>
+                    <Button size="sm" variant="outline" onClick={() => setAddComissaoOpen(true)}>
+                      <Plus className="h-4 w-4" /> Adicionar comissão
+                    </Button>
+                  </CardHeader>
                   <CardContent>
                     {loading ? (
                       <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -245,13 +495,24 @@ export function FinanceiroClient() {
                           {comissoesPendentes.map((c) => (
                             <TableRow key={c.id}>
                               <TableCell>{vendorName(c)}</TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                              <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
+                              <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                               <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
                               <TableCell className="text-right">
-                                <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
-                                  <CheckCircle className="h-4 w-4" /> Pagar
-                                </Button>
+                                <div className="flex justify-end gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
+                                    <CheckCircle className="h-4 w-4" /> Pagar
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => excluirComissao(c.id)}
+                                    title="Excluir"
+                                    className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -267,46 +528,118 @@ export function FinanceiroClient() {
           {/* CONTAS PAGAS — comissões pagas */}
           {isManager && (
             <TabsContent value="pagas">
-              <Card>
-                <CardHeader><CardTitle>Contas Pagas</CardTitle></CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-                  ) : comissoesPagas.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão paga ainda.</p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Vendedor</TableHead>
-                          <TableHead>Valor</TableHead>
-                          <TableHead>%</TableHead>
-                          <TableHead>Data de Pagamento</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {comissoesPagas.map((c) => (
-                          <TableRow key={c.id}>
-                            <TableCell>{vendorName(c)}</TableCell>
-                            <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                            <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
-                            <TableCell>{formatDate(c.data_pagamento)}</TableCell>
-                            <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="flex-row items-center justify-between space-y-0">
+                    <CardTitle>Contas Pagas</CardTitle>
+                    <Button size="sm" onClick={() => { setAddPagasOpen(true); setPagaForm({ fornecedor: "", descricao: "", valor: "", data_pagamento: new Date().toISOString().slice(0, 10) }); }}>
+                      <Plus className="h-4 w-4" /> Adicionar
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                    ) : contasPagarPagas.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Nenhuma conta paga.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Fornecedor</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Pago em</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ação</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                        </TableHeader>
+                        <TableBody>
+                          {contasPagarPagas.map((c) => (
+                            <TableRow key={c.id}>
+                              <TableCell>{c.fornecedor ?? "—"}</TableCell>
+                              <TableCell>{c.descricao ?? "—"}</TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                              <TableCell>{formatDate(c.data_pagamento)}</TableCell>
+                              <TableCell>{statusBadge(c.status, pagarBadge)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => excluirContaPagar(c.id)}
+                                  title="Excluir"
+                                  className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Comissões Pagas</CardTitle></CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                    ) : comissoesPagas.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão paga ainda.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Vendedor</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>%</TableHead>
+                            <TableHead>Data de Pagamento</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {comissoesPagas.map((c) => (
+                            <TableRow key={c.id}>
+                              <TableCell>{vendorName(c)}</TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
+                              <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
+                              <TableCell>{formatDate(c.data_pagamento)}</TableCell>
+                              <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => excluirComissao(c.id)}
+                                  title="Excluir"
+                                  className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           )}
 
           {/* COMISSÕES — histórico completo */}
           <TabsContent value="comissoes">
             <Card>
-              <CardHeader><CardTitle>Comissões</CardTitle></CardHeader>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle>Comissões</CardTitle>
+                {isManager && (
+                  <Button size="sm" onClick={() => setAddComissaoOpen(true)}>
+                    <Plus className="h-4 w-4" /> Adicionar
+                  </Button>
+                )}
+              </CardHeader>
               <CardContent>
                 {loading ? (
                   <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -328,17 +661,28 @@ export function FinanceiroClient() {
                       {comissoes.map((c) => (
                         <TableRow key={c.id}>
                           <TableCell>{vendorName(c)}</TableCell>
-                          <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                          <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
+                          <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
+                          <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                           <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
                           <TableCell>{c.data_pagamento ? formatDate(c.data_pagamento) : "—"}</TableCell>
                           {isManager && (
                             <TableCell className="text-right">
-                              {c.status === "pendente" && (
-                                <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
-                                  <CheckCircle className="h-4 w-4" /> Pagar
+                              <div className="flex justify-end gap-2">
+                                {c.status === "pendente" && (
+                                  <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
+                                    <CheckCircle className="h-4 w-4" /> Pagar
+                                  </Button>
+                                )}
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => excluirComissao(c.id)}
+                                  title="Excluir"
+                                  className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                >
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
-                              )}
+                              </div>
                             </TableCell>
                           )}
                         </TableRow>
@@ -377,6 +721,149 @@ export function FinanceiroClient() {
             <Button onClick={confirmarPagamentoComissao} disabled={paying || !payDate}>
               {paying ? "Salvando..." : "Confirmar pagamento"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: adicionar conta a receber */}
+      <Dialog open={addReceberOpen} onOpenChange={setAddReceberOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar conta a receber</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Descrição</Label>
+              <Input value={recForm.descricao} onChange={(e) => setRecForm((p) => ({ ...p, descricao: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Valor</Label>
+              <Input inputMode="decimal" value={recForm.valor} onChange={(e) => setRecForm((p) => ({ ...p, valor: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Vencimento</Label>
+              <Input type="date" value={recForm.data_vencimento} onChange={(e) => setRecForm((p) => ({ ...p, data_vencimento: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddReceberOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={criarContaReceber} disabled={saving}>{saving ? "Salvando..." : "Adicionar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: adicionar conta a pagar */}
+      <Dialog open={addPagarOpen} onOpenChange={setAddPagarOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar conta a pagar</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Fornecedor</Label>
+              <Input value={pagForm.fornecedor} onChange={(e) => setPagForm((p) => ({ ...p, fornecedor: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Vencimento</Label>
+              <Input type="date" value={pagForm.data_vencimento} onChange={(e) => setPagForm((p) => ({ ...p, data_vencimento: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Descrição</Label>
+              <Input value={pagForm.descricao} onChange={(e) => setPagForm((p) => ({ ...p, descricao: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Valor</Label>
+              <Input inputMode="decimal" value={pagForm.valor} onChange={(e) => setPagForm((p) => ({ ...p, valor: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddPagarOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={() => criarContaPagar("pendente")} disabled={saving}>{saving ? "Salvando..." : "Adicionar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: adicionar conta paga */}
+      <Dialog open={addPagasOpen} onOpenChange={setAddPagasOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar conta paga</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Fornecedor</Label>
+              <Input value={pagaForm.fornecedor} onChange={(e) => setPagaForm((p) => ({ ...p, fornecedor: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Data de pagamento</Label>
+              <Input type="date" value={pagaForm.data_pagamento} onChange={(e) => setPagaForm((p) => ({ ...p, data_pagamento: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Descrição</Label>
+              <Input value={pagaForm.descricao} onChange={(e) => setPagaForm((p) => ({ ...p, descricao: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Valor</Label>
+              <Input inputMode="decimal" value={pagaForm.valor} onChange={(e) => setPagaForm((p) => ({ ...p, valor: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddPagasOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={() => criarContaPagar("pago")} disabled={saving}>{saving ? "Salvando..." : "Adicionar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: adicionar comissão manual */}
+      <Dialog open={addComissaoOpen} onOpenChange={setAddComissaoOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Adicionar comissão</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Vendedor</Label>
+              <Select value={comForm.vendedor_id} onChange={(e) => setComForm((p) => ({ ...p, vendedor_id: e.target.value }))}>
+                <option value="">Selecione...</option>
+                {usuarios
+                  .filter((u) => u.tipo === "vendedor")
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.nome}
+                    </option>
+                  ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Valor da venda</Label>
+              <Input inputMode="decimal" value={comForm.valor_venda} onChange={(e) => setComForm((p) => ({ ...p, valor_venda: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Base de cálculo</Label>
+              <Input inputMode="decimal" value={comForm.base_calculo} onChange={(e) => setComForm((p) => ({ ...p, base_calculo: e.target.value }))} placeholder="Se vazio, usa o valor da venda" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>% Comissão</Label>
+              <Input inputMode="decimal" value={comForm.percentual_comissao} onChange={(e) => setComForm((p) => ({ ...p, percentual_comissao: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={comForm.status} onChange={(e) => setComForm((p) => ({ ...p, status: e.target.value }))}>
+                <option value="pendente">Pendente</option>
+                <option value="pago">Pago</option>
+                <option value="cancelado">Cancelado</option>
+              </Select>
+            </div>
+            {comForm.status === "pago" && (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Data de pagamento</Label>
+                <Input type="date" value={comForm.data_pagamento} onChange={(e) => setComForm((p) => ({ ...p, data_pagamento: e.target.value }))} />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddComissaoOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={criarComissaoManual} disabled={saving}>{saving ? "Salvando..." : "Adicionar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
