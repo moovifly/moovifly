@@ -239,11 +239,11 @@ export function VendasClient() {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   function handleCompanhiaSelect(c: Companhia) {
-    setForm((prev) => {
-      const fp = getFormaPagamento(c.codigo);
-      const devePreencher = fp && !prev.forma_pagamento.trim();
-      return { ...prev, companhia: c.nome, ...(devePreencher ? { forma_pagamento: fp } : {}) };
-    });
+    setForm((prev) => ({
+      ...prev,
+      companhia: c.nome,
+      forma_pagamento: getFormaPagamento(c.codigo) ?? "",
+    }));
   }
 
   return (
@@ -357,7 +357,7 @@ export function VendasClient() {
                 <Label>Companhia aérea</Label>
                 <Autocomplete
                   value={form.companhia}
-                  onValueChange={(t) => setForm((p) => ({ ...p, companhia: t }))}
+                  onValueChange={(t) => setForm((p) => ({ ...p, companhia: t, ...(!t.trim() ? { forma_pagamento: "" } : {}) }))}
                   onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
                   options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
                   placeholder="LATAM, GOL, Azul..."
@@ -391,7 +391,7 @@ export function VendasClient() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Forma de pagamento</Label>
-                <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} />
+                <Input value={form.forma_pagamento} readOnly className="cursor-default select-text" placeholder="Selecione uma companhia aérea para preencher automaticamente." />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Observações</Label>

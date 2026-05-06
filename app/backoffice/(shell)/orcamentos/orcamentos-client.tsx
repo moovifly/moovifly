@@ -531,13 +531,11 @@ export function OrcamentosClient() {
   }
 
   function handleCompanhiaSelect(i: number, companhia: Companhia) {
-    setForm((f) => {
-      const voos = f.voos.map((v, idx) => idx === i ? { ...v, companhia: companhia.nome } : v);
-      const fp = getFormaPagamento(companhia.codigo);
-      const fpAtual = f.forma_pagamento.trim();
-      const devePreencher = fp && (!fpAtual || fpAtual === PAGAMENTO_PADRAO);
-      return { ...f, voos, ...(devePreencher ? { forma_pagamento: fp } : {}) };
-    });
+    setForm((f) => ({
+      ...f,
+      voos: f.voos.map((v, idx) => idx === i ? { ...v, companhia: companhia.nome } : v),
+      forma_pagamento: getFormaPagamento(companhia.codigo) ?? "",
+    }));
   }
 
   return (
@@ -770,7 +768,7 @@ export function OrcamentosClient() {
                           </div>
                           <div><Label>Data</Label><Input type="date" value={v.data} onChange={(e) => updateVoo(i, { data: e.target.value })} /></div>
                           <div><Label>Companhia</Label>
-                            <Autocomplete value={v.companhia} onValueChange={(t) => updateVoo(i, { companhia: t })} onSelect={(opt) => handleCompanhiaSelect(i, opt.value as Companhia)} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
+                            <Autocomplete value={v.companhia} onValueChange={(t) => { updateVoo(i, { companhia: t }); if (!t.trim()) setForm((f) => ({ ...f, forma_pagamento: "" })); }} onSelect={(opt) => handleCompanhiaSelect(i, opt.value as Companhia)} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
                           </div>
                           <div><Label>Saída</Label><Input type="time" value={v.horario_saida} onChange={(e) => updateVoo(i, { horario_saida: e.target.value })} /></div>
                           <div><Label>Chegada</Label><Input type="time" value={v.horario_chegada} onChange={(e) => updateVoo(i, { horario_chegada: e.target.value })} /></div>
@@ -802,7 +800,7 @@ export function OrcamentosClient() {
 
             <div className="space-y-1.5">
               <Label>Formas de pagamento</Label>
-              <Textarea rows={3} value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} />
+              <Textarea rows={3} value={form.forma_pagamento} readOnly className="cursor-default select-text" placeholder="Selecione uma companhia aérea para preencher automaticamente." />
             </div>
 
             <div className="space-y-1.5">
