@@ -13,6 +13,7 @@ type Body = {
   email?: string;
   tipo?: string;
   ativo?: boolean;
+  comissao_percentual?: number;
 };
 
 /** Localiza auth.users pelo e-mail (paginado). Uso administrativo, base pequena. */
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
     const emailRaw = typeof body.email === "string" ? body.email.trim() : "";
     const tipo = typeof body.tipo === "string" ? body.tipo : "";
     const ativo = body.ativo !== false;
+    const comissao_percentual = typeof body.comissao_percentual === "number" ? body.comissao_percentual : 0;
 
     if (!nome || !emailRaw) {
       return NextResponse.json({ error: "Nome e e-mail são obrigatórios." }, { status: 400 });
@@ -110,6 +112,7 @@ export async function POST(request: Request) {
       email: emailNorm,
       tipo,
       ativo,
+      comissao_percentual,
     });
 
     if (insertError) {

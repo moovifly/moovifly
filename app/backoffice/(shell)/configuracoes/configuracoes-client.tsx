@@ -22,11 +22,11 @@ import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { ROLE_LABELS } from "@/lib/auth";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
-type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean };
+type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: number | null };
 
-type FormState = { id: string | null; nome: string; email: string; tipo: string; ativo: boolean };
+type FormState = { id: string | null; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: string };
 
-const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true });
+const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true, comissao_percentual: "0" });
 
 type NovoFluxo = "invite" | "link";
 
@@ -57,7 +57,7 @@ export function ConfiguracoesClient() {
   }
 
   function openEdit(u: Usuario) {
-    setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo });
+    setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo, comissao_percentual: String(u.comissao_percentual ?? 0) });
     setOpen(true);
   }
 
@@ -67,7 +67,7 @@ export function ConfiguracoesClient() {
     setSaving(true);
     try {
       if (form.id) {
-        const { error } = await supabase.from("usuarios").update({ nome: form.nome, tipo: form.tipo, ativo: form.ativo }).eq("id", form.id);
+        const { error } = await supabase.from("usuarios").update({ nome: form.nome, tipo: form.tipo, ativo: form.ativo, comissao_percentual: Number(form.comissao_percentual) }).eq("id", form.id);
         if (error) throw error;
         toast.success("Usuário atualizado!");
       } else {
@@ -84,6 +84,7 @@ export function ConfiguracoesClient() {
             email: form.email.trim(),
             tipo: form.tipo,
             ativo: form.ativo,
+            comissao_percentual: Number(form.comissao_percentual),
           }),
         });
         const json = (await res.json()) as { error?: string };
@@ -157,6 +158,7 @@ export function ConfiguracoesClient() {
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Função</TableHead>
+                    <TableHead>Comissão</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -167,6 +169,7 @@ export function ConfiguracoesClient() {
                       <TableCell className="font-medium">{u.nome}</TableCell>
                       <TableCell className="text-[var(--text-secondary)]">{u.email}</TableCell>
                       <TableCell>{ROLE_LABELS[u.tipo] ?? u.tipo}</TableCell>
+                      <TableCell>{u.comissao_percentual != null ? `${u.comissao_percentual}%` : "—"}</TableCell>
                       <TableCell>
                         <span className={`cursor-pointer rounded-full px-2 py-0.5 text-xs font-semibold ${u.ativo ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`} onClick={() => toggleAtivo(u)}>
                           {u.ativo ? "Ativo" : "Inativo"}
@@ -236,6 +239,18 @@ export function ConfiguracoesClient() {
               <Select value={form.tipo} onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))}>
                 {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Comissão (%)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={form.comissao_percentual}
+                onChange={(e) => setForm((f) => ({ ...f, comissao_percentual: e.target.value }))}
+                placeholder="0"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>

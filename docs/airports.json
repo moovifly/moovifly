@@ -1,0 +1,2978 @@
+[
+  {
+    "iata": "GRU",
+    "icao": "SBGR",
+    "name": "Aeroporto Internacional de Guarulhos",
+    "city": "São Paulo",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "CGH",
+    "icao": "SBSP",
+    "name": "Aeroporto de Congonhas",
+    "city": "São Paulo",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "VCP",
+    "icao": "SBKP",
+    "name": "Aeroporto Internacional de Viracopos",
+    "city": "Campinas",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "GIG",
+    "icao": "SBGL",
+    "name": "Aeroporto Internacional do Galeão",
+    "city": "Rio de Janeiro",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "SDU",
+    "icao": "SBRJ",
+    "name": "Aeroporto Santos Dumont",
+    "city": "Rio de Janeiro",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "BSB",
+    "icao": "SBBR",
+    "name": "Aeroporto Internacional de Brasília",
+    "city": "Brasília",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "SSA",
+    "icao": "SBSV",
+    "name": "Aeroporto Internacional de Salvador",
+    "city": "Salvador",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "FOR",
+    "icao": "SBFZ",
+    "name": "Aeroporto Internacional Pinto Martins",
+    "city": "Fortaleza",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "REC",
+    "icao": "SBRF",
+    "name": "Aeroporto Internacional do Recife",
+    "city": "Recife",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "BEL",
+    "icao": "SBBE",
+    "name": "Aeroporto Internacional de Belém",
+    "city": "Belém",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "MAO",
+    "icao": "SBEG",
+    "name": "Aeroporto Internacional de Manaus",
+    "city": "Manaus",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "POA",
+    "icao": "SBPA",
+    "name": "Aeroporto Internacional Salgado Filho",
+    "city": "Porto Alegre",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "CWB",
+    "icao": "SBCT",
+    "name": "Aeroporto Internacional Afonso Pena",
+    "city": "Curitiba",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "FLN",
+    "icao": "SBFL",
+    "name": "Aeroporto Internacional Hercílio Luz",
+    "city": "Florianópolis",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "MCZ",
+    "icao": "SBMO",
+    "name": "Aeroporto Internacional Zumbi dos Palmares",
+    "city": "Maceió",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "NAT",
+    "icao": "SBSG",
+    "name": "Aeroporto Internacional São Gonçalo do Amarante",
+    "city": "Natal",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "JPA",
+    "icao": "SBJP",
+    "name": "Aeroporto Internacional Presidente Castro Pinto",
+    "city": "João Pessoa",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "THE",
+    "icao": "SBTE",
+    "name": "Aeroporto Internacional de Teresina",
+    "city": "Teresina",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "SLZ",
+    "icao": "SBSL",
+    "name": "Aeroporto Internacional Marechal Cunha Machado",
+    "city": "São Luís",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "CGB",
+    "icao": "SBCY",
+    "name": "Aeroporto Internacional Marechal Rondon",
+    "city": "Cuiabá",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "CGR",
+    "icao": "SBDO",
+    "name": "Aeroporto Internacional de Campo Grande",
+    "city": "Campo Grande",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "VIX",
+    "icao": "SBVT",
+    "name": "Aeroporto Internacional de Vitória",
+    "city": "Vitória",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "BHZ",
+    "icao": "SBCF",
+    "name": "Aeroporto Internacional de Belo Horizonte",
+    "city": "Belo Horizonte",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "CNF",
+    "icao": "SBCF",
+    "name": "Aeroporto Internacional Tancredo Neves",
+    "city": "Confins",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "PLU",
+    "icao": "SBBH",
+    "name": "Aeroporto da Pampulha",
+    "city": "Belo Horizonte",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "GYN",
+    "icao": "SBGO",
+    "name": "Aeroporto Internacional de Goiânia",
+    "city": "Goiânia",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "PMW",
+    "icao": "SBPJ",
+    "name": "Aeroporto Internacional de Palmas",
+    "city": "Palmas",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "PVH",
+    "icao": "SBPV",
+    "name": "Aeroporto Internacional de Porto Velho",
+    "city": "Porto Velho",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "RBR",
+    "icao": "SBRB",
+    "name": "Aeroporto Internacional de Rio Branco",
+    "city": "Rio Branco",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "MCP",
+    "icao": "SBMQ",
+    "name": "Aeroporto Internacional de Macapá",
+    "city": "Macapá",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "BVB",
+    "icao": "SBBV",
+    "name": "Aeroporto Internacional de Boa Vista",
+    "city": "Boa Vista",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "IOS",
+    "icao": "SBIL",
+    "name": "Aeroporto de Ilhéus",
+    "city": "Ilhéus",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "AJU",
+    "icao": "SNSB",
+    "name": "Aeroporto Internacional de Aracaju",
+    "city": "Aracaju",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "IGU",
+    "icao": "SBFI",
+    "name": "Aeroporto Internacional de Foz do Iguaçu",
+    "city": "Foz do Iguaçu",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "JDO",
+    "icao": "SBJU",
+    "name": "Aeroporto Internacional de Juazeiro do Norte",
+    "city": "Juazeiro do Norte",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "IMP",
+    "icao": "SBIZ",
+    "name": "Aeroporto de Imperatriz",
+    "city": "Imperatriz",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "XIG",
+    "icao": "",
+    "name": "Aeroporto de Xinguara",
+    "city": "Xinguara",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "PPB",
+    "icao": "SDPP",
+    "name": "Aeroporto Lauro Carneiro de Loyola (Joinville)",
+    "city": "Joinville",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
+    "iata": "LDB",
+    "icao": "SBLO",
+    "name": "Aeroporto Internacional de Londrina",
+    "city": "Londrina",
+    "country": "Brasil",
+    "type": "international"
+  },
+  {
+    "iata": "MGA",
+    "icao": "MNMG",
+    "name": "Aeroporto Internacional Augusto C. Sandino",
+    "city": "Manágua",
+    "country": "Nicarágua",
+    "type": "international"
+  },
+  {
+    "iata": "EZE",
+    "icao": "SAEZ",
+    "name": "Aeroporto Internacional Ministro Pistarini",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "type": "international"
+  },
+  {
+    "iata": "AEP",
+    "icao": "SABE",
+    "name": "Aeroporto Jorge Newbery",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "type": "domestic"
+  },
+  {
+    "iata": "COR",
+    "icao": "SACO",
+    "name": "Aeroporto Internacional Ingeniero Ambrosio Taravella",
+    "city": "Córdoba",
+    "country": "Argentina",
+    "type": "international"
+  },
+  {
+    "iata": "MDZ",
+    "icao": "SAME",
+    "name": "Aeroporto Internacional El Plumerillo",
+    "city": "Mendoza",
+    "country": "Argentina",
+    "type": "international"
+  },
+  {
+    "iata": "SCL",
+    "icao": "SCEL",
+    "name": "Aeroporto Internacional Comodoro Arturo Merino Benítez",
+    "city": "Santiago",
+    "country": "Chile",
+    "type": "international"
+  },
+  {
+    "iata": "BOG",
+    "icao": "SKBO",
+    "name": "Aeroporto Internacional El Dorado",
+    "city": "Bogotá",
+    "country": "Colômbia",
+    "type": "international"
+  },
+  {
+    "iata": "MDE",
+    "icao": "SKRG",
+    "name": "Aeroporto Internacional José María Córdova",
+    "city": "Medellín",
+    "country": "Colômbia",
+    "type": "international"
+  },
+  {
+    "iata": "CTG",
+    "icao": "SKCG",
+    "name": "Aeroporto Internacional Rafael Núñez",
+    "city": "Cartagena",
+    "country": "Colômbia",
+    "type": "international"
+  },
+  {
+    "iata": "LIM",
+    "icao": "SPJC",
+    "name": "Aeroporto Internacional Jorge Chávez",
+    "city": "Lima",
+    "country": "Peru",
+    "type": "international"
+  },
+  {
+    "iata": "CUZ",
+    "icao": "SPZO",
+    "name": "Aeroporto Internacional Tenente Alejandro Velasco Astete",
+    "city": "Cusco",
+    "country": "Peru",
+    "type": "international"
+  },
+  {
+    "iata": "UIO",
+    "icao": "SEQM",
+    "name": "Aeroporto Internacional Mariscal Sucre",
+    "city": "Quito",
+    "country": "Equador",
+    "type": "international"
+  },
+  {
+    "iata": "GYE",
+    "icao": "SEGU",
+    "name": "Aeroporto Internacional José Joaquín de Olmedo",
+    "city": "Guayaquil",
+    "country": "Equador",
+    "type": "international"
+  },
+  {
+    "iata": "VVI",
+    "icao": "SLVR",
+    "name": "Aeroporto Internacional Viru Viru",
+    "city": "Santa Cruz",
+    "country": "Bolívia",
+    "type": "international"
+  },
+  {
+    "iata": "LPB",
+    "icao": "SLLP",
+    "name": "Aeroporto Internacional El Alto",
+    "city": "La Paz",
+    "country": "Bolívia",
+    "type": "international"
+  },
+  {
+    "iata": "ASU",
+    "icao": "SGAS",
+    "name": "Aeroporto Internacional Silvio Pettirossi",
+    "city": "Assunção",
+    "country": "Paraguai",
+    "type": "international"
+  },
+  {
+    "iata": "MVD",
+    "icao": "SUMU",
+    "name": "Aeroporto Internacional de Carrasco",
+    "city": "Montevidéu",
+    "country": "Uruguai",
+    "type": "international"
+  },
+  {
+    "iata": "CCS",
+    "icao": "SVMI",
+    "name": "Aeroporto Internacional Simón Bolívar",
+    "city": "Caracas",
+    "country": "Venezuela",
+    "type": "international"
+  },
+  {
+    "iata": "GEO",
+    "icao": "SYCJ",
+    "name": "Aeroporto Internacional Cheddi Jagan",
+    "city": "Georgetown",
+    "country": "Guiana",
+    "type": "international"
+  },
+  {
+    "iata": "PBM",
+    "icao": "SMJP",
+    "name": "Aeroporto Internacional Johan Adolf Pengel",
+    "city": "Paramaribo",
+    "country": "Suriname",
+    "type": "international"
+  },
+  {
+    "iata": "CAY",
+    "icao": "SOCA",
+    "name": "Aeroporto Internacional Félix Eboué",
+    "city": "Caiena",
+    "country": "Guiana Francesa",
+    "type": "international"
+  },
+  {
+    "iata": "JFK",
+    "icao": "KJFK",
+    "name": "Aeroporto Internacional John F. Kennedy",
+    "city": "Nova York",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "LAX",
+    "icao": "KLAX",
+    "name": "Aeroporto Internacional de Los Angeles",
+    "city": "Los Angeles",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "ORD",
+    "icao": "KORD",
+    "name": "Aeroporto Internacional O'Hare",
+    "city": "Chicago",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "ATL",
+    "icao": "KATL",
+    "name": "Aeroporto Internacional Hartsfield-Jackson",
+    "city": "Atlanta",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "DFW",
+    "icao": "KDFW",
+    "name": "Aeroporto Internacional Dallas/Fort Worth",
+    "city": "Dallas",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "DEN",
+    "icao": "KDEN",
+    "name": "Aeroporto Internacional de Denver",
+    "city": "Denver",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SFO",
+    "icao": "KSFO",
+    "name": "Aeroporto Internacional de San Francisco",
+    "city": "São Francisco",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "MIA",
+    "icao": "KMIA",
+    "name": "Aeroporto Internacional de Miami",
+    "city": "Miami",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SEA",
+    "icao": "KSEA",
+    "name": "Aeroporto Internacional Seattle-Tacoma",
+    "city": "Seattle",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "LAS",
+    "icao": "KLAS",
+    "name": "Aeroporto Internacional Harry Reid",
+    "city": "Las Vegas",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "MCO",
+    "icao": "KMCO",
+    "name": "Aeroporto Internacional de Orlando",
+    "city": "Orlando",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "EWR",
+    "icao": "KEWR",
+    "name": "Aeroporto Internacional Newark Liberty",
+    "city": "Newark",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "IAH",
+    "icao": "KIAH",
+    "name": "Aeroporto Internacional George Bush Intercontinental",
+    "city": "Houston",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "PHX",
+    "icao": "KPHX",
+    "name": "Aeroporto Internacional Sky Harbor",
+    "city": "Phoenix",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "BOS",
+    "icao": "KBOS",
+    "name": "Aeroporto Internacional Logan",
+    "city": "Boston",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "MSP",
+    "icao": "KMSP",
+    "name": "Aeroporto Internacional Minneapolis-Saint Paul",
+    "city": "Minneapolis",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "DTW",
+    "icao": "KDTW",
+    "name": "Aeroporto Internacional Metropolitano de Detroit",
+    "city": "Detroit",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "PHL",
+    "icao": "KPHL",
+    "name": "Aeroporto Internacional de Filadélfia",
+    "city": "Filadélfia",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "CLT",
+    "icao": "KCLT",
+    "name": "Aeroporto Internacional de Charlotte",
+    "city": "Charlotte",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SLC",
+    "icao": "KSLC",
+    "name": "Aeroporto Internacional de Salt Lake City",
+    "city": "Salt Lake City",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "IAD",
+    "icao": "KIAD",
+    "name": "Aeroporto Internacional Washington Dulles",
+    "city": "Washington",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "DCA",
+    "icao": "KDCA",
+    "name": "Aeroporto Nacional Ronald Reagan",
+    "city": "Washington",
+    "country": "Estados Unidos",
+    "type": "domestic"
+  },
+  {
+    "iata": "BWI",
+    "icao": "KBWI",
+    "name": "Aeroporto Internacional Baltimore/Washington",
+    "city": "Baltimore",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SAN",
+    "icao": "KSAN",
+    "name": "Aeroporto Internacional de San Diego",
+    "city": "San Diego",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "TPA",
+    "icao": "KTPA",
+    "name": "Aeroporto Internacional de Tampa",
+    "city": "Tampa",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "PDX",
+    "icao": "KPDX",
+    "name": "Aeroporto Internacional de Portland",
+    "city": "Portland",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "HNL",
+    "icao": "PHNL",
+    "name": "Aeroporto Internacional Daniel K. Inouye",
+    "city": "Honolulu",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "ANC",
+    "icao": "PANC",
+    "name": "Aeroporto Internacional Ted Stevens",
+    "city": "Anchorage",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "MEM",
+    "icao": "KMEM",
+    "name": "Aeroporto Internacional de Memphis",
+    "city": "Memphis",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "MCI",
+    "icao": "KMCI",
+    "name": "Aeroporto Internacional de Kansas City",
+    "city": "Kansas City",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "STL",
+    "icao": "KSTL",
+    "name": "Aeroporto Internacional Lambert",
+    "city": "St. Louis",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "MSY",
+    "icao": "KMSY",
+    "name": "Aeroporto Internacional Louis Armstrong",
+    "city": "Nova Orleans",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "AUS",
+    "icao": "KAUS",
+    "name": "Aeroporto Internacional de Austin",
+    "city": "Austin",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SNA",
+    "icao": "KSNA",
+    "name": "Aeroporto John Wayne",
+    "city": "Orange County",
+    "country": "Estados Unidos",
+    "type": "domestic"
+  },
+  {
+    "iata": "OAK",
+    "icao": "KOAK",
+    "name": "Aeroporto Internacional de Oakland",
+    "city": "Oakland",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SMF",
+    "icao": "KSMF",
+    "name": "Aeroporto Internacional de Sacramento",
+    "city": "Sacramento",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "RDU",
+    "icao": "KRDU",
+    "name": "Aeroporto Internacional Raleigh-Durham",
+    "city": "Raleigh",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "BNA",
+    "icao": "KBNA",
+    "name": "Aeroporto Internacional de Nashville",
+    "city": "Nashville",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "IND",
+    "icao": "KIND",
+    "name": "Aeroporto Internacional de Indianápolis",
+    "city": "Indianápolis",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "CMH",
+    "icao": "KCMH",
+    "name": "Aeroporto Internacional John Glenn Columbus",
+    "city": "Columbus",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "YYZ",
+    "icao": "CYYZ",
+    "name": "Aeroporto Internacional Pearson",
+    "city": "Toronto",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YVR",
+    "icao": "CYVR",
+    "name": "Aeroporto Internacional de Vancouver",
+    "city": "Vancouver",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YUL",
+    "icao": "CYUL",
+    "name": "Aeroporto Internacional Pierre Elliott Trudeau",
+    "city": "Montreal",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YYC",
+    "icao": "CYYC",
+    "name": "Aeroporto Internacional de Calgary",
+    "city": "Calgary",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YEG",
+    "icao": "CYEG",
+    "name": "Aeroporto Internacional de Edmonton",
+    "city": "Edmonton",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YOW",
+    "icao": "CYOW",
+    "name": "Aeroporto Internacional Macdonald-Cartier",
+    "city": "Ottawa",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YHZ",
+    "icao": "CYHZ",
+    "name": "Aeroporto Internacional Stanfield",
+    "city": "Halifax",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "YWG",
+    "icao": "CYWG",
+    "name": "Aeroporto Internacional de Winnipeg",
+    "city": "Winnipeg",
+    "country": "Canadá",
+    "type": "international"
+  },
+  {
+    "iata": "MEX",
+    "icao": "MMMX",
+    "name": "Aeroporto Internacional Benito Juárez",
+    "city": "Cidade do México",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "NLU",
+    "icao": "MMSM",
+    "name": "Aeroporto Internacional Felipe Ángeles",
+    "city": "Ciudad de México",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "CUN",
+    "icao": "MMUN",
+    "name": "Aeroporto Internacional de Cancún",
+    "city": "Cancún",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "GDL",
+    "icao": "MMGL",
+    "name": "Aeroporto Internacional Miguel Hidalgo y Costilla",
+    "city": "Guadalajara",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "MTY",
+    "icao": "MMMY",
+    "name": "Aeroporto Internacional General Mariano Escobedo",
+    "city": "Monterrey",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "TLC",
+    "icao": "MMTO",
+    "name": "Aeroporto Internacional Licenciado Adolfo López Mateos",
+    "city": "Toluca",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "MID",
+    "icao": "MMMD",
+    "name": "Aeroporto Internacional Manuel Crescencio Rejón",
+    "city": "Mérida",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "PVR",
+    "icao": "MMPR",
+    "name": "Aeroporto Internacional Gustavo Díaz Ordaz",
+    "city": "Puerto Vallarta",
+    "country": "México",
+    "type": "international"
+  },
+  {
+    "iata": "SJO",
+    "icao": "MROC",
+    "name": "Aeroporto Internacional Juan Santamaría",
+    "city": "San José",
+    "country": "Costa Rica",
+    "type": "international"
+  },
+  {
+    "iata": "GUA",
+    "icao": "MGGT",
+    "name": "Aeroporto Internacional La Aurora",
+    "city": "Cidade da Guatemala",
+    "country": "Guatemala",
+    "type": "international"
+  },
+  {
+    "iata": "SAP",
+    "icao": "MHLM",
+    "name": "Aeroporto Internacional Ramón Villeda Morales",
+    "city": "San Pedro Sula",
+    "country": "Honduras",
+    "type": "international"
+  },
+  {
+    "iata": "SAL",
+    "icao": "MSLP",
+    "name": "Aeroporto Internacional de El Salvador",
+    "city": "San Salvador",
+    "country": "El Salvador",
+    "type": "international"
+  },
+  {
+    "iata": "PTY",
+    "icao": "MPTO",
+    "name": "Aeroporto Internacional de Tocumen",
+    "city": "Cidade do Panamá",
+    "country": "Panamá",
+    "type": "international"
+  },
+  {
+    "iata": "HAV",
+    "icao": "MUHA",
+    "name": "Aeroporto Internacional José Martí",
+    "city": "Havana",
+    "country": "Cuba",
+    "type": "international"
+  },
+  {
+    "iata": "SDQ",
+    "icao": "MDSD",
+    "name": "Aeroporto Internacional Las Américas",
+    "city": "Santo Domingo",
+    "country": "República Dominicana",
+    "type": "international"
+  },
+  {
+    "iata": "PUJ",
+    "icao": "MDPC",
+    "name": "Aeroporto Internacional de Punta Cana",
+    "city": "Punta Cana",
+    "country": "República Dominicana",
+    "type": "international"
+  },
+  {
+    "iata": "SJU",
+    "icao": "TJSJ",
+    "name": "Aeroporto Internacional Luis Muñoz Marín",
+    "city": "San Juan",
+    "country": "Porto Rico",
+    "type": "international"
+  },
+  {
+    "iata": "MBJ",
+    "icao": "MKJS",
+    "name": "Aeroporto Internacional Sangster",
+    "city": "Montego Bay",
+    "country": "Jamaica",
+    "type": "international"
+  },
+  {
+    "iata": "NAS",
+    "icao": "MYNN",
+    "name": "Aeroporto Internacional Lynden Pindling",
+    "city": "Nassau",
+    "country": "Bahamas",
+    "type": "international"
+  },
+  {
+    "iata": "BGI",
+    "icao": "TBPB",
+    "name": "Aeroporto Internacional Grantley Adams",
+    "city": "Bridgetown",
+    "country": "Barbados",
+    "type": "international"
+  },
+  {
+    "iata": "LHR",
+    "icao": "EGLL",
+    "name": "Aeroporto Internacional de Heathrow",
+    "city": "Londres",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "LGW",
+    "icao": "EGKK",
+    "name": "Aeroporto de Gatwick",
+    "city": "Londres",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "STN",
+    "icao": "EGSS",
+    "name": "Aeroporto de Stansted",
+    "city": "Londres",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "LTN",
+    "icao": "EGGW",
+    "name": "Aeroporto de Luton",
+    "city": "Londres",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "LCY",
+    "icao": "EGLC",
+    "name": "Aeroporto de London City",
+    "city": "Londres",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "MAN",
+    "icao": "EGCC",
+    "name": "Aeroporto Internacional de Manchester",
+    "city": "Manchester",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "BHX",
+    "icao": "EGBB",
+    "name": "Aeroporto Internacional de Birmingham",
+    "city": "Birmingham",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "EDI",
+    "icao": "EGPH",
+    "name": "Aeroporto de Edimburgo",
+    "city": "Edimburgo",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "GLA",
+    "icao": "EGPF",
+    "name": "Aeroporto Internacional de Glasgow",
+    "city": "Glasgow",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "CDG",
+    "icao": "LFPG",
+    "name": "Aeroporto Internacional Charles de Gaulle",
+    "city": "Paris",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "ORY",
+    "icao": "LFPO",
+    "name": "Aeroporto de Orly",
+    "city": "Paris",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "NCE",
+    "icao": "LFMN",
+    "name": "Aeroporto Internacional Nice Côte d'Azur",
+    "city": "Nice",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "LYS",
+    "icao": "LFLL",
+    "name": "Aeroporto Internacional de Lyon",
+    "city": "Lyon",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "MRS",
+    "icao": "LFML",
+    "name": "Aeroporto Internacional de Marselha",
+    "city": "Marselha",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "TLS",
+    "icao": "LFBO",
+    "name": "Aeroporto Internacional de Toulouse",
+    "city": "Toulouse",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "FRA",
+    "icao": "EDDF",
+    "name": "Aeroporto Internacional de Frankfurt",
+    "city": "Frankfurt",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "MUC",
+    "icao": "EDDM",
+    "name": "Aeroporto Internacional de Munique",
+    "city": "Munique",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "BER",
+    "icao": "EDDB",
+    "name": "Aeroporto Internacional Berlim Brandenburg",
+    "city": "Berlim",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "HAM",
+    "icao": "EDDH",
+    "name": "Aeroporto Internacional de Hamburgo",
+    "city": "Hamburgo",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "DUS",
+    "icao": "EDDL",
+    "name": "Aeroporto Internacional de Düsseldorf",
+    "city": "Düsseldorf",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "CGN",
+    "icao": "EDDK",
+    "name": "Aeroporto Internacional de Colônia/Bonn",
+    "city": "Colônia",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "STR",
+    "icao": "EDDS",
+    "name": "Aeroporto Internacional de Stuttgart",
+    "city": "Stuttgart",
+    "country": "Alemanha",
+    "type": "international"
+  },
+  {
+    "iata": "AMS",
+    "icao": "EHAM",
+    "name": "Aeroporto Internacional de Schiphol",
+    "city": "Amsterdã",
+    "country": "Países Baixos",
+    "type": "international"
+  },
+  {
+    "iata": "BRU",
+    "icao": "EBBR",
+    "name": "Aeroporto Internacional de Bruxelas",
+    "city": "Bruxelas",
+    "country": "Bélgica",
+    "type": "international"
+  },
+  {
+    "iata": "FCO",
+    "icao": "LIRF",
+    "name": "Aeroporto Internacional Leonardo da Vinci",
+    "city": "Roma",
+    "country": "Itália",
+    "type": "international"
+  },
+  {
+    "iata": "MXP",
+    "icao": "LIMC",
+    "name": "Aeroporto Internacional de Milão-Malpensa",
+    "city": "Milão",
+    "country": "Itália",
+    "type": "international"
+  },
+  {
+    "iata": "LIN",
+    "icao": "LIML",
+    "name": "Aeroporto de Milão Linate",
+    "city": "Milão",
+    "country": "Itália",
+    "type": "domestic"
+  },
+  {
+    "iata": "VCE",
+    "icao": "LIPZ",
+    "name": "Aeroporto Internacional Marco Polo",
+    "city": "Veneza",
+    "country": "Itália",
+    "type": "international"
+  },
+  {
+    "iata": "NAP",
+    "icao": "LIRN",
+    "name": "Aeroporto Internacional de Nápoles",
+    "city": "Nápoles",
+    "country": "Itália",
+    "type": "international"
+  },
+  {
+    "iata": "BGY",
+    "icao": "LIME",
+    "name": "Aeroporto Internacional de Bérgamo",
+    "city": "Bérgamo",
+    "country": "Itália",
+    "type": "international"
+  },
+  {
+    "iata": "MAD",
+    "icao": "LEMD",
+    "name": "Aeroporto Internacional Adolfo Suárez",
+    "city": "Madrid",
+    "country": "Espanha",
+    "type": "international"
+  },
+  {
+    "iata": "BCN",
+    "icao": "LEBL",
+    "name": "Aeroporto Internacional de Barcelona",
+    "city": "Barcelona",
+    "country": "Espanha",
+    "type": "international"
+  },
+  {
+    "iata": "PMI",
+    "icao": "LEPA",
+    "name": "Aeroporto Internacional de Palma de Maiorca",
+    "city": "Palma",
+    "country": "Espanha",
+    "type": "international"
+  },
+  {
+    "iata": "AGP",
+    "icao": "LEMG",
+    "name": "Aeroporto Internacional de Málaga",
+    "city": "Málaga",
+    "country": "Espanha",
+    "type": "international"
+  },
+  {
+    "iata": "ALC",
+    "icao": "LEAL",
+    "name": "Aeroporto Internacional de Alicante",
+    "city": "Alicante",
+    "country": "Espanha",
+    "type": "international"
+  },
+  {
+    "iata": "VLC",
+    "icao": "LEVC",
+    "name": "Aeroporto Internacional de Valencia",
+    "city": "Valência",
+    "country": "Espanha",
+    "type": "international"
+  },
+  {
+    "iata": "LIS",
+    "icao": "LPPT",
+    "name": "Aeroporto Internacional Humberto Delgado",
+    "city": "Lisboa",
+    "country": "Portugal",
+    "type": "international"
+  },
+  {
+    "iata": "OPO",
+    "icao": "LPPR",
+    "name": "Aeroporto Internacional Francisco de Sá Carneiro",
+    "city": "Porto",
+    "country": "Portugal",
+    "type": "international"
+  },
+  {
+    "iata": "FAO",
+    "icao": "LPFR",
+    "name": "Aeroporto Internacional de Faro",
+    "city": "Faro",
+    "country": "Portugal",
+    "type": "international"
+  },
+  {
+    "iata": "FNC",
+    "icao": "LPMA",
+    "name": "Aeroporto Internacional da Madeira",
+    "city": "Funchal",
+    "country": "Portugal",
+    "type": "international"
+  },
+  {
+    "iata": "PDL",
+    "icao": "LPPD",
+    "name": "Aeroporto Internacional João Paulo II",
+    "city": "Ponta Delgada",
+    "country": "Portugal",
+    "type": "international"
+  },
+  {
+    "iata": "ZRH",
+    "icao": "LSZH",
+    "name": "Aeroporto Internacional de Zurique",
+    "city": "Zurique",
+    "country": "Suíça",
+    "type": "international"
+  },
+  {
+    "iata": "GVA",
+    "icao": "LSGG",
+    "name": "Aeroporto Internacional de Genebra",
+    "city": "Genebra",
+    "country": "Suíça",
+    "type": "international"
+  },
+  {
+    "iata": "VIE",
+    "icao": "LOWW",
+    "name": "Aeroporto Internacional de Viena",
+    "city": "Viena",
+    "country": "Áustria",
+    "type": "international"
+  },
+  {
+    "iata": "PRG",
+    "icao": "LKPR",
+    "name": "Aeroporto Internacional Václav Havel",
+    "city": "Praga",
+    "country": "República Tcheca",
+    "type": "international"
+  },
+  {
+    "iata": "WAW",
+    "icao": "EPWA",
+    "name": "Aeroporto Internacional Frederic Chopin",
+    "city": "Varsóvia",
+    "country": "Polônia",
+    "type": "international"
+  },
+  {
+    "iata": "KRK",
+    "icao": "EPKK",
+    "name": "Aeroporto Internacional João Paulo II",
+    "city": "Cracóvia",
+    "country": "Polônia",
+    "type": "international"
+  },
+  {
+    "iata": "BUD",
+    "icao": "LHBP",
+    "name": "Aeroporto Internacional Ferenc Liszt",
+    "city": "Budapeste",
+    "country": "Hungria",
+    "type": "international"
+  },
+  {
+    "iata": "BEG",
+    "icao": "LYBE",
+    "name": "Aeroporto Internacional Nikola Tesla",
+    "city": "Belgrado",
+    "country": "Sérvia",
+    "type": "international"
+  },
+  {
+    "iata": "OTP",
+    "icao": "LROP",
+    "name": "Aeroporto Internacional Henri Coandă",
+    "city": "Bucareste",
+    "country": "Romênia",
+    "type": "international"
+  },
+  {
+    "iata": "SOF",
+    "icao": "LBSF",
+    "name": "Aeroporto Internacional de Sófia",
+    "city": "Sófia",
+    "country": "Bulgária",
+    "type": "international"
+  },
+  {
+    "iata": "SKG",
+    "icao": "LGTS",
+    "name": "Aeroporto Internacional Macedonia",
+    "city": "Thessaloníki",
+    "country": "Grécia",
+    "type": "international"
+  },
+  {
+    "iata": "ATH",
+    "icao": "LGAV",
+    "name": "Aeroporto Internacional Eleftherios Venizelos",
+    "city": "Atenas",
+    "country": "Grécia",
+    "type": "international"
+  },
+  {
+    "iata": "HER",
+    "icao": "LGIR",
+    "name": "Aeroporto Internacional Nikos Kazantzakis",
+    "city": "Heraklion",
+    "country": "Grécia",
+    "type": "international"
+  },
+  {
+    "iata": "CPH",
+    "icao": "EKCH",
+    "name": "Aeroporto Internacional de Copenhagen",
+    "city": "Copenhague",
+    "country": "Dinamarca",
+    "type": "international"
+  },
+  {
+    "iata": "ARN",
+    "icao": "ESSA",
+    "name": "Aeroporto Internacional de Estocolmo",
+    "city": "Estocolmo",
+    "country": "Suécia",
+    "type": "international"
+  },
+  {
+    "iata": "GOT",
+    "icao": "ESGG",
+    "name": "Aeroporto Internacional de Gotemburgo",
+    "city": "Gotemburgo",
+    "country": "Suécia",
+    "type": "international"
+  },
+  {
+    "iata": "OSL",
+    "icao": "ENGM",
+    "name": "Aeroporto Internacional de Oslo",
+    "city": "Oslo",
+    "country": "Noruega",
+    "type": "international"
+  },
+  {
+    "iata": "HEL",
+    "icao": "EFHK",
+    "name": "Aeroporto Internacional de Helsinque",
+    "city": "Helsinque",
+    "country": "Finlândia",
+    "type": "international"
+  },
+  {
+    "iata": "TLL",
+    "icao": "EETN",
+    "name": "Aeroporto Internacional de Tallinn",
+    "city": "Tallinn",
+    "country": "Estônia",
+    "type": "international"
+  },
+  {
+    "iata": "RIX",
+    "icao": "EVRA",
+    "name": "Aeroporto Internacional de Riga",
+    "city": "Riga",
+    "country": "Letônia",
+    "type": "international"
+  },
+  {
+    "iata": "VNO",
+    "icao": "EYVI",
+    "name": "Aeroporto Internacional de Vilnius",
+    "city": "Vilnius",
+    "country": "Lituânia",
+    "type": "international"
+  },
+  {
+    "iata": "LJU",
+    "icao": "LJLJ",
+    "name": "Aeroporto Internacional Jože Pučnik",
+    "city": "Liubliana",
+    "country": "Eslovênia",
+    "type": "international"
+  },
+  {
+    "iata": "ZAG",
+    "icao": "LDZA",
+    "name": "Aeroporto Internacional de Zagreb",
+    "city": "Zagreb",
+    "country": "Croácia",
+    "type": "international"
+  },
+  {
+    "iata": "DBV",
+    "icao": "LDDU",
+    "name": "Aeroporto Internacional de Dubrovnik",
+    "city": "Dubrovnik",
+    "country": "Croácia",
+    "type": "international"
+  },
+  {
+    "iata": "SPU",
+    "icao": "LDSP",
+    "name": "Aeroporto Internacional de Split",
+    "city": "Split",
+    "country": "Croácia",
+    "type": "international"
+  },
+  {
+    "iata": "TIA",
+    "icao": "LATI",
+    "name": "Aeroporto Internacional Nënë Tereza",
+    "city": "Tirana",
+    "country": "Albânia",
+    "type": "international"
+  },
+  {
+    "iata": "SKP",
+    "icao": "LWSK",
+    "name": "Aeroporto Internacional de Skopje",
+    "city": "Skopje",
+    "country": "Macedônia do Norte",
+    "type": "international"
+  },
+  {
+    "iata": "SVO",
+    "icao": "UUEE",
+    "name": "Aeroporto Internacional Sheremetyevo",
+    "city": "Moscou",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "DME",
+    "icao": "UUDD",
+    "name": "Aeroporto Internacional Domodedovo",
+    "city": "Moscou",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "VKO",
+    "icao": "UUWW",
+    "name": "Aeroporto Internacional Vnukovo",
+    "city": "Moscou",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "LED",
+    "icao": "ULLI",
+    "name": "Aeroporto Internacional Pulkovo",
+    "city": "São Petersburgo",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "SVX",
+    "icao": "USSS",
+    "name": "Aeroporto Internacional Koltsovo",
+    "city": "Ecaterimburgo",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "KJA",
+    "icao": "UNKL",
+    "name": "Aeroporto Internacional de Krasnoyarsk",
+    "city": "Krasnoyarsk",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "IKT",
+    "icao": "UIII",
+    "name": "Aeroporto Internacional de Irkutsk",
+    "city": "Irkutsk",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "VVO",
+    "icao": "UHWW",
+    "name": "Aeroporto Internacional de Vladivostok",
+    "city": "Vladivostok",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "KBP",
+    "icao": "UKBB",
+    "name": "Aeroporto Internacional Boryspil",
+    "city": "Kiev",
+    "country": "Ucrânia",
+    "type": "international"
+  },
+  {
+    "iata": "IEV",
+    "icao": "UKKK",
+    "name": "Aeroporto Internacional Igor Sikorsky",
+    "city": "Kiev",
+    "country": "Ucrânia",
+    "type": "international"
+  },
+  {
+    "iata": "IST",
+    "icao": "LTFM",
+    "name": "Aeroporto Internacional de Istambul",
+    "city": "Istambul",
+    "country": "Turquia",
+    "type": "international"
+  },
+  {
+    "iata": "SAW",
+    "icao": "LTFJ",
+    "name": "Aeroporto de Sabiha Gökçen",
+    "city": "Istambul",
+    "country": "Turquia",
+    "type": "international"
+  },
+  {
+    "iata": "ESB",
+    "icao": "LTAC",
+    "name": "Aeroporto Internacional Esenboğa",
+    "city": "Ancara",
+    "country": "Turquia",
+    "type": "international"
+  },
+  {
+    "iata": "AYT",
+    "icao": "LTAI",
+    "name": "Aeroporto Internacional de Antalya",
+    "city": "Antalya",
+    "country": "Turquia",
+    "type": "international"
+  },
+  {
+    "iata": "ADB",
+    "icao": "LTBJ",
+    "name": "Aeroporto Internacional Adnan Menderes",
+    "city": "Izmir",
+    "country": "Turquia",
+    "type": "international"
+  },
+  {
+    "iata": "DXB",
+    "icao": "OMDB",
+    "name": "Aeroporto Internacional de Dubai",
+    "city": "Dubai",
+    "country": "Emirados Árabes Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "AUH",
+    "icao": "OMAA",
+    "name": "Aeroporto Internacional de Abu Dhabi",
+    "city": "Abu Dhabi",
+    "country": "Emirados Árabes Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "SHJ",
+    "icao": "OMSJ",
+    "name": "Aeroporto Internacional de Sharjah",
+    "city": "Sharjah",
+    "country": "Emirados Árabes Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "DOH",
+    "icao": "OTHH",
+    "name": "Aeroporto Internacional Hamad",
+    "city": "Doha",
+    "country": "Catar",
+    "type": "international"
+  },
+  {
+    "iata": "BAH",
+    "icao": "OBBI",
+    "name": "Aeroporto Internacional de Barein",
+    "city": "Manama",
+    "country": "Barein",
+    "type": "international"
+  },
+  {
+    "iata": "KWI",
+    "icao": "OKBK",
+    "name": "Aeroporto Internacional do Kuwait",
+    "city": "Kuwait",
+    "country": "Kuwait",
+    "type": "international"
+  },
+  {
+    "iata": "MCT",
+    "icao": "OOMS",
+    "name": "Aeroporto Internacional de Mascate",
+    "city": "Mascate",
+    "country": "Omã",
+    "type": "international"
+  },
+  {
+    "iata": "RUH",
+    "icao": "OERK",
+    "name": "Aeroporto Internacional Rei Khalid",
+    "city": "Riade",
+    "country": "Arábia Saudita",
+    "type": "international"
+  },
+  {
+    "iata": "JED",
+    "icao": "OEJN",
+    "name": "Aeroporto Internacional Rei Abdulaziz",
+    "city": "Jidá",
+    "country": "Arábia Saudita",
+    "type": "international"
+  },
+  {
+    "iata": "DMM",
+    "icao": "OEDF",
+    "name": "Aeroporto Internacional Rei Fahd",
+    "city": "Dammam",
+    "country": "Arábia Saudita",
+    "type": "international"
+  },
+  {
+    "iata": "MED",
+    "icao": "OEMA",
+    "name": "Aeroporto Internacional Príncipe Mohammad bin Abdulaziz",
+    "city": "Medina",
+    "country": "Arábia Saudita",
+    "type": "international"
+  },
+  {
+    "iata": "AMM",
+    "icao": "OJAI",
+    "name": "Aeroporto Internacional Rainha Alia",
+    "city": "Amã",
+    "country": "Jordânia",
+    "type": "international"
+  },
+  {
+    "iata": "BEY",
+    "icao": "OLBA",
+    "name": "Aeroporto Internacional de Beirute",
+    "city": "Beirute",
+    "country": "Líbano",
+    "type": "international"
+  },
+  {
+    "iata": "TLV",
+    "icao": "LLBG",
+    "name": "Aeroporto Internacional Ben Gurion",
+    "city": "Tel Aviv",
+    "country": "Israel",
+    "type": "international"
+  },
+  {
+    "iata": "CAI",
+    "icao": "HECA",
+    "name": "Aeroporto Internacional do Cairo",
+    "city": "Cairo",
+    "country": "Egito",
+    "type": "international"
+  },
+  {
+    "iata": "HRG",
+    "icao": "HEGN",
+    "name": "Aeroporto Internacional de Hurghada",
+    "city": "Hurghada",
+    "country": "Egito",
+    "type": "international"
+  },
+  {
+    "iata": "SSH",
+    "icao": "HESH",
+    "name": "Aeroporto Internacional de Sharm el-Sheikh",
+    "city": "Sharm el-Sheikh",
+    "country": "Egito",
+    "type": "international"
+  },
+  {
+    "iata": "LXR",
+    "icao": "HELX",
+    "name": "Aeroporto Internacional de Luxor",
+    "city": "Luxor",
+    "country": "Egito",
+    "type": "international"
+  },
+  {
+    "iata": "CMN",
+    "icao": "GMMN",
+    "name": "Aeroporto Internacional Mohammed V",
+    "city": "Casablanca",
+    "country": "Marrocos",
+    "type": "international"
+  },
+  {
+    "iata": "RAK",
+    "icao": "GMMX",
+    "name": "Aeroporto Internacional Marrakech Menara",
+    "city": "Marrakech",
+    "country": "Marrocos",
+    "type": "international"
+  },
+  {
+    "iata": "FEZ",
+    "icao": "GMFF",
+    "name": "Aeroporto Internacional de Fez",
+    "city": "Fez",
+    "country": "Marrocos",
+    "type": "international"
+  },
+  {
+    "iata": "TUN",
+    "icao": "DTTA",
+    "name": "Aeroporto Internacional Tunis-Carthage",
+    "city": "Túnis",
+    "country": "Tunísia",
+    "type": "international"
+  },
+  {
+    "iata": "ALG",
+    "icao": "DAAG",
+    "name": "Aeroporto Internacional Houari Boumediene",
+    "city": "Argel",
+    "country": "Argélia",
+    "type": "international"
+  },
+  {
+    "iata": "TIP",
+    "icao": "HLLT",
+    "name": "Aeroporto Internacional de Trípoli",
+    "city": "Trípoli",
+    "country": "Líbia",
+    "type": "international"
+  },
+  {
+    "iata": "KRT",
+    "icao": "HSSS",
+    "name": "Aeroporto Internacional de Cartum",
+    "city": "Cartum",
+    "country": "Sudão",
+    "type": "international"
+  },
+  {
+    "iata": "ADD",
+    "icao": "HAAB",
+    "name": "Aeroporto Internacional Bole",
+    "city": "Adis Abeba",
+    "country": "Etiópia",
+    "type": "international"
+  },
+  {
+    "iata": "NBI",
+    "icao": "HKNW",
+    "name": "Aeroporto Internacional Nairobi (Wilson)",
+    "city": "Nairóbi",
+    "country": "Quênia",
+    "type": "international"
+  },
+  {
+    "iata": "NBO",
+    "icao": "HKJK",
+    "name": "Aeroporto Internacional Jomo Kenyatta",
+    "city": "Nairóbi",
+    "country": "Quênia",
+    "type": "international"
+  },
+  {
+    "iata": "MBA",
+    "icao": "HKMO",
+    "name": "Aeroporto Internacional Mombasa",
+    "city": "Mombaça",
+    "country": "Quênia",
+    "type": "international"
+  },
+  {
+    "iata": "DAR",
+    "icao": "HTDA",
+    "name": "Aeroporto Internacional Julius Nyerere",
+    "city": "Dar es Salaam",
+    "country": "Tanzânia",
+    "type": "international"
+  },
+  {
+    "iata": "JRO",
+    "icao": "HTKJ",
+    "name": "Aeroporto Internacional Kilimanjaro",
+    "city": "Arusha",
+    "country": "Tanzânia",
+    "type": "international"
+  },
+  {
+    "iata": "EBB",
+    "icao": "HUEN",
+    "name": "Aeroporto Internacional Entebbe",
+    "city": "Entebbe",
+    "country": "Uganda",
+    "type": "international"
+  },
+  {
+    "iata": "KGL",
+    "icao": "HRYR",
+    "name": "Aeroporto Internacional de Kigali",
+    "city": "Kigali",
+    "country": "Ruanda",
+    "type": "international"
+  },
+  {
+    "iata": "LOS",
+    "icao": "DNMM",
+    "name": "Aeroporto Internacional Murtala Muhammed",
+    "city": "Lagos",
+    "country": "Nigéria",
+    "type": "international"
+  },
+  {
+    "iata": "ABV",
+    "icao": "DNAA",
+    "name": "Aeroporto Internacional Nnamdi Azikiwe",
+    "city": "Abuja",
+    "country": "Nigéria",
+    "type": "international"
+  },
+  {
+    "iata": "ACC",
+    "icao": "DGAA",
+    "name": "Aeroporto Internacional de Kotoka",
+    "city": "Acra",
+    "country": "Gana",
+    "type": "international"
+  },
+  {
+    "iata": "ABJ",
+    "icao": "DIAP",
+    "name": "Aeroporto Internacional Félix-Houphouët-Boigny",
+    "city": "Abidjan",
+    "country": "Costa do Marfim",
+    "type": "international"
+  },
+  {
+    "iata": "DKR",
+    "icao": "GOOY",
+    "name": "Aeroporto Internacional Leopold Sédar Senghor",
+    "city": "Dacar",
+    "country": "Senegal",
+    "type": "international"
+  },
+  {
+    "iata": "DSS",
+    "icao": "GOBD",
+    "name": "Aeroporto Internacional Blaise Diagne",
+    "city": "Dacar",
+    "country": "Senegal",
+    "type": "international"
+  },
+  {
+    "iata": "CMB",
+    "icao": "VCBI",
+    "name": "Aeroporto Internacional Bandaranaike",
+    "city": "Colombo",
+    "country": "Sri Lanka",
+    "type": "international"
+  },
+  {
+    "iata": "CPT",
+    "icao": "FACT",
+    "name": "Aeroporto Internacional da Cidade do Cabo",
+    "city": "Cidade do Cabo",
+    "country": "África do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "JNB",
+    "icao": "FAOR",
+    "name": "Aeroporto Internacional O.R. Tambo",
+    "city": "Joanesburgo",
+    "country": "África do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "DUR",
+    "icao": "FALE",
+    "name": "Aeroporto Internacional King Shaka",
+    "city": "Durban",
+    "country": "África do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "HRE",
+    "icao": "FVHA",
+    "name": "Aeroporto Internacional Robert Gabriel Mugabe",
+    "city": "Harare",
+    "country": "Zimbábue",
+    "type": "international"
+  },
+  {
+    "iata": "GBE",
+    "icao": "FBSK",
+    "name": "Aeroporto Internacional de Gaborone",
+    "city": "Gaborone",
+    "country": "Botsuana",
+    "type": "international"
+  },
+  {
+    "iata": "MPM",
+    "icao": "FQMA",
+    "name": "Aeroporto Internacional de Maputo",
+    "city": "Maputo",
+    "country": "Moçambique",
+    "type": "international"
+  },
+  {
+    "iata": "TNR",
+    "icao": "FMMI",
+    "name": "Aeroporto Internacional Ivato",
+    "city": "Antananarivo",
+    "country": "Madagáscar",
+    "type": "international"
+  },
+  {
+    "iata": "MRU",
+    "icao": "FIMP",
+    "name": "Aeroporto Internacional Sir Seewoosagur Ramgoolam",
+    "city": "Port Louis",
+    "country": "Maurício",
+    "type": "international"
+  },
+  {
+    "iata": "PEK",
+    "icao": "ZBAA",
+    "name": "Aeroporto Internacional Capital de Pequim",
+    "city": "Pequim",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "PKX",
+    "icao": "ZBAD",
+    "name": "Aeroporto Internacional Daxing de Pequim",
+    "city": "Pequim",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "PVG",
+    "icao": "ZSPD",
+    "name": "Aeroporto Internacional Pudong de Xangai",
+    "city": "Xangai",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "SHA",
+    "icao": "ZSSS",
+    "name": "Aeroporto Internacional Hongqiao de Xangai",
+    "city": "Xangai",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "CAN",
+    "icao": "ZGGG",
+    "name": "Aeroporto Internacional de Guangzhou",
+    "city": "Guangzhou",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "SZX",
+    "icao": "ZGSZ",
+    "name": "Aeroporto Internacional de Shenzhen",
+    "city": "Shenzhen",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "CTU",
+    "icao": "ZUUU",
+    "name": "Aeroporto Internacional de Chengdu",
+    "city": "Chengdu",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "HGH",
+    "icao": "ZSHC",
+    "name": "Aeroporto Internacional de Hangzhou",
+    "city": "Hangzhou",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "XIY",
+    "icao": "ZLXY",
+    "name": "Aeroporto Internacional de Xi'an",
+    "city": "Xi'an",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "KMG",
+    "icao": "ZPPP",
+    "name": "Aeroporto Internacional de Kunming",
+    "city": "Kunming",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "WUH",
+    "icao": "ZHHH",
+    "name": "Aeroporto Internacional de Wuhan",
+    "city": "Wuhan",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "CKG",
+    "icao": "ZUCK",
+    "name": "Aeroporto Internacional de Chongqing",
+    "city": "Chongqing",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "NKG",
+    "icao": "ZSNJ",
+    "name": "Aeroporto Internacional de Nanjing",
+    "city": "Nanjing",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "TSN",
+    "icao": "ZBTJ",
+    "name": "Aeroporto Internacional de Tianjin",
+    "city": "Tianjin",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "HKG",
+    "icao": "VHHH",
+    "name": "Aeroporto Internacional de Hong Kong",
+    "city": "Hong Kong",
+    "country": "Hong Kong",
+    "type": "international"
+  },
+  {
+    "iata": "MFM",
+    "icao": "VMMC",
+    "name": "Aeroporto Internacional de Macau",
+    "city": "Macau",
+    "country": "Macau",
+    "type": "international"
+  },
+  {
+    "iata": "TPE",
+    "icao": "RCTP",
+    "name": "Aeroporto Internacional Taiwan Taoyuan",
+    "city": "Taipei",
+    "country": "Taiwan",
+    "type": "international"
+  },
+  {
+    "iata": "KHH",
+    "icao": "RCKH",
+    "name": "Aeroporto Internacional de Kaohsiung",
+    "city": "Kaohsiung",
+    "country": "Taiwan",
+    "type": "international"
+  },
+  {
+    "iata": "NRT",
+    "icao": "RJAA",
+    "name": "Aeroporto Internacional de Narita",
+    "city": "Tóquio",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "HND",
+    "icao": "RJTT",
+    "name": "Aeroporto Internacional de Haneda",
+    "city": "Tóquio",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "KIX",
+    "icao": "RJBB",
+    "name": "Aeroporto Internacional de Kansai",
+    "city": "Osaka",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "ITM",
+    "icao": "RJOO",
+    "name": "Aeroporto de Itami",
+    "city": "Osaka",
+    "country": "Japão",
+    "type": "domestic"
+  },
+  {
+    "iata": "NGO",
+    "icao": "RJGG",
+    "name": "Aeroporto Internacional Chubu Centrair",
+    "city": "Nagoia",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "CTS",
+    "icao": "RJCC",
+    "name": "Aeroporto Internacional New Chitose",
+    "city": "Sapporo",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "FUK",
+    "icao": "RJFF",
+    "name": "Aeroporto de Fukuoka",
+    "city": "Fukuoka",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "OKA",
+    "icao": "ROAH",
+    "name": "Aeroporto Internacional de Naha",
+    "city": "Okinawa",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "ICN",
+    "icao": "RKSI",
+    "name": "Aeroporto Internacional de Incheon",
+    "city": "Seul",
+    "country": "Coreia do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "GMP",
+    "icao": "RKSS",
+    "name": "Aeroporto Internacional de Gimpo",
+    "city": "Seul",
+    "country": "Coreia do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "PUS",
+    "icao": "RKPK",
+    "name": "Aeroporto Internacional de Gimhae",
+    "city": "Busan",
+    "country": "Coreia do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "CJU",
+    "icao": "RKPC",
+    "name": "Aeroporto Internacional de Jeju",
+    "city": "Jeju",
+    "country": "Coreia do Sul",
+    "type": "international"
+  },
+  {
+    "iata": "SIN",
+    "icao": "WSSS",
+    "name": "Aeroporto Internacional de Changi",
+    "city": "Singapura",
+    "country": "Singapura",
+    "type": "international"
+  },
+  {
+    "iata": "KUL",
+    "icao": "WMKK",
+    "name": "Aeroporto Internacional de Kuala Lumpur",
+    "city": "Kuala Lumpur",
+    "country": "Malásia",
+    "type": "international"
+  },
+  {
+    "iata": "BKI",
+    "icao": "WBKK",
+    "name": "Aeroporto Internacional de Kota Kinabalu",
+    "city": "Kota Kinabalu",
+    "country": "Malásia",
+    "type": "international"
+  },
+  {
+    "iata": "PEN",
+    "icao": "WMKP",
+    "name": "Aeroporto Internacional de Penang",
+    "city": "Penang",
+    "country": "Malásia",
+    "type": "international"
+  },
+  {
+    "iata": "CGK",
+    "icao": "WIII",
+    "name": "Aeroporto Internacional Soekarno-Hatta",
+    "city": "Jacarta",
+    "country": "Indonésia",
+    "type": "international"
+  },
+  {
+    "iata": "DPS",
+    "icao": "WADD",
+    "name": "Aeroporto Internacional Ngurah Rai",
+    "city": "Denpasar",
+    "country": "Indonésia",
+    "type": "international"
+  },
+  {
+    "iata": "SUB",
+    "icao": "WARR",
+    "name": "Aeroporto Internacional Juanda",
+    "city": "Surabaia",
+    "country": "Indonésia",
+    "type": "international"
+  },
+  {
+    "iata": "BPN",
+    "icao": "WALL",
+    "name": "Aeroporto Internacional Sultan Aji Muhammad Sulaiman",
+    "city": "Balikpapan",
+    "country": "Indonésia",
+    "type": "international"
+  },
+  {
+    "iata": "MNL",
+    "icao": "RPLL",
+    "name": "Aeroporto Internacional Ninoy Aquino",
+    "city": "Manila",
+    "country": "Filipinas",
+    "type": "international"
+  },
+  {
+    "iata": "CEB",
+    "icao": "RPVM",
+    "name": "Aeroporto Internacional Mactan-Cebu",
+    "city": "Cebu",
+    "country": "Filipinas",
+    "type": "international"
+  },
+  {
+    "iata": "BKK",
+    "icao": "VTBS",
+    "name": "Aeroporto Internacional Suvarnabhumi",
+    "city": "Banguecoque",
+    "country": "Tailândia",
+    "type": "international"
+  },
+  {
+    "iata": "DMK",
+    "icao": "VTBD",
+    "name": "Aeroporto Internacional Don Mueang",
+    "city": "Banguecoque",
+    "country": "Tailândia",
+    "type": "international"
+  },
+  {
+    "iata": "HKT",
+    "icao": "VTSP",
+    "name": "Aeroporto Internacional de Phuket",
+    "city": "Phuket",
+    "country": "Tailândia",
+    "type": "international"
+  },
+  {
+    "iata": "CNX",
+    "icao": "VTCC",
+    "name": "Aeroporto Internacional de Chiang Mai",
+    "city": "Chiang Mai",
+    "country": "Tailândia",
+    "type": "international"
+  },
+  {
+    "iata": "HAN",
+    "icao": "VVNB",
+    "name": "Aeroporto Internacional Noi Bai",
+    "city": "Hanói",
+    "country": "Vietnã",
+    "type": "international"
+  },
+  {
+    "iata": "SGN",
+    "icao": "VVTS",
+    "name": "Aeroporto Internacional Tan Son Nhat",
+    "city": "Ho Chi Minh",
+    "country": "Vietnã",
+    "type": "international"
+  },
+  {
+    "iata": "DAD",
+    "icao": "VVDN",
+    "name": "Aeroporto Internacional de Da Nang",
+    "city": "Da Nang",
+    "country": "Vietnã",
+    "type": "international"
+  },
+  {
+    "iata": "PNH",
+    "icao": "VDPP",
+    "name": "Aeroporto Internacional de Phnom Penh",
+    "city": "Phnom Penh",
+    "country": "Camboja",
+    "type": "international"
+  },
+  {
+    "iata": "REP",
+    "icao": "VDSR",
+    "name": "Aeroporto Internacional de Siem Reap",
+    "city": "Siem Reap",
+    "country": "Camboja",
+    "type": "international"
+  },
+  {
+    "iata": "VTE",
+    "icao": "VLVT",
+    "name": "Aeroporto Internacional Wattay",
+    "city": "Vientiane",
+    "country": "Laos",
+    "type": "international"
+  },
+  {
+    "iata": "RGN",
+    "icao": "VYYY",
+    "name": "Aeroporto Internacional de Yangon",
+    "city": "Yangon",
+    "country": "Myanmar",
+    "type": "international"
+  },
+  {
+    "iata": "DEL",
+    "icao": "VIDP",
+    "name": "Aeroporto Internacional Indira Gandhi",
+    "city": "Nova Délhi",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "BOM",
+    "icao": "VABB",
+    "name": "Aeroporto Internacional Chhatrapati Shivaji Maharaj",
+    "city": "Mumbai",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "BLR",
+    "icao": "VOBL",
+    "name": "Aeroporto Internacional de Bengaluru",
+    "city": "Bengaluru",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "MAA",
+    "icao": "VOMM",
+    "name": "Aeroporto Internacional de Chennai",
+    "city": "Chennai",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "CCU",
+    "icao": "VECC",
+    "name": "Aeroporto Internacional Netaji Subhas Chandra Bose",
+    "city": "Calcutá",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "HYD",
+    "icao": "VOHS",
+    "name": "Aeroporto Internacional Rajiv Gandhi",
+    "city": "Hyderabad",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "COK",
+    "icao": "VOCI",
+    "name": "Aeroporto Internacional Cochin",
+    "city": "Cochin",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "AMD",
+    "icao": "VAAH",
+    "name": "Aeroporto Internacional Sardar Vallabhbhai Patel",
+    "city": "Ahmedabad",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "GOI",
+    "icao": "VAGO",
+    "name": "Aeroporto Internacional de Goa",
+    "city": "Goa",
+    "country": "Índia",
+    "type": "international"
+  },
+  {
+    "iata": "KTM",
+    "icao": "VNKT",
+    "name": "Aeroporto Internacional Tribhuvan",
+    "city": "Catmandu",
+    "country": "Nepal",
+    "type": "international"
+  },
+  {
+    "iata": "DAC",
+    "icao": "VGHS",
+    "name": "Aeroporto Internacional Hazrat Shahjalal",
+    "city": "Dhaka",
+    "country": "Bangladesh",
+    "type": "international"
+  },
+  {
+    "iata": "KHI",
+    "icao": "OPKC",
+    "name": "Aeroporto Internacional Jinnah",
+    "city": "Carachi",
+    "country": "Paquistão",
+    "type": "international"
+  },
+  {
+    "iata": "LHE",
+    "icao": "OPLA",
+    "name": "Aeroporto Internacional Allama Iqbal",
+    "city": "Lahore",
+    "country": "Paquistão",
+    "type": "international"
+  },
+  {
+    "iata": "ISB",
+    "icao": "OPRN",
+    "name": "Aeroporto Internacional Islamabad",
+    "city": "Islamabade",
+    "country": "Paquistão",
+    "type": "international"
+  },
+  {
+    "iata": "KBL",
+    "icao": "OAKB",
+    "name": "Aeroporto Internacional de Cabul",
+    "city": "Cabul",
+    "country": "Afeganistão",
+    "type": "international"
+  },
+  {
+    "iata": "THR",
+    "icao": "OIII",
+    "name": "Aeroporto Internacional Imam Khomeini",
+    "city": "Teerã",
+    "country": "Irã",
+    "type": "international"
+  },
+  {
+    "iata": "IKA",
+    "icao": "OIIE",
+    "name": "Aeroporto Internacional Imam Khomeini",
+    "city": "Teerã",
+    "country": "Irã",
+    "type": "international"
+  },
+  {
+    "iata": "MHD",
+    "icao": "OIMM",
+    "name": "Aeroporto Internacional Shahid Hasheminejad",
+    "city": "Mashhad",
+    "country": "Irã",
+    "type": "international"
+  },
+  {
+    "iata": "BGW",
+    "icao": "ORBI",
+    "name": "Aeroporto Internacional de Bagdá",
+    "city": "Bagdá",
+    "country": "Iraque",
+    "type": "international"
+  },
+  {
+    "iata": "NJF",
+    "icao": "ORMN",
+    "name": "Aeroporto Internacional Al Najaf",
+    "city": "An-Nájaf",
+    "country": "Iraque",
+    "type": "international"
+  },
+  {
+    "iata": "OVB",
+    "icao": "UNNT",
+    "name": "Aeroporto Internacional Tolmachevo",
+    "city": "Novosibirsk",
+    "country": "Rússia",
+    "type": "international"
+  },
+  {
+    "iata": "ALA",
+    "icao": "UAAA",
+    "name": "Aeroporto Internacional de Almaty",
+    "city": "Almaty",
+    "country": "Cazaquistão",
+    "type": "international"
+  },
+  {
+    "iata": "NQZ",
+    "icao": "UACC",
+    "name": "Aeroporto Internacional Nursultão Nazarbayev",
+    "city": "Astana",
+    "country": "Cazaquistão",
+    "type": "international"
+  },
+  {
+    "iata": "TAS",
+    "icao": "UTTT",
+    "name": "Aeroporto Internacional Islam Karimov",
+    "city": "Tashkent",
+    "country": "Uzbequistão",
+    "type": "international"
+  },
+  {
+    "iata": "SYD",
+    "icao": "YSSY",
+    "name": "Aeroporto Internacional Kingsford Smith",
+    "city": "Sydney",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "MEL",
+    "icao": "YMML",
+    "name": "Aeroporto Internacional de Melbourne",
+    "city": "Melbourne",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "BNE",
+    "icao": "YBBN",
+    "name": "Aeroporto Internacional de Brisbane",
+    "city": "Brisbane",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "PER",
+    "icao": "YPPH",
+    "name": "Aeroporto Internacional de Perth",
+    "city": "Perth",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "ADL",
+    "icao": "YPAD",
+    "name": "Aeroporto Internacional de Adelaide",
+    "city": "Adelaide",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "CBR",
+    "icao": "YSCB",
+    "name": "Aeroporto Internacional de Canberra",
+    "city": "Canberra",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "DRW",
+    "icao": "YPDN",
+    "name": "Aeroporto Internacional de Darwin",
+    "city": "Darwin",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "CNS",
+    "icao": "YBCS",
+    "name": "Aeroporto Internacional de Cairns",
+    "city": "Cairns",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "OOL",
+    "icao": "YBCG",
+    "name": "Aeroporto Gold Coast",
+    "city": "Gold Coast",
+    "country": "Austrália",
+    "type": "international"
+  },
+  {
+    "iata": "AKL",
+    "icao": "NZAA",
+    "name": "Aeroporto Internacional de Auckland",
+    "city": "Auckland",
+    "country": "Nova Zelândia",
+    "type": "international"
+  },
+  {
+    "iata": "CHC",
+    "icao": "NZCH",
+    "name": "Aeroporto Internacional de Christchurch",
+    "city": "Christchurch",
+    "country": "Nova Zelândia",
+    "type": "international"
+  },
+  {
+    "iata": "WLG",
+    "icao": "NZWN",
+    "name": "Aeroporto Internacional de Wellington",
+    "city": "Wellington",
+    "country": "Nova Zelândia",
+    "type": "international"
+  },
+  {
+    "iata": "NAN",
+    "icao": "NFFN",
+    "name": "Aeroporto Internacional Nadi",
+    "city": "Nadi",
+    "country": "Fiji",
+    "type": "international"
+  },
+  {
+    "iata": "PPT",
+    "icao": "NTAA",
+    "name": "Aeroporto Internacional Faa'a",
+    "city": "Papeete",
+    "country": "Polinésia Francesa",
+    "type": "international"
+  },
+  {
+    "iata": "AGA",
+    "icao": "GMAD",
+    "name": "Aeroporto Internacional Al Massira",
+    "city": "Agadir",
+    "country": "Marrocos",
+    "type": "international"
+  },
+  {
+    "iata": "OUA",
+    "icao": "DFFD",
+    "name": "Aeroporto Internacional de Ouagadougou",
+    "city": "Ouagadougou",
+    "country": "Burkina Faso",
+    "type": "international"
+  },
+  {
+    "iata": "BKO",
+    "icao": "GABS",
+    "name": "Aeroporto Internacional Modibo Keïta Senou",
+    "city": "Bamaco",
+    "country": "Mali",
+    "type": "international"
+  },
+  {
+    "iata": "COO",
+    "icao": "DBBB",
+    "name": "Aeroporto Internacional Cadjehoun",
+    "city": "Cotonu",
+    "country": "Benim",
+    "type": "international"
+  },
+  {
+    "iata": "LFW",
+    "icao": "DXXX",
+    "name": "Aeroporto Internacional de Lomé",
+    "city": "Lomé",
+    "country": "Togo",
+    "type": "international"
+  },
+  {
+    "iata": "ROB",
+    "icao": "GLRB",
+    "name": "Aeroporto Internacional Roberts",
+    "city": "Monróvia",
+    "country": "Libéria",
+    "type": "international"
+  },
+  {
+    "iata": "FNA",
+    "icao": "GFLL",
+    "name": "Aeroporto Internacional Lungi",
+    "city": "Freetown",
+    "country": "Serra Leoa",
+    "type": "international"
+  },
+  {
+    "iata": "CKY",
+    "icao": "GUCY",
+    "name": "Aeroporto Internacional Ahmed Sékou Touré",
+    "city": "Conacri",
+    "country": "Guiné",
+    "type": "international"
+  },
+  {
+    "iata": "OXB",
+    "icao": "GGOV",
+    "name": "Aeroporto Internacional Osvaldo Vieira",
+    "city": "Bissau",
+    "country": "Guiné-Bissau",
+    "type": "international"
+  },
+  {
+    "iata": "NIM",
+    "icao": "DRRN",
+    "name": "Aeroporto Internacional Diori Hamani",
+    "city": "Niamey",
+    "country": "Níger",
+    "type": "international"
+  },
+  {
+    "iata": "NDJ",
+    "icao": "FTTJ",
+    "name": "Aeroporto Internacional Hassan Djamous",
+    "city": "N'Djamena",
+    "country": "Chade",
+    "type": "international"
+  },
+  {
+    "iata": "BZV",
+    "icao": "FCBB",
+    "name": "Aeroporto Internacional Maya-Maya",
+    "city": "Brazzaville",
+    "country": "Congo",
+    "type": "international"
+  },
+  {
+    "iata": "FIH",
+    "icao": "FZAA",
+    "name": "Aeroporto Internacional de Ndjili",
+    "city": "Kinshasa",
+    "country": "DR Congo",
+    "type": "international"
+  },
+  {
+    "iata": "LBV",
+    "icao": "FOOL",
+    "name": "Aeroporto Internacional Leon M'ba",
+    "city": "Libreville",
+    "country": "Gabão",
+    "type": "international"
+  },
+  {
+    "iata": "DLA",
+    "icao": "FKKD",
+    "name": "Aeroporto Internacional de Douala",
+    "city": "Douala",
+    "country": "Camarões",
+    "type": "international"
+  },
+  {
+    "iata": "SSG",
+    "icao": "FGSL",
+    "name": "Aeroporto Internacional de Malabo",
+    "city": "Malabo",
+    "country": "Guiné Equatorial",
+    "type": "international"
+  },
+  {
+    "iata": "BGF",
+    "icao": "FEFF",
+    "name": "Aeroporto Internacional M'poko",
+    "city": "Bangui",
+    "country": "Rep. Centro-Africana",
+    "type": "international"
+  },
+  {
+    "iata": "LON",
+    "icao": "",
+    "name": "Cidade de Londres (Multi-aeroporto)",
+    "city": "Londres",
+    "country": "Reino Unido",
+    "type": "international"
+  },
+  {
+    "iata": "NYC",
+    "icao": "",
+    "name": "Cidade de Nova York (Multi-aeroporto)",
+    "city": "Nova York",
+    "country": "Estados Unidos",
+    "type": "international"
+  },
+  {
+    "iata": "BJS",
+    "icao": "",
+    "name": "Cidade de Pequim (Multi-aeroporto)",
+    "city": "Pequim",
+    "country": "China",
+    "type": "international"
+  },
+  {
+    "iata": "TYO",
+    "icao": "",
+    "name": "Cidade de Tóquio (Multi-aeroporto)",
+    "city": "Tóquio",
+    "country": "Japão",
+    "type": "international"
+  },
+  {
+    "iata": "PAR",
+    "icao": "",
+    "name": "Cidade de Paris (Multi-aeroporto)",
+    "city": "Paris",
+    "country": "França",
+    "type": "international"
+  },
+  {
+    "iata": "MIL",
+    "icao": "",
+    "name": "Cidade de Milão (Multi-aeroporto)",
+    "city": "Milão",
+    "country": "Itália",
+    "type": "international"
+  },
+  {
+    "iata": "OSA",
+    "icao": "",
+    "name": "Cidade de Osaka (Multi-aeroporto)",
+    "city": "Osaka",
+    "country": "Japão",
+    "type": "international"
+  }
+]

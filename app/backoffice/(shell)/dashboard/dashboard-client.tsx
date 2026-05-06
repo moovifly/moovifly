@@ -44,6 +44,8 @@ type Financial = {
   contasReceberCount: number;
   contasPagarValor: number | null;
   contasPagarCount: number | null;
+  comissaoPendenteValor: number | null;
+  comissaoPendenteCount: number | null;
 };
 
 const initialStats: Stats = { totalClientes: 0, totalVendas: 0, faturamentoTotal: 0 };
@@ -52,6 +54,8 @@ const initialFinancial: Financial = {
   contasReceberCount: 0,
   contasPagarValor: null,
   contasPagarCount: null,
+  comissaoPendenteValor: null,
+  comissaoPendenteCount: null,
 };
 
 async function loadStats(profile: UserProfile): Promise<Stats> {
@@ -147,11 +151,26 @@ async function loadFinancial(profile: UserProfile): Promise<Financial> {
     countPagar = contasPagar?.length ?? 0;
   }
 
+  let comissaoPendenteValor: number | null = null;
+  let comissaoPendenteCount: number | null = null;
+  if (!["administrador", "gerente"].includes(profile.tipo)) {
+    const { data: comissoes } = await supabase
+      .from("comissoes")
+      .select("valor")
+      .eq("vendedor_id", profile.id)
+      .eq("status", "pendente");
+    comissaoPendenteValor =
+      comissoes?.reduce((sum: number, c: { valor?: number | string | null }) => sum + Number.parseFloat(String(c.valor ?? 0)), 0) ?? 0;
+    comissaoPendenteCount = comissoes?.length ?? 0;
+  }
+
   return {
     contasReceberValor: totalReceber,
     contasReceberCount: contasReceber?.length ?? 0,
     contasPagarValor: totalPagar,
     contasPagarCount: countPagar,
+    comissaoPendenteValor,
+    comissaoPendenteCount,
   };
 }
 
@@ -379,7 +398,7 @@ export function DashboardClient() {
           </Card>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <FinancialCard
             label="A Receber"
             value={loading ? null : formatCurrency(financial.contasReceberValor)}
@@ -394,6 +413,15 @@ export function DashboardClient() {
             href="/backoffice/financeiro/?tab=pagar"
             tone="negative"
           />
+          {profile && !["administrador", "gerente"].includes(profile.tipo) && (
+            <FinancialCard
+              label="Minhas Comissões"
+              value={loading ? null : financial.comissaoPendenteValor !== null ? formatCurrency(financial.comissaoPendenteValor) : "—"}
+              count={loading ? null : financial.comissaoPendenteCount !== null ? `${financial.comissaoPendenteCount} pendente${(financial.comissaoPendenteCount ?? 0) !== 1 ? "s" : ""}` : "—"}
+              href="/backoffice/financeiro/?tab=comissoes"
+              tone="commission"
+            />
+          )}
         </section>
       </div>
     </>
@@ -436,12 +464,14 @@ function StatCard({ label, value, icon: Icon, tone = "green", trend }: {
 }
 
 function FinancialCard({ label, value, count, href, tone }: {
-  label: string; value: string | null; count: string | null; href: string; tone: "positive" | "negative";
+  label: string; value: string | null; count: string | null; href: string; tone: "positive" | "negative" | "commission";
 }) {
-  const Icon = tone === "positive" ? ArrowUpRight : ArrowDownRight;
+  const Icon = tone === "positive" ? ArrowUpRight : tone === "negative" ? ArrowDownRight : Wallet;
   const toneClass = tone === "positive"
     ? "bg-[var(--success-bg)] text-[var(--success-text)]"
-    : "bg-[var(--danger-bg)] text-[var(--danger-text)]";
+    : tone === "negative"
+      ? "bg-[var(--danger-bg)] text-[var(--danger-text)]"
+      : "bg-[var(--purple-glow)] text-[var(--purple-700)]";
 
   return (
     <Card>

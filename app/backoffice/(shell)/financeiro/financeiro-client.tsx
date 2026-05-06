@@ -10,6 +10,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
@@ -17,7 +20,20 @@ import { formatCurrency, formatDate } from "@/lib/format";
 
 type ContaReceber = { id: string; descricao: string | null; valor: number | string; data_vencimento: string | null; status: string };
 type ContaPagar = { id: string; fornecedor: string | null; descricao: string | null; valor: number | string; data_vencimento: string | null; status: string };
-type Comissao = { id: string; venda_id: string | null; valor: number | string; percentual: number | string | null; status: string; usuarios?: { nome: string } | { nome: string }[] | null };
+type Comissao = {
+  id: string;
+  venda_id: string | null;
+  valor: number | string;
+  percentual: number | string | null;
+  status: string;
+  data_pagamento: string | null;
+  usuarios?: { nome: string } | { nome: string }[] | null;
+};
+
+function vendorName(c: Comissao): string {
+  const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
+  return usr?.nome ?? "—";
+}
 
 export function FinanceiroClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -27,6 +43,11 @@ export function FinanceiroClient() {
   const [pagar, setPagar] = useState<ContaPagar[]>([]);
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal de pagamento de comissão
+  const [payModal, setPayModal] = useState<{ id: string; nome: string; valor: number } | null>(null);
+  const [payDate, setPayDate] = useState("");
+  const [paying, setPaying] = useState(false);
 
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
 
@@ -68,11 +89,40 @@ export function FinanceiroClient() {
     load();
   }
 
-  async function marcarComissaoPaga(id: string) {
-    await supabase.from("comissoes").update({ status: "pago", data_pagamento: new Date().toISOString().slice(0, 10) }).eq("id", id);
-    toast.success("Comissão marcada como paga!");
-    load();
+  function abrirModalPagamentoComissao(c: Comissao) {
+    setPayDate(new Date().toISOString().slice(0, 10));
+    setPayModal({ id: c.id, nome: vendorName(c), valor: Number(c.valor) });
   }
+
+  async function confirmarPagamentoComissao() {
+    if (!payModal || !payDate) return;
+    setPaying(true);
+    try {
+      const { error } = await supabase
+        .from("comissoes")
+        .update({ status: "pago", data_pagamento: payDate })
+        .eq("id", payModal.id);
+      if (error) throw error;
+      toast.success("Comissão marcada como paga!");
+      setPayModal(null);
+      load();
+    } catch (err) {
+      toast.error("Erro ao registrar pagamento", { description: formatSupabaseError(err) });
+    } finally {
+      setPaying(false);
+    }
+  }
+
+  const comissoesPendentes = useMemo(() => comissoes.filter((c) => c.status === "pendente"), [comissoes]);
+  const comissoesPagas = useMemo(() => comissoes.filter((c) => c.status === "pago"), [comissoes]);
+
+  function statusBadge(status: string, map: Record<string, string>) {
+    return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${map[status] ?? "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>{status}</span>;
+  }
+
+  const receberBadge = { recebido: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
+  const pagarBadge = { pago: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
+  const comissaoBadge = { pago: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
 
   return (
     <>
@@ -82,9 +132,11 @@ export function FinanceiroClient() {
           <TabsList>
             <TabsTrigger value="receber">A Receber</TabsTrigger>
             {isManager && <TabsTrigger value="pagar">A Pagar</TabsTrigger>}
+            {isManager && <TabsTrigger value="pagas">Contas Pagas</TabsTrigger>}
             <TabsTrigger value="comissoes">Comissões</TabsTrigger>
           </TabsList>
 
+          {/* A RECEBER */}
           <TabsContent value="receber">
             <Card>
               <CardHeader><CardTitle>Contas a Receber</CardTitle></CardHeader>
@@ -110,11 +162,7 @@ export function FinanceiroClient() {
                           <TableCell>{c.descricao ?? "—"}</TableCell>
                           <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
                           <TableCell>{formatDate(c.data_vencimento)}</TableCell>
-                          <TableCell>
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.status === "recebido" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : c.status === "cancelado" ? "bg-[var(--danger-bg)] text-[var(--danger-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
-                              {c.status}
-                            </span>
-                          </TableCell>
+                          <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
                           <TableCell className="text-right">
                             {c.status === "pendente" && (
                               <Button size="sm" variant="outline" onClick={() => marcarRecebido(c.id)}>
@@ -131,46 +179,120 @@ export function FinanceiroClient() {
             </Card>
           </TabsContent>
 
+          {/* A PAGAR — contas_pagar + comissões pendentes */}
           {isManager && (
             <TabsContent value="pagar">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader><CardTitle>Contas a Pagar</CardTitle></CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                    ) : pagar.filter((c) => c.status === "pendente").length === 0 ? (
+                      <p className="py-4 text-center text-sm text-[var(--text-secondary)]">Nenhuma conta a pagar.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Fornecedor</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Vencimento</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pagar.filter((c) => c.status === "pendente").map((c) => (
+                            <TableRow key={c.id}>
+                              <TableCell>{c.fornecedor ?? "—"}</TableCell>
+                              <TableCell>{c.descricao ?? "—"}</TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                              <TableCell>{formatDate(c.data_vencimento)}</TableCell>
+                              <TableCell>{statusBadge(c.status, pagarBadge)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button size="sm" variant="outline" onClick={() => marcarPago(c.id)}>
+                                  <CheckCircle className="h-4 w-4" /> Pago
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle>Comissões Pendentes</CardTitle></CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                    ) : comissoesPendentes.length === 0 ? (
+                      <p className="py-4 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão pendente.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Vendedor</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>%</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {comissoesPendentes.map((c) => (
+                            <TableRow key={c.id}>
+                              <TableCell>{vendorName(c)}</TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                              <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
+                              <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
+                                  <CheckCircle className="h-4 w-4" /> Pagar
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* CONTAS PAGAS — comissões pagas */}
+          {isManager && (
+            <TabsContent value="pagas">
               <Card>
-                <CardHeader><CardTitle>Contas a Pagar</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Contas Pagas</CardTitle></CardHeader>
                 <CardContent>
                   {loading ? (
                     <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-                  ) : pagar.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma conta a pagar.</p>
+                  ) : comissoesPagas.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão paga ainda.</p>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Fornecedor</TableHead>
-                          <TableHead>Descrição</TableHead>
+                          <TableHead>Vendedor</TableHead>
                           <TableHead>Valor</TableHead>
-                          <TableHead>Vencimento</TableHead>
+                          <TableHead>%</TableHead>
+                          <TableHead>Data de Pagamento</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Ação</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pagar.map((c) => (
+                        {comissoesPagas.map((c) => (
                           <TableRow key={c.id}>
-                            <TableCell>{c.fornecedor ?? "—"}</TableCell>
-                            <TableCell>{c.descricao ?? "—"}</TableCell>
+                            <TableCell>{vendorName(c)}</TableCell>
                             <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                            <TableCell>{formatDate(c.data_vencimento)}</TableCell>
-                            <TableCell>
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.status === "pago" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : c.status === "cancelado" ? "bg-[var(--danger-bg)] text-[var(--danger-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
-                                {c.status}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {c.status === "pendente" && (
-                                <Button size="sm" variant="outline" onClick={() => marcarPago(c.id)}>
-                                  <CheckCircle className="h-4 w-4" /> Pago
-                                </Button>
-                              )}
-                            </TableCell>
+                            <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
+                            <TableCell>{formatDate(c.data_pagamento)}</TableCell>
+                            <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -181,6 +303,7 @@ export function FinanceiroClient() {
             </TabsContent>
           )}
 
+          {/* COMISSÕES — histórico completo */}
           <TabsContent value="comissoes">
             <Card>
               <CardHeader><CardTitle>Comissões</CardTitle></CardHeader>
@@ -197,34 +320,29 @@ export function FinanceiroClient() {
                         <TableHead>Valor</TableHead>
                         <TableHead>%</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Pago em</TableHead>
                         {isManager && <TableHead className="text-right">Ação</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {comissoes.map((c) => {
-                        const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
-                        return (
-                          <TableRow key={c.id}>
-                            <TableCell>{usr?.nome ?? "—"}</TableCell>
-                            <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                            <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
-                            <TableCell>
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.status === "pago" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : c.status === "cancelado" ? "bg-[var(--danger-bg)] text-[var(--danger-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
-                                {c.status}
-                              </span>
+                      {comissoes.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell>{vendorName(c)}</TableCell>
+                          <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                          <TableCell>{c.percentual ? `${c.percentual}%` : "—"}</TableCell>
+                          <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
+                          <TableCell>{c.data_pagamento ? formatDate(c.data_pagamento) : "—"}</TableCell>
+                          {isManager && (
+                            <TableCell className="text-right">
+                              {c.status === "pendente" && (
+                                <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
+                                  <CheckCircle className="h-4 w-4" /> Pagar
+                                </Button>
+                              )}
                             </TableCell>
-                            {isManager && (
-                              <TableCell className="text-right">
-                                {c.status === "pendente" && (
-                                  <Button size="sm" variant="outline" onClick={() => marcarComissaoPaga(c.id)}>
-                                    <CheckCircle className="h-4 w-4" /> Pagar
-                                  </Button>
-                                )}
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        );
-                      })}
+                          )}
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 )}
@@ -233,6 +351,35 @@ export function FinanceiroClient() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de pagamento de comissão */}
+      <Dialog open={!!payModal} onOpenChange={(open) => { if (!open) setPayModal(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Registrar Pagamento de Comissão</DialogTitle>
+          </DialogHeader>
+          {payModal && (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-[var(--text-secondary)]">
+                Vendedor: <span className="font-medium text-foreground">{payModal.nome}</span>
+              </p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Valor: <span className="font-semibold text-foreground">{formatCurrency(payModal.valor)}</span>
+              </p>
+              <div className="space-y-1.5">
+                <Label>Data de pagamento</Label>
+                <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} required />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPayModal(null)} disabled={paying}>Cancelar</Button>
+            <Button onClick={confirmarPagamentoComissao} disabled={paying || !payDate}>
+              {paying ? "Salvando..." : "Confirmar pagamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

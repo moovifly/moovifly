@@ -31,6 +31,7 @@ import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { loadAeroportos, loadCompanhias, searchAeroportos, searchCompanhias, type Aeroporto, type Companhia } from "@/lib/datasets";
 import { downloadOrcamentoPdf } from "@/lib/orcamento-pdf";
+import { getFormaPagamento } from "@/lib/financiamento";
 
 type Voo = {
   tipo: "ida" | "volta";
@@ -529,6 +530,16 @@ export function OrcamentosClient() {
     setForm((f) => ({ ...f, voos: f.voos.map((v, idx) => idx === i ? { ...v, ...patch } : v) }));
   }
 
+  function handleCompanhiaSelect(i: number, companhia: Companhia) {
+    setForm((f) => {
+      const voos = f.voos.map((v, idx) => idx === i ? { ...v, companhia: companhia.nome } : v);
+      const fp = getFormaPagamento(companhia.codigo);
+      const fpAtual = f.forma_pagamento.trim();
+      const devePreencher = fp && (!fpAtual || fpAtual === PAGAMENTO_PADRAO);
+      return { ...f, voos, ...(devePreencher ? { forma_pagamento: fp } : {}) };
+    });
+  }
+
   return (
     <>
       <Topbar
@@ -759,7 +770,7 @@ export function OrcamentosClient() {
                           </div>
                           <div><Label>Data</Label><Input type="date" value={v.data} onChange={(e) => updateVoo(i, { data: e.target.value })} /></div>
                           <div><Label>Companhia</Label>
-                            <Autocomplete value={v.companhia} onValueChange={(t) => updateVoo(i, { companhia: t })} onSelect={(opt) => updateVoo(i, { companhia: (opt.value as Companhia).nome })} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
+                            <Autocomplete value={v.companhia} onValueChange={(t) => updateVoo(i, { companhia: t })} onSelect={(opt) => handleCompanhiaSelect(i, opt.value as Companhia)} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
                           </div>
                           <div><Label>Saída</Label><Input type="time" value={v.horario_saida} onChange={(e) => updateVoo(i, { horario_saida: e.target.value })} /></div>
                           <div><Label>Chegada</Label><Input type="time" value={v.horario_chegada} onChange={(e) => updateVoo(i, { horario_chegada: e.target.value })} /></div>

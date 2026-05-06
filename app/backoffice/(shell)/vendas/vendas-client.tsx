@@ -24,6 +24,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
+import { getFormaPagamento } from "@/lib/financiamento";
 
 type Venda = {
   id: string;
@@ -65,13 +67,13 @@ type FormState = {
   tipo: string;
   origem: string;
   destino: string;
+  companhia: string;
   data_ida: string;
   data_volta: string;
   data_venda: string;
   valor_total: string;
   taxa_rav: string;
   taxa_du: string;
-  comissao_percentual: string;
   status: string;
   forma_pagamento: string;
   observacoes: string;
@@ -84,13 +86,13 @@ const emptyForm = (): FormState => ({
   tipo: "passagem",
   origem: "",
   destino: "",
+  companhia: "",
   data_ida: "",
   data_volta: "",
   data_venda: new Date().toISOString().slice(0, 10),
   valor_total: "",
   taxa_rav: "0",
   taxa_du: "0",
-  comissao_percentual: "0",
   status: "pendente",
   forma_pagamento: "",
   observacoes: "",
@@ -101,6 +103,7 @@ export function VendasClient() {
   const { profile } = useAuth();
   const [items, setItems] = useState<Venda[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [companhias, setCompanhias] = useState<Companhia[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -134,6 +137,10 @@ export function VendasClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
+  useEffect(() => {
+    loadCompanhias().then(setCompanhias);
+  }, []);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return items.filter((v) => {
@@ -155,13 +162,13 @@ export function VendasClient() {
       tipo: v.tipo ?? "passagem",
       origem: v.origem ?? "",
       destino: v.destino ?? "",
+      companhia: (v as unknown as { companhia?: string | null }).companhia ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
       data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
       valor_total: String(v.valor_total ?? ""),
       taxa_rav: String(v.taxa_rav ?? "0"),
       taxa_du: String(v.taxa_du ?? "0"),
-      comissao_percentual: String(v.comissao_percentual ?? "0"),
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       observacoes: v.observacoes ?? "",
@@ -186,13 +193,13 @@ export function VendasClient() {
         descricao,
         origem: form.origem || null,
         destino: form.destino || null,
+        companhia: form.companhia || null,
         data_ida: form.data_ida || null,
         data_volta: form.data_volta || null,
         data_venda: form.data_venda,
         valor_total: Number(form.valor_total),
         taxa_rav: Number(form.taxa_rav),
         taxa_du: Number(form.taxa_du),
-        comissao_percentual: Number(form.comissao_percentual),
         status: form.status,
         forma_pagamento: form.forma_pagamento || null,
         observacoes: form.observacoes || null,
@@ -230,6 +237,14 @@ export function VendasClient() {
 
   const f = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  function handleCompanhiaSelect(c: Companhia) {
+    setForm((prev) => {
+      const fp = getFormaPagamento(c.codigo);
+      const devePreencher = fp && !prev.forma_pagamento.trim();
+      return { ...prev, companhia: c.nome, ...(devePreencher ? { forma_pagamento: fp } : {}) };
+    });
+  }
 
   return (
     <>
@@ -338,6 +353,16 @@ export function VendasClient() {
                 <Label>Destino</Label>
                 <Input value={form.destino} onChange={f("destino")} placeholder="GIG - Rio de Janeiro" />
               </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Companhia aérea</Label>
+                <Autocomplete
+                  value={form.companhia}
+                  onValueChange={(t) => setForm((p) => ({ ...p, companhia: t }))}
+                  onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
+                  options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
+                  placeholder="LATAM, GOL, Azul..."
+                />
+              </div>
               <div className="space-y-1.5">
                 <Label>Data de ida</Label>
                 <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
@@ -357,10 +382,6 @@ export function VendasClient() {
               <div className="space-y-1.5">
                 <Label>Taxa DU (R$)</Label>
                 <Input type="number" step="0.01" min="0" value={form.taxa_du} onChange={f("taxa_du")} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Comissão (%)</Label>
-                <Input type="number" step="0.01" min="0" max="100" value={form.comissao_percentual} onChange={f("comissao_percentual")} />
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>

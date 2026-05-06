@@ -3,1794 +3,2232 @@
     "codigo": "GRU",
     "nome": "Aeroporto Internacional de Guarulhos",
     "cidade": "São Paulo",
-    "estado": "SP",
     "pais": "Brasil"
   },
   {
     "codigo": "CGH",
     "nome": "Aeroporto de Congonhas",
     "cidade": "São Paulo",
-    "estado": "SP",
     "pais": "Brasil"
   },
   {
     "codigo": "VCP",
     "nome": "Aeroporto Internacional de Viracopos",
     "cidade": "Campinas",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "SJK",
-    "nome": "Aeroporto de São José dos Campos",
-    "cidade": "São José dos Campos",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "RAO",
-    "nome": "Aeroporto Leite Lopes",
-    "cidade": "Ribeirão Preto",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "SOD",
-    "nome": "Aeroporto de Sorocaba",
-    "cidade": "Sorocaba",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "BAU",
-    "nome": "Aeroporto Comandante João Ribeiro de Barros",
-    "cidade": "Bauru",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PPB",
-    "nome": "Aeroporto Presidente Prudente",
-    "cidade": "Presidente Prudente",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "AQA",
-    "nome": "Aeroporto de Araraquara",
-    "cidade": "Araraquara",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JTC",
-    "nome": "Aeroporto de Bauru/Arealva",
-    "cidade": "Bauru",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MII",
-    "nome": "Aeroporto de Marília",
-    "cidade": "Marília",
-    "estado": "SP",
     "pais": "Brasil"
   },
   {
     "codigo": "GIG",
     "nome": "Aeroporto Internacional do Galeão",
     "cidade": "Rio de Janeiro",
-    "estado": "RJ",
     "pais": "Brasil"
   },
   {
     "codigo": "SDU",
     "nome": "Aeroporto Santos Dumont",
     "cidade": "Rio de Janeiro",
-    "estado": "RJ",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CFB",
-    "nome": "Aeroporto Internacional de Cabo Frio",
-    "cidade": "Cabo Frio",
-    "estado": "RJ",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MEA",
-    "nome": "Aeroporto de Macaé",
-    "cidade": "Macaé",
-    "estado": "RJ",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "QNS",
-    "nome": "Aeroporto de Angra dos Reis",
-    "cidade": "Angra dos Reis",
-    "estado": "RJ",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CNF",
-    "nome": "Aeroporto Internacional de Confins",
-    "cidade": "Belo Horizonte",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PLU",
-    "nome": "Aeroporto da Pampulha",
-    "cidade": "Belo Horizonte",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "UDI",
-    "nome": "Aeroporto de Uberlândia",
-    "cidade": "Uberlândia",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "IPN",
-    "nome": "Aeroporto Usiminas",
-    "cidade": "Ipatinga",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MOC",
-    "nome": "Aeroporto Mário Ribeiro",
-    "cidade": "Montes Claros",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JDF",
-    "nome": "Aeroporto da Zona da Mata",
-    "cidade": "Juiz de Fora",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "VAG",
-    "nome": "Aeroporto Major Brigadeiro Trompowsky",
-    "cidade": "Varginha",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "GVR",
-    "nome": "Aeroporto de Governador Valadares",
-    "cidade": "Governador Valadares",
-    "estado": "MG",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "POA",
-    "nome": "Aeroporto Salgado Filho",
-    "cidade": "Porto Alegre",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CXJ",
-    "nome": "Aeroporto Hugo Cantergiani",
-    "cidade": "Caxias do Sul",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PFB",
-    "nome": "Aeroporto Lauro Kurtz",
-    "cidade": "Passo Fundo",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "URG",
-    "nome": "Aeroporto Internacional de Uruguaiana",
-    "cidade": "Uruguaiana",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "BGA",
-    "nome": "Aeroporto Comandante Gustavo Kraemer",
-    "cidade": "Bagé",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PET",
-    "nome": "Aeroporto Internacional de Pelotas",
-    "cidade": "Pelotas",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "SMA",
-    "nome": "Aeroporto de Santa Maria",
-    "cidade": "Santa Maria",
-    "estado": "RS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CWB",
-    "nome": "Aeroporto Afonso Pena",
-    "cidade": "Curitiba",
-    "estado": "PR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "IGU",
-    "nome": "Aeroporto Internacional de Foz do Iguaçu",
-    "cidade": "Foz do Iguaçu",
-    "estado": "PR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "LDB",
-    "nome": "Aeroporto de Londrina",
-    "cidade": "Londrina",
-    "estado": "PR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MGF",
-    "nome": "Aeroporto Regional de Maringá",
-    "cidade": "Maringá",
-    "estado": "PR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CAC",
-    "nome": "Aeroporto de Cascavel",
-    "cidade": "Cascavel",
-    "estado": "PR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PGZ",
-    "nome": "Aeroporto de Ponta Grossa",
-    "cidade": "Ponta Grossa",
-    "estado": "PR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "FLN",
-    "nome": "Aeroporto Hercílio Luz",
-    "cidade": "Florianópolis",
-    "estado": "SC",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "NVT",
-    "nome": "Aeroporto de Navegantes",
-    "cidade": "Navegantes",
-    "estado": "SC",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JOI",
-    "nome": "Aeroporto de Joinville",
-    "cidade": "Joinville",
-    "estado": "SC",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CCM",
-    "nome": "Aeroporto de Criciúma",
-    "cidade": "Criciúma",
-    "estado": "SC",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "SSA",
-    "nome": "Aeroporto Internacional de Salvador",
-    "cidade": "Salvador",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "BPS",
-    "nome": "Aeroporto de Porto Seguro",
-    "cidade": "Porto Seguro",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "IOS",
-    "nome": "Aeroporto Jorge Amado",
-    "cidade": "Ilhéus",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "LEC",
-    "nome": "Aeroporto Coronel Horácio de Mattos",
-    "cidade": "Lençóis",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "VAL",
-    "nome": "Aeroporto de Valença",
-    "cidade": "Valença",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "FEC",
-    "nome": "Aeroporto João Durval Carneiro",
-    "cidade": "Feira de Santana",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "VDC",
-    "nome": "Aeroporto de Vitória da Conquista",
-    "cidade": "Vitória da Conquista",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "BRA",
-    "nome": "Aeroporto de Barreiras",
-    "cidade": "Barreiras",
-    "estado": "BA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "REC",
-    "nome": "Aeroporto Internacional do Recife",
-    "cidade": "Recife",
-    "estado": "PE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "FEN",
-    "nome": "Aeroporto de Fernando de Noronha",
-    "cidade": "Fernando de Noronha",
-    "estado": "PE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PNZ",
-    "nome": "Aeroporto de Petrolina",
-    "cidade": "Petrolina",
-    "estado": "PE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "FOR",
-    "nome": "Aeroporto Internacional de Fortaleza",
-    "cidade": "Fortaleza",
-    "estado": "CE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JDO",
-    "nome": "Aeroporto Regional de Jericoacoara",
-    "cidade": "Jericoacoara",
-    "estado": "CE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JJD",
-    "nome": "Aeroporto de Jijoca de Jericoacoara",
-    "cidade": "Cruz",
-    "estado": "CE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JUA",
-    "nome": "Aeroporto Regional do Cariri",
-    "cidade": "Juazeiro do Norte",
-    "estado": "CE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "NAT",
-    "nome": "Aeroporto Internacional de Natal",
-    "cidade": "Natal",
-    "estado": "RN",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MEU",
-    "nome": "Aeroporto de Mossoró",
-    "cidade": "Mossoró",
-    "estado": "RN",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MCZ",
-    "nome": "Aeroporto Internacional de Maceió",
-    "cidade": "Maceió",
-    "estado": "AL",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "AJU",
-    "nome": "Aeroporto de Aracaju",
-    "cidade": "Aracaju",
-    "estado": "SE",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "JPA",
-    "nome": "Aeroporto Internacional de João Pessoa",
-    "cidade": "João Pessoa",
-    "estado": "PB",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CPV",
-    "nome": "Aeroporto de Campina Grande",
-    "cidade": "Campina Grande",
-    "estado": "PB",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "SLZ",
-    "nome": "Aeroporto Internacional de São Luís",
-    "cidade": "São Luís",
-    "estado": "MA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "IMP",
-    "nome": "Aeroporto de Imperatriz",
-    "cidade": "Imperatriz",
-    "estado": "MA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "THE",
-    "nome": "Aeroporto de Teresina",
-    "cidade": "Teresina",
-    "estado": "PI",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PHB",
-    "nome": "Aeroporto de Parnaíba",
-    "cidade": "Parnaíba",
-    "estado": "PI",
     "pais": "Brasil"
   },
   {
     "codigo": "BSB",
     "nome": "Aeroporto Internacional de Brasília",
     "cidade": "Brasília",
-    "estado": "DF",
     "pais": "Brasil"
   },
   {
-    "codigo": "GYN",
-    "nome": "Aeroporto Santa Genoveva",
-    "cidade": "Goiânia",
-    "estado": "GO",
+    "codigo": "SSA",
+    "nome": "Aeroporto Internacional de Salvador",
+    "cidade": "Salvador",
     "pais": "Brasil"
   },
   {
-    "codigo": "CGB",
-    "nome": "Aeroporto Marechal Rondon",
-    "cidade": "Cuiabá",
-    "estado": "MT",
+    "codigo": "FOR",
+    "nome": "Aeroporto Internacional Pinto Martins",
+    "cidade": "Fortaleza",
     "pais": "Brasil"
   },
   {
-    "codigo": "CGR",
-    "nome": "Aeroporto Internacional de Campo Grande",
-    "cidade": "Campo Grande",
-    "estado": "MS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CMG",
-    "nome": "Aeroporto Internacional de Corumbá",
-    "cidade": "Corumbá",
-    "estado": "MS",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "BVB",
-    "nome": "Aeroporto Internacional de Boa Vista",
-    "cidade": "Boa Vista",
-    "estado": "RR",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "ROO",
-    "nome": "Aeroporto de Rondonópolis",
-    "cidade": "Rondonópolis",
-    "estado": "MT",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "SJP",
-    "nome": "Aeroporto de São José do Rio Preto",
-    "cidade": "São José do Rio Preto",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "ARS",
-    "nome": "Aeroporto de Araçatuba",
-    "cidade": "Araçatuba",
-    "estado": "SP",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MAO",
-    "nome": "Aeroporto Internacional de Manaus",
-    "cidade": "Manaus",
-    "estado": "AM",
+    "codigo": "REC",
+    "nome": "Aeroporto Internacional do Recife",
+    "cidade": "Recife",
     "pais": "Brasil"
   },
   {
     "codigo": "BEL",
     "nome": "Aeroporto Internacional de Belém",
     "cidade": "Belém",
-    "estado": "PA",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "MAO",
+    "nome": "Aeroporto Internacional de Manaus",
+    "cidade": "Manaus",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "POA",
+    "nome": "Aeroporto Internacional Salgado Filho",
+    "cidade": "Porto Alegre",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "CWB",
+    "nome": "Aeroporto Internacional Afonso Pena",
+    "cidade": "Curitiba",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "FLN",
+    "nome": "Aeroporto Internacional Hercílio Luz",
+    "cidade": "Florianópolis",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "MCZ",
+    "nome": "Aeroporto Internacional Zumbi dos Palmares",
+    "cidade": "Maceió",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "NAT",
+    "nome": "Aeroporto Internacional São Gonçalo do Amarante",
+    "cidade": "Natal",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "JPA",
+    "nome": "Aeroporto Internacional Presidente Castro Pinto",
+    "cidade": "João Pessoa",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "THE",
+    "nome": "Aeroporto Internacional de Teresina",
+    "cidade": "Teresina",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "SLZ",
+    "nome": "Aeroporto Internacional Marechal Cunha Machado",
+    "cidade": "São Luís",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "CGB",
+    "nome": "Aeroporto Internacional Marechal Rondon",
+    "cidade": "Cuiabá",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "CGR",
+    "nome": "Aeroporto Internacional de Campo Grande",
+    "cidade": "Campo Grande",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "VIX",
+    "nome": "Aeroporto Internacional de Vitória",
+    "cidade": "Vitória",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "BHZ",
+    "nome": "Aeroporto Internacional de Belo Horizonte",
+    "cidade": "Belo Horizonte",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "CNF",
+    "nome": "Aeroporto Internacional Tancredo Neves",
+    "cidade": "Confins",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "PLU",
+    "nome": "Aeroporto da Pampulha",
+    "cidade": "Belo Horizonte",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "GYN",
+    "nome": "Aeroporto Internacional de Goiânia",
+    "cidade": "Goiânia",
+    "pais": "Brasil"
+  },
+  {
+    "codigo": "PMW",
+    "nome": "Aeroporto Internacional de Palmas",
+    "cidade": "Palmas",
     "pais": "Brasil"
   },
   {
     "codigo": "PVH",
     "nome": "Aeroporto Internacional de Porto Velho",
     "cidade": "Porto Velho",
-    "estado": "RO",
     "pais": "Brasil"
   },
   {
     "codigo": "RBR",
     "nome": "Aeroporto Internacional de Rio Branco",
     "cidade": "Rio Branco",
-    "estado": "AC",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PBQ",
-    "nome": "Aeroporto Internacional de Parauapebas",
-    "cidade": "Parauapebas",
-    "estado": "PA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "STM",
-    "nome": "Aeroporto de Santarém",
-    "cidade": "Santarém",
-    "estado": "PA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "MAB",
-    "nome": "Aeroporto de Marabá",
-    "cidade": "Marabá",
-    "estado": "PA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "ALT",
-    "nome": "Aeroporto de Altamira",
-    "cidade": "Altamira",
-    "estado": "PA",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "CZS",
-    "nome": "Aeroporto de Cruzeiro do Sul",
-    "cidade": "Cruzeiro do Sul",
-    "estado": "AC",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "PMW",
-    "nome": "Aeroporto de Palmas",
-    "cidade": "Palmas",
-    "estado": "TO",
-    "pais": "Brasil"
-  },
-  {
-    "codigo": "AUX",
-    "nome": "Aeroporto de Araguaína",
-    "cidade": "Araguaína",
-    "estado": "TO",
     "pais": "Brasil"
   },
   {
     "codigo": "MCP",
     "nome": "Aeroporto Internacional de Macapá",
     "cidade": "Macapá",
-    "estado": "AP",
     "pais": "Brasil"
   },
   {
-    "codigo": "MCO",
-    "nome": "Orlando International Airport",
-    "cidade": "Orlando",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "BVB",
+    "nome": "Aeroporto Internacional de Boa Vista",
+    "cidade": "Boa Vista",
+    "pais": "Brasil"
   },
   {
-    "codigo": "MIA",
-    "nome": "Miami International Airport",
-    "cidade": "Miami",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "IOS",
+    "nome": "Aeroporto de Ilhéus",
+    "cidade": "Ilhéus",
+    "pais": "Brasil"
   },
   {
-    "codigo": "FLL",
-    "nome": "Fort Lauderdale-Hollywood International",
-    "cidade": "Fort Lauderdale",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "AJU",
+    "nome": "Aeroporto Internacional de Aracaju",
+    "cidade": "Aracaju",
+    "pais": "Brasil"
   },
   {
-    "codigo": "TPA",
-    "nome": "Tampa International Airport",
-    "cidade": "Tampa",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "IGU",
+    "nome": "Aeroporto Internacional de Foz do Iguaçu",
+    "cidade": "Foz do Iguaçu",
+    "pais": "Brasil"
   },
   {
-    "codigo": "RSW",
-    "nome": "Southwest Florida International Airport",
-    "cidade": "Fort Myers",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "JDO",
+    "nome": "Aeroporto Internacional de Juazeiro do Norte",
+    "cidade": "Juazeiro do Norte",
+    "pais": "Brasil"
   },
   {
-    "codigo": "PBI",
-    "nome": "Palm Beach International Airport",
-    "cidade": "West Palm Beach",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "IMP",
+    "nome": "Aeroporto de Imperatriz",
+    "cidade": "Imperatriz",
+    "pais": "Brasil"
   },
   {
-    "codigo": "JAX",
-    "nome": "Jacksonville International Airport",
-    "cidade": "Jacksonville",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "XIG",
+    "nome": "Aeroporto de Xinguara",
+    "cidade": "Xinguara",
+    "pais": "Brasil"
   },
   {
-    "codigo": "SRQ",
-    "nome": "Sarasota-Bradenton International",
-    "cidade": "Sarasota",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "PPB",
+    "nome": "Aeroporto Lauro Carneiro de Loyola (Joinville)",
+    "cidade": "Joinville",
+    "pais": "Brasil"
   },
   {
-    "codigo": "EYW",
-    "nome": "Key West International Airport",
-    "cidade": "Key West",
-    "estado": "FL",
-    "pais": "EUA"
+    "codigo": "LDB",
+    "nome": "Aeroporto Internacional de Londrina",
+    "cidade": "Londrina",
+    "pais": "Brasil"
   },
   {
-    "codigo": "JFK",
-    "nome": "John F. Kennedy International Airport",
-    "cidade": "Nova York",
-    "estado": "NY",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "EWR",
-    "nome": "Newark Liberty International Airport",
-    "cidade": "Newark",
-    "estado": "NJ",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "LGA",
-    "nome": "LaGuardia Airport",
-    "cidade": "Nova York",
-    "estado": "NY",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "BOS",
-    "nome": "Logan International Airport",
-    "cidade": "Boston",
-    "estado": "MA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "PHL",
-    "nome": "Philadelphia International Airport",
-    "cidade": "Filadélfia",
-    "estado": "PA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "BUF",
-    "nome": "Buffalo Niagara International",
-    "cidade": "Buffalo",
-    "estado": "NY",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "LAX",
-    "nome": "Los Angeles International Airport",
-    "cidade": "Los Angeles",
-    "estado": "CA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SFO",
-    "nome": "San Francisco International Airport",
-    "cidade": "São Francisco",
-    "estado": "CA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SAN",
-    "nome": "San Diego International Airport",
-    "cidade": "San Diego",
-    "estado": "CA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SNA",
-    "nome": "John Wayne Airport",
-    "cidade": "Orange County",
-    "estado": "CA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "OAK",
-    "nome": "Oakland International Airport",
-    "cidade": "Oakland",
-    "estado": "CA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SJC",
-    "nome": "Norman Y. Mineta San José International",
-    "cidade": "San José",
-    "estado": "CA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "LAS",
-    "nome": "Harry Reid International Airport",
-    "cidade": "Las Vegas",
-    "estado": "NV",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "PHX",
-    "nome": "Phoenix Sky Harbor International",
-    "cidade": "Phoenix",
-    "estado": "AZ",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "DFW",
-    "nome": "Dallas/Fort Worth International",
-    "cidade": "Dallas",
-    "estado": "TX",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "IAH",
-    "nome": "George Bush Intercontinental",
-    "cidade": "Houston",
-    "estado": "TX",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "HOU",
-    "nome": "William P. Hobby Airport",
-    "cidade": "Houston",
-    "estado": "TX",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "AUS",
-    "nome": "Austin-Bergstrom International",
-    "cidade": "Austin",
-    "estado": "TX",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SAT",
-    "nome": "San Antonio International Airport",
-    "cidade": "San Antonio",
-    "estado": "TX",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "ORD",
-    "nome": "O'Hare International Airport",
-    "cidade": "Chicago",
-    "estado": "IL",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "MDW",
-    "nome": "Chicago Midway International",
-    "cidade": "Chicago",
-    "estado": "IL",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "DTW",
-    "nome": "Detroit Metropolitan Wayne County",
-    "cidade": "Detroit",
-    "estado": "MI",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "MSP",
-    "nome": "Minneapolis-St. Paul International",
-    "cidade": "Minneapolis",
-    "estado": "MN",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "ATL",
-    "nome": "Hartsfield-Jackson Atlanta International",
-    "cidade": "Atlanta",
-    "estado": "GA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "CLT",
-    "nome": "Charlotte Douglas International",
-    "cidade": "Charlotte",
-    "estado": "NC",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "BNA",
-    "nome": "Nashville International Airport",
-    "cidade": "Nashville",
-    "estado": "TN",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "MSY",
-    "nome": "Louis Armstrong New Orleans International",
-    "cidade": "Nova Orleans",
-    "estado": "LA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SEA",
-    "nome": "Seattle-Tacoma International Airport",
-    "cidade": "Seattle",
-    "estado": "WA",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "PDX",
-    "nome": "Portland International Airport",
-    "cidade": "Portland",
-    "estado": "OR",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "SLC",
-    "nome": "Salt Lake City International Airport",
-    "cidade": "Salt Lake City",
-    "estado": "UT",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "DEN",
-    "nome": "Denver International Airport",
-    "cidade": "Denver",
-    "estado": "CO",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "HNL",
-    "nome": "Daniel K. Inouye International Airport",
-    "cidade": "Honolulu",
-    "estado": "HI",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "OGG",
-    "nome": "Kahului Airport",
-    "cidade": "Maui",
-    "estado": "HI",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "KOA",
-    "nome": "Ellison Onizuka Kona International",
-    "cidade": "Kona",
-    "estado": "HI",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "DCA",
-    "nome": "Ronald Reagan Washington National",
-    "cidade": "Washington",
-    "estado": "DC",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "IAD",
-    "nome": "Washington Dulles International",
-    "cidade": "Washington",
-    "estado": "DC",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "BWI",
-    "nome": "Baltimore/Washington International",
-    "cidade": "Baltimore",
-    "estado": "MD",
-    "pais": "EUA"
-  },
-  {
-    "codigo": "YYZ",
-    "nome": "Toronto Pearson International Airport",
-    "cidade": "Toronto",
-    "estado": "ON",
-    "pais": "Canadá"
-  },
-  {
-    "codigo": "YUL",
-    "nome": "Montréal-Pierre Elliott Trudeau International",
-    "cidade": "Montreal",
-    "estado": "QC",
-    "pais": "Canadá"
-  },
-  {
-    "codigo": "YVR",
-    "nome": "Vancouver International Airport",
-    "cidade": "Vancouver",
-    "estado": "BC",
-    "pais": "Canadá"
-  },
-  {
-    "codigo": "YYC",
-    "nome": "Calgary International Airport",
-    "cidade": "Calgary",
-    "estado": "AB",
-    "pais": "Canadá"
-  },
-  {
-    "codigo": "YOW",
-    "nome": "Ottawa Macdonald-Cartier International",
-    "cidade": "Ottawa",
-    "estado": "ON",
-    "pais": "Canadá"
-  },
-  {
-    "codigo": "LIS",
-    "nome": "Aeroporto Humberto Delgado",
-    "cidade": "Lisboa",
-    "pais": "Portugal"
-  },
-  {
-    "codigo": "OPO",
-    "nome": "Aeroporto Francisco Sá Carneiro",
-    "cidade": "Porto",
-    "pais": "Portugal"
-  },
-  {
-    "codigo": "FAO",
-    "nome": "Aeroporto de Faro",
-    "cidade": "Faro",
-    "pais": "Portugal"
-  },
-  {
-    "codigo": "FNC",
-    "nome": "Aeroporto da Madeira Cristiano Ronaldo",
-    "cidade": "Funchal",
-    "pais": "Portugal"
-  },
-  {
-    "codigo": "PDL",
-    "nome": "Aeroporto João Paulo II",
-    "cidade": "Ponta Delgada",
-    "pais": "Portugal"
-  },
-  {
-    "codigo": "MAD",
-    "nome": "Aeropuerto Adolfo Suárez Madrid-Barajas",
-    "cidade": "Madri",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "BCN",
-    "nome": "Aeropuerto de Barcelona-El Prat",
-    "cidade": "Barcelona",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "PMI",
-    "nome": "Aeropuerto de Palma de Mallorca",
-    "cidade": "Palma de Mallorca",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "AGP",
-    "nome": "Aeropuerto de Málaga-Costa del Sol",
-    "cidade": "Málaga",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "SVQ",
-    "nome": "Aeropuerto de Sevilla",
-    "cidade": "Sevilha",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "VLC",
-    "nome": "Aeropuerto de Valencia",
-    "cidade": "Valência",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "IBZ",
-    "nome": "Aeropuerto de Ibiza",
-    "cidade": "Ibiza",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "TFS",
-    "nome": "Aeropuerto de Tenerife Sur",
-    "cidade": "Tenerife",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "LPA",
-    "nome": "Aeropuerto de Gran Canaria",
-    "cidade": "Gran Canaria",
-    "pais": "Espanha"
-  },
-  {
-    "codigo": "CDG",
-    "nome": "Aéroport Paris-Charles de Gaulle",
-    "cidade": "Paris",
-    "pais": "França"
-  },
-  {
-    "codigo": "ORY",
-    "nome": "Aéroport Paris-Orly",
-    "cidade": "Paris",
-    "pais": "França"
-  },
-  {
-    "codigo": "NCE",
-    "nome": "Aéroport Nice-Côte d'Azur",
-    "cidade": "Nice",
-    "pais": "França"
-  },
-  {
-    "codigo": "LYS",
-    "nome": "Aéroport Lyon-Saint-Exupéry",
-    "cidade": "Lyon",
-    "pais": "França"
-  },
-  {
-    "codigo": "MRS",
-    "nome": "Aéroport Marseille Provence",
-    "cidade": "Marselha",
-    "pais": "França"
-  },
-  {
-    "codigo": "FCO",
-    "nome": "Aeroporto Leonardo da Vinci-Fiumicino",
-    "cidade": "Roma",
-    "pais": "Itália"
-  },
-  {
-    "codigo": "MXP",
-    "nome": "Aeroporto di Milano Malpensa",
-    "cidade": "Milão",
-    "pais": "Itália"
-  },
-  {
-    "codigo": "VCE",
-    "nome": "Aeroporto di Venezia Marco Polo",
-    "cidade": "Veneza",
-    "pais": "Itália"
-  },
-  {
-    "codigo": "NAP",
-    "nome": "Aeroporto di Napoli-Capodichino",
-    "cidade": "Nápoles",
-    "pais": "Itália"
-  },
-  {
-    "codigo": "FLR",
-    "nome": "Aeroporto di Firenze-Peretola",
-    "cidade": "Florença",
-    "pais": "Itália"
-  },
-  {
-    "codigo": "BLQ",
-    "nome": "Aeroporto di Bologna-Guglielmo Marconi",
-    "cidade": "Bolonha",
-    "pais": "Itália"
-  },
-  {
-    "codigo": "LHR",
-    "nome": "London Heathrow Airport",
-    "cidade": "Londres",
-    "pais": "Reino Unido"
-  },
-  {
-    "codigo": "LGW",
-    "nome": "London Gatwick Airport",
-    "cidade": "Londres",
-    "pais": "Reino Unido"
-  },
-  {
-    "codigo": "STN",
-    "nome": "London Stansted Airport",
-    "cidade": "Londres",
-    "pais": "Reino Unido"
-  },
-  {
-    "codigo": "MAN",
-    "nome": "Manchester Airport",
-    "cidade": "Manchester",
-    "pais": "Reino Unido"
-  },
-  {
-    "codigo": "EDI",
-    "nome": "Edinburgh Airport",
-    "cidade": "Edimburgo",
-    "pais": "Reino Unido"
-  },
-  {
-    "codigo": "FRA",
-    "nome": "Frankfurt Airport",
-    "cidade": "Frankfurt",
-    "pais": "Alemanha"
-  },
-  {
-    "codigo": "MUC",
-    "nome": "Munich Airport",
-    "cidade": "Munique",
-    "pais": "Alemanha"
-  },
-  {
-    "codigo": "BER",
-    "nome": "Berlin Brandenburg Airport",
-    "cidade": "Berlim",
-    "pais": "Alemanha"
-  },
-  {
-    "codigo": "DUS",
-    "nome": "Düsseldorf Airport",
-    "cidade": "Düsseldorf",
-    "pais": "Alemanha"
-  },
-  {
-    "codigo": "HAM",
-    "nome": "Hamburg Airport",
-    "cidade": "Hamburgo",
-    "pais": "Alemanha"
-  },
-  {
-    "codigo": "AMS",
-    "nome": "Amsterdam Airport Schiphol",
-    "cidade": "Amsterdã",
-    "pais": "Holanda"
-  },
-  {
-    "codigo": "BRU",
-    "nome": "Brussels Airport",
-    "cidade": "Bruxelas",
-    "pais": "Bélgica"
-  },
-  {
-    "codigo": "ZRH",
-    "nome": "Zurich Airport",
-    "cidade": "Zurique",
-    "pais": "Suíça"
-  },
-  {
-    "codigo": "GVA",
-    "nome": "Geneva Airport",
-    "cidade": "Genebra",
-    "pais": "Suíça"
-  },
-  {
-    "codigo": "VIE",
-    "nome": "Vienna International Airport",
-    "cidade": "Viena",
-    "pais": "Áustria"
-  },
-  {
-    "codigo": "CPH",
-    "nome": "Copenhagen Airport",
-    "cidade": "Copenhague",
-    "pais": "Dinamarca"
-  },
-  {
-    "codigo": "ARN",
-    "nome": "Stockholm Arlanda Airport",
-    "cidade": "Estocolmo",
-    "pais": "Suécia"
-  },
-  {
-    "codigo": "OSL",
-    "nome": "Oslo Airport",
-    "cidade": "Oslo",
-    "pais": "Noruega"
-  },
-  {
-    "codigo": "HEL",
-    "nome": "Helsinki-Vantaa Airport",
-    "cidade": "Helsinque",
-    "pais": "Finlândia"
-  },
-  {
-    "codigo": "KEF",
-    "nome": "Keflavík International Airport",
-    "cidade": "Reykjavik",
-    "pais": "Islândia"
-  },
-  {
-    "codigo": "PRG",
-    "nome": "Václav Havel Airport Prague",
-    "cidade": "Praga",
-    "pais": "República Tcheca"
-  },
-  {
-    "codigo": "BUD",
-    "nome": "Budapest Ferenc Liszt International",
-    "cidade": "Budapeste",
-    "pais": "Hungria"
-  },
-  {
-    "codigo": "WAW",
-    "nome": "Warsaw Chopin Airport",
-    "cidade": "Varsóvia",
-    "pais": "Polônia"
-  },
-  {
-    "codigo": "ATH",
-    "nome": "Athens International Airport",
-    "cidade": "Atenas",
-    "pais": "Grécia"
-  },
-  {
-    "codigo": "DBV",
-    "nome": "Dubrovnik Airport",
-    "cidade": "Dubrovnik",
-    "pais": "Croácia"
-  },
-  {
-    "codigo": "DUB",
-    "nome": "Dublin Airport",
-    "cidade": "Dublin",
-    "pais": "Irlanda"
-  },
-  {
-    "codigo": "LUX",
-    "nome": "Luxembourg Airport",
-    "cidade": "Luxemburgo",
-    "pais": "Luxemburgo"
+    "codigo": "MGA",
+    "nome": "Aeroporto Internacional Augusto C. Sandino",
+    "cidade": "Manágua",
+    "pais": "Nicarágua"
   },
   {
     "codigo": "EZE",
-    "nome": "Aeropuerto Internacional Ezeiza",
+    "nome": "Aeroporto Internacional Ministro Pistarini",
     "cidade": "Buenos Aires",
     "pais": "Argentina"
   },
   {
     "codigo": "AEP",
-    "nome": "Aeroparque Jorge Newbery",
+    "nome": "Aeroporto Jorge Newbery",
     "cidade": "Buenos Aires",
     "pais": "Argentina"
   },
   {
     "codigo": "COR",
-    "nome": "Aeropuerto Internacional Ingeniero Ambrosio Taravella",
+    "nome": "Aeroporto Internacional Ingeniero Ambrosio Taravella",
     "cidade": "Córdoba",
     "pais": "Argentina"
   },
   {
     "codigo": "MDZ",
-    "nome": "Aeropuerto Internacional Gobernador Francisco Gabrielli",
+    "nome": "Aeroporto Internacional El Plumerillo",
     "cidade": "Mendoza",
     "pais": "Argentina"
   },
   {
-    "codigo": "BRC",
-    "nome": "Aeropuerto Internacional San Carlos de Bariloche",
-    "cidade": "Bariloche",
-    "pais": "Argentina"
-  },
-  {
-    "codigo": "USH",
-    "nome": "Aeropuerto Internacional Malvinas Argentinas",
-    "cidade": "Ushuaia",
-    "pais": "Argentina"
-  },
-  {
-    "codigo": "IGR",
-    "nome": "Aeropuerto Internacional de Iguazú",
-    "cidade": "Puerto Iguazú",
-    "pais": "Argentina"
-  },
-  {
-    "codigo": "FTE",
-    "nome": "Aeropuerto Internacional El Calafate",
-    "cidade": "El Calafate",
-    "pais": "Argentina"
-  },
-  {
     "codigo": "SCL",
-    "nome": "Aeropuerto Internacional Arturo Merino Benítez",
+    "nome": "Aeroporto Internacional Comodoro Arturo Merino Benítez",
     "cidade": "Santiago",
     "pais": "Chile"
   },
   {
-    "codigo": "IPC",
-    "nome": "Aeropuerto Internacional Mataveri",
-    "cidade": "Ilha de Páscoa",
-    "pais": "Chile"
-  },
-  {
-    "codigo": "PUQ",
-    "nome": "Aeropuerto Internacional Presidente Carlos Ibáñez del Campo",
-    "cidade": "Punta Arenas",
-    "pais": "Chile"
-  },
-  {
-    "codigo": "LIM",
-    "nome": "Aeropuerto Internacional Jorge Chávez",
-    "cidade": "Lima",
-    "pais": "Peru"
-  },
-  {
-    "codigo": "CUZ",
-    "nome": "Aeropuerto Internacional Alejandro Velasco Astete",
-    "cidade": "Cusco",
-    "pais": "Peru"
-  },
-  {
     "codigo": "BOG",
-    "nome": "Aeropuerto Internacional El Dorado",
+    "nome": "Aeroporto Internacional El Dorado",
     "cidade": "Bogotá",
     "pais": "Colômbia"
   },
   {
     "codigo": "MDE",
-    "nome": "Aeropuerto Internacional José María Córdova",
+    "nome": "Aeroporto Internacional José María Córdova",
     "cidade": "Medellín",
     "pais": "Colômbia"
   },
   {
     "codigo": "CTG",
-    "nome": "Aeropuerto Internacional Rafael Núñez",
+    "nome": "Aeroporto Internacional Rafael Núñez",
     "cidade": "Cartagena",
     "pais": "Colômbia"
   },
   {
+    "codigo": "LIM",
+    "nome": "Aeroporto Internacional Jorge Chávez",
+    "cidade": "Lima",
+    "pais": "Peru"
+  },
+  {
+    "codigo": "CUZ",
+    "nome": "Aeroporto Internacional Tenente Alejandro Velasco Astete",
+    "cidade": "Cusco",
+    "pais": "Peru"
+  },
+  {
     "codigo": "UIO",
-    "nome": "Aeropuerto Internacional Mariscal Sucre",
+    "nome": "Aeroporto Internacional Mariscal Sucre",
     "cidade": "Quito",
     "pais": "Equador"
   },
   {
     "codigo": "GYE",
-    "nome": "Aeropuerto Internacional José Joaquín de Olmedo",
+    "nome": "Aeroporto Internacional José Joaquín de Olmedo",
     "cidade": "Guayaquil",
     "pais": "Equador"
   },
   {
-    "codigo": "GPS",
-    "nome": "Aeropuerto Ecológico Galápagos",
-    "cidade": "Galápagos",
-    "pais": "Equador"
-  },
-  {
-    "codigo": "MVD",
-    "nome": "Aeropuerto Internacional de Carrasco",
-    "cidade": "Montevidéu",
-    "pais": "Uruguai"
-  },
-  {
-    "codigo": "PDP",
-    "nome": "Aeropuerto Internacional de Punta del Este",
-    "cidade": "Punta del Este",
-    "pais": "Uruguai"
-  },
-  {
-    "codigo": "ASU",
-    "nome": "Aeropuerto Internacional Silvio Pettirossi",
-    "cidade": "Assunção",
-    "pais": "Paraguai"
-  },
-  {
     "codigo": "VVI",
-    "nome": "Aeropuerto Internacional Viru Viru",
-    "cidade": "Santa Cruz de la Sierra",
+    "nome": "Aeroporto Internacional Viru Viru",
+    "cidade": "Santa Cruz",
     "pais": "Bolívia"
   },
   {
     "codigo": "LPB",
-    "nome": "Aeropuerto Internacional El Alto",
+    "nome": "Aeroporto Internacional El Alto",
     "cidade": "La Paz",
     "pais": "Bolívia"
   },
   {
+    "codigo": "ASU",
+    "nome": "Aeroporto Internacional Silvio Pettirossi",
+    "cidade": "Assunção",
+    "pais": "Paraguai"
+  },
+  {
+    "codigo": "MVD",
+    "nome": "Aeroporto Internacional de Carrasco",
+    "cidade": "Montevidéu",
+    "pais": "Uruguai"
+  },
+  {
+    "codigo": "CCS",
+    "nome": "Aeroporto Internacional Simón Bolívar",
+    "cidade": "Caracas",
+    "pais": "Venezuela"
+  },
+  {
+    "codigo": "GEO",
+    "nome": "Aeroporto Internacional Cheddi Jagan",
+    "cidade": "Georgetown",
+    "pais": "Guiana"
+  },
+  {
+    "codigo": "PBM",
+    "nome": "Aeroporto Internacional Johan Adolf Pengel",
+    "cidade": "Paramaribo",
+    "pais": "Suriname"
+  },
+  {
+    "codigo": "CAY",
+    "nome": "Aeroporto Internacional Félix Eboué",
+    "cidade": "Caiena",
+    "pais": "Guiana Francesa"
+  },
+  {
+    "codigo": "JFK",
+    "nome": "Aeroporto Internacional John F. Kennedy",
+    "cidade": "Nova York",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "LAX",
+    "nome": "Aeroporto Internacional de Los Angeles",
+    "cidade": "Los Angeles",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "ORD",
+    "nome": "Aeroporto Internacional O'Hare",
+    "cidade": "Chicago",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "ATL",
+    "nome": "Aeroporto Internacional Hartsfield-Jackson",
+    "cidade": "Atlanta",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "DFW",
+    "nome": "Aeroporto Internacional Dallas/Fort Worth",
+    "cidade": "Dallas",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "DEN",
+    "nome": "Aeroporto Internacional de Denver",
+    "cidade": "Denver",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "SFO",
+    "nome": "Aeroporto Internacional de San Francisco",
+    "cidade": "São Francisco",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "MIA",
+    "nome": "Aeroporto Internacional de Miami",
+    "cidade": "Miami",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "SEA",
+    "nome": "Aeroporto Internacional Seattle-Tacoma",
+    "cidade": "Seattle",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "LAS",
+    "nome": "Aeroporto Internacional Harry Reid",
+    "cidade": "Las Vegas",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "MCO",
+    "nome": "Aeroporto Internacional de Orlando",
+    "cidade": "Orlando",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "EWR",
+    "nome": "Aeroporto Internacional Newark Liberty",
+    "cidade": "Newark",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "IAH",
+    "nome": "Aeroporto Internacional George Bush Intercontinental",
+    "cidade": "Houston",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "PHX",
+    "nome": "Aeroporto Internacional Sky Harbor",
+    "cidade": "Phoenix",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "BOS",
+    "nome": "Aeroporto Internacional Logan",
+    "cidade": "Boston",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "MSP",
+    "nome": "Aeroporto Internacional Minneapolis-Saint Paul",
+    "cidade": "Minneapolis",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "DTW",
+    "nome": "Aeroporto Internacional Metropolitano de Detroit",
+    "cidade": "Detroit",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "PHL",
+    "nome": "Aeroporto Internacional de Filadélfia",
+    "cidade": "Filadélfia",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "CLT",
+    "nome": "Aeroporto Internacional de Charlotte",
+    "cidade": "Charlotte",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "SLC",
+    "nome": "Aeroporto Internacional de Salt Lake City",
+    "cidade": "Salt Lake City",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "IAD",
+    "nome": "Aeroporto Internacional Washington Dulles",
+    "cidade": "Washington",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "DCA",
+    "nome": "Aeroporto Nacional Ronald Reagan",
+    "cidade": "Washington",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "BWI",
+    "nome": "Aeroporto Internacional Baltimore/Washington",
+    "cidade": "Baltimore",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "SAN",
+    "nome": "Aeroporto Internacional de San Diego",
+    "cidade": "San Diego",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "TPA",
+    "nome": "Aeroporto Internacional de Tampa",
+    "cidade": "Tampa",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "PDX",
+    "nome": "Aeroporto Internacional de Portland",
+    "cidade": "Portland",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "HNL",
+    "nome": "Aeroporto Internacional Daniel K. Inouye",
+    "cidade": "Honolulu",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "ANC",
+    "nome": "Aeroporto Internacional Ted Stevens",
+    "cidade": "Anchorage",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "MEM",
+    "nome": "Aeroporto Internacional de Memphis",
+    "cidade": "Memphis",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "MCI",
+    "nome": "Aeroporto Internacional de Kansas City",
+    "cidade": "Kansas City",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "STL",
+    "nome": "Aeroporto Internacional Lambert",
+    "cidade": "St. Louis",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "MSY",
+    "nome": "Aeroporto Internacional Louis Armstrong",
+    "cidade": "Nova Orleans",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "AUS",
+    "nome": "Aeroporto Internacional de Austin",
+    "cidade": "Austin",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "SNA",
+    "nome": "Aeroporto John Wayne",
+    "cidade": "Orange County",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "OAK",
+    "nome": "Aeroporto Internacional de Oakland",
+    "cidade": "Oakland",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "SMF",
+    "nome": "Aeroporto Internacional de Sacramento",
+    "cidade": "Sacramento",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "RDU",
+    "nome": "Aeroporto Internacional Raleigh-Durham",
+    "cidade": "Raleigh",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "BNA",
+    "nome": "Aeroporto Internacional de Nashville",
+    "cidade": "Nashville",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "IND",
+    "nome": "Aeroporto Internacional de Indianápolis",
+    "cidade": "Indianápolis",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "CMH",
+    "nome": "Aeroporto Internacional John Glenn Columbus",
+    "cidade": "Columbus",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "YYZ",
+    "nome": "Aeroporto Internacional Pearson",
+    "cidade": "Toronto",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YVR",
+    "nome": "Aeroporto Internacional de Vancouver",
+    "cidade": "Vancouver",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YUL",
+    "nome": "Aeroporto Internacional Pierre Elliott Trudeau",
+    "cidade": "Montreal",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YYC",
+    "nome": "Aeroporto Internacional de Calgary",
+    "cidade": "Calgary",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YEG",
+    "nome": "Aeroporto Internacional de Edmonton",
+    "cidade": "Edmonton",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YOW",
+    "nome": "Aeroporto Internacional Macdonald-Cartier",
+    "cidade": "Ottawa",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YHZ",
+    "nome": "Aeroporto Internacional Stanfield",
+    "cidade": "Halifax",
+    "pais": "Canadá"
+  },
+  {
+    "codigo": "YWG",
+    "nome": "Aeroporto Internacional de Winnipeg",
+    "cidade": "Winnipeg",
+    "pais": "Canadá"
+  },
+  {
     "codigo": "MEX",
-    "nome": "Aeropuerto Internacional de la Ciudad de México",
+    "nome": "Aeroporto Internacional Benito Juárez",
     "cidade": "Cidade do México",
     "pais": "México"
   },
   {
+    "codigo": "NLU",
+    "nome": "Aeroporto Internacional Felipe Ángeles",
+    "cidade": "Ciudad de México",
+    "pais": "México"
+  },
+  {
     "codigo": "CUN",
-    "nome": "Aeropuerto Internacional de Cancún",
+    "nome": "Aeroporto Internacional de Cancún",
     "cidade": "Cancún",
     "pais": "México"
   },
   {
     "codigo": "GDL",
-    "nome": "Aeropuerto Internacional de Guadalajara",
+    "nome": "Aeroporto Internacional Miguel Hidalgo y Costilla",
     "cidade": "Guadalajara",
     "pais": "México"
   },
   {
+    "codigo": "MTY",
+    "nome": "Aeroporto Internacional General Mariano Escobedo",
+    "cidade": "Monterrey",
+    "pais": "México"
+  },
+  {
+    "codigo": "TLC",
+    "nome": "Aeroporto Internacional Licenciado Adolfo López Mateos",
+    "cidade": "Toluca",
+    "pais": "México"
+  },
+  {
+    "codigo": "MID",
+    "nome": "Aeroporto Internacional Manuel Crescencio Rejón",
+    "cidade": "Mérida",
+    "pais": "México"
+  },
+  {
     "codigo": "PVR",
-    "nome": "Aeropuerto Internacional de Puerto Vallarta",
+    "nome": "Aeroporto Internacional Gustavo Díaz Ordaz",
     "cidade": "Puerto Vallarta",
     "pais": "México"
   },
   {
-    "codigo": "SJD",
-    "nome": "Aeropuerto Internacional de Los Cabos",
-    "cidade": "Los Cabos",
-    "pais": "México"
-  },
-  {
-    "codigo": "CZM",
-    "nome": "Aeropuerto Internacional de Cozumel",
-    "cidade": "Cozumel",
-    "pais": "México"
-  },
-  {
-    "codigo": "PTY",
-    "nome": "Aeropuerto Internacional de Tocumen",
-    "cidade": "Cidade do Panamá",
-    "pais": "Panamá"
-  },
-  {
     "codigo": "SJO",
-    "nome": "Aeropuerto Internacional Juan Santamaría",
+    "nome": "Aeroporto Internacional Juan Santamaría",
     "cidade": "San José",
     "pais": "Costa Rica"
   },
   {
-    "codigo": "LIR",
-    "nome": "Aeropuerto Internacional Daniel Oduber Quirós",
-    "cidade": "Liberia",
-    "pais": "Costa Rica"
+    "codigo": "GUA",
+    "nome": "Aeroporto Internacional La Aurora",
+    "cidade": "Cidade da Guatemala",
+    "pais": "Guatemala"
   },
   {
-    "codigo": "PUJ",
-    "nome": "Aeropuerto Internacional de Punta Cana",
-    "cidade": "Punta Cana",
-    "pais": "República Dominicana"
+    "codigo": "SAP",
+    "nome": "Aeroporto Internacional Ramón Villeda Morales",
+    "cidade": "San Pedro Sula",
+    "pais": "Honduras"
   },
   {
-    "codigo": "SDQ",
-    "nome": "Aeropuerto Internacional Las Américas",
-    "cidade": "Santo Domingo",
-    "pais": "República Dominicana"
+    "codigo": "SAL",
+    "nome": "Aeroporto Internacional de El Salvador",
+    "cidade": "San Salvador",
+    "pais": "El Salvador"
   },
   {
-    "codigo": "AUA",
-    "nome": "Queen Beatrix International Airport",
-    "cidade": "Oranjestad",
-    "pais": "Aruba"
-  },
-  {
-    "codigo": "CUR",
-    "nome": "Curaçao International Airport",
-    "cidade": "Willemstad",
-    "pais": "Curaçao"
-  },
-  {
-    "codigo": "SXM",
-    "nome": "Princess Juliana International Airport",
-    "cidade": "Philipsburg",
-    "pais": "Sint Maarten"
-  },
-  {
-    "codigo": "MBJ",
-    "nome": "Sangster International Airport",
-    "cidade": "Montego Bay",
-    "pais": "Jamaica"
+    "codigo": "PTY",
+    "nome": "Aeroporto Internacional de Tocumen",
+    "cidade": "Cidade do Panamá",
+    "pais": "Panamá"
   },
   {
     "codigo": "HAV",
-    "nome": "Aeropuerto Internacional José Martí",
+    "nome": "Aeroporto Internacional José Martí",
     "cidade": "Havana",
     "pais": "Cuba"
   },
   {
+    "codigo": "SDQ",
+    "nome": "Aeroporto Internacional Las Américas",
+    "cidade": "Santo Domingo",
+    "pais": "República Dominicana"
+  },
+  {
+    "codigo": "PUJ",
+    "nome": "Aeroporto Internacional de Punta Cana",
+    "cidade": "Punta Cana",
+    "pais": "República Dominicana"
+  },
+  {
     "codigo": "SJU",
-    "nome": "Luis Muñoz Marín International Airport",
+    "nome": "Aeroporto Internacional Luis Muñoz Marín",
     "cidade": "San Juan",
     "pais": "Porto Rico"
   },
   {
-    "codigo": "BGI",
-    "nome": "Grantley Adams International Airport",
-    "cidade": "Bridgetown",
-    "pais": "Barbados"
+    "codigo": "MBJ",
+    "nome": "Aeroporto Internacional Sangster",
+    "cidade": "Montego Bay",
+    "pais": "Jamaica"
   },
   {
     "codigo": "NAS",
-    "nome": "Lynden Pindling International Airport",
+    "nome": "Aeroporto Internacional Lynden Pindling",
     "cidade": "Nassau",
     "pais": "Bahamas"
   },
   {
+    "codigo": "BGI",
+    "nome": "Aeroporto Internacional Grantley Adams",
+    "cidade": "Bridgetown",
+    "pais": "Barbados"
+  },
+  {
+    "codigo": "LHR",
+    "nome": "Aeroporto Internacional de Heathrow",
+    "cidade": "Londres",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "LGW",
+    "nome": "Aeroporto de Gatwick",
+    "cidade": "Londres",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "STN",
+    "nome": "Aeroporto de Stansted",
+    "cidade": "Londres",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "LTN",
+    "nome": "Aeroporto de Luton",
+    "cidade": "Londres",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "LCY",
+    "nome": "Aeroporto de London City",
+    "cidade": "Londres",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "MAN",
+    "nome": "Aeroporto Internacional de Manchester",
+    "cidade": "Manchester",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "BHX",
+    "nome": "Aeroporto Internacional de Birmingham",
+    "cidade": "Birmingham",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "EDI",
+    "nome": "Aeroporto de Edimburgo",
+    "cidade": "Edimburgo",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "GLA",
+    "nome": "Aeroporto Internacional de Glasgow",
+    "cidade": "Glasgow",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "CDG",
+    "nome": "Aeroporto Internacional Charles de Gaulle",
+    "cidade": "Paris",
+    "pais": "França"
+  },
+  {
+    "codigo": "ORY",
+    "nome": "Aeroporto de Orly",
+    "cidade": "Paris",
+    "pais": "França"
+  },
+  {
+    "codigo": "NCE",
+    "nome": "Aeroporto Internacional Nice Côte d'Azur",
+    "cidade": "Nice",
+    "pais": "França"
+  },
+  {
+    "codigo": "LYS",
+    "nome": "Aeroporto Internacional de Lyon",
+    "cidade": "Lyon",
+    "pais": "França"
+  },
+  {
+    "codigo": "MRS",
+    "nome": "Aeroporto Internacional de Marselha",
+    "cidade": "Marselha",
+    "pais": "França"
+  },
+  {
+    "codigo": "TLS",
+    "nome": "Aeroporto Internacional de Toulouse",
+    "cidade": "Toulouse",
+    "pais": "França"
+  },
+  {
+    "codigo": "FRA",
+    "nome": "Aeroporto Internacional de Frankfurt",
+    "cidade": "Frankfurt",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "MUC",
+    "nome": "Aeroporto Internacional de Munique",
+    "cidade": "Munique",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "BER",
+    "nome": "Aeroporto Internacional Berlim Brandenburg",
+    "cidade": "Berlim",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "HAM",
+    "nome": "Aeroporto Internacional de Hamburgo",
+    "cidade": "Hamburgo",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "DUS",
+    "nome": "Aeroporto Internacional de Düsseldorf",
+    "cidade": "Düsseldorf",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "CGN",
+    "nome": "Aeroporto Internacional de Colônia/Bonn",
+    "cidade": "Colônia",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "STR",
+    "nome": "Aeroporto Internacional de Stuttgart",
+    "cidade": "Stuttgart",
+    "pais": "Alemanha"
+  },
+  {
+    "codigo": "AMS",
+    "nome": "Aeroporto Internacional de Schiphol",
+    "cidade": "Amsterdã",
+    "pais": "Países Baixos"
+  },
+  {
+    "codigo": "BRU",
+    "nome": "Aeroporto Internacional de Bruxelas",
+    "cidade": "Bruxelas",
+    "pais": "Bélgica"
+  },
+  {
+    "codigo": "FCO",
+    "nome": "Aeroporto Internacional Leonardo da Vinci",
+    "cidade": "Roma",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "MXP",
+    "nome": "Aeroporto Internacional de Milão-Malpensa",
+    "cidade": "Milão",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "LIN",
+    "nome": "Aeroporto de Milão Linate",
+    "cidade": "Milão",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "VCE",
+    "nome": "Aeroporto Internacional Marco Polo",
+    "cidade": "Veneza",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "NAP",
+    "nome": "Aeroporto Internacional de Nápoles",
+    "cidade": "Nápoles",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "BGY",
+    "nome": "Aeroporto Internacional de Bérgamo",
+    "cidade": "Bérgamo",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "MAD",
+    "nome": "Aeroporto Internacional Adolfo Suárez",
+    "cidade": "Madrid",
+    "pais": "Espanha"
+  },
+  {
+    "codigo": "BCN",
+    "nome": "Aeroporto Internacional de Barcelona",
+    "cidade": "Barcelona",
+    "pais": "Espanha"
+  },
+  {
+    "codigo": "PMI",
+    "nome": "Aeroporto Internacional de Palma de Maiorca",
+    "cidade": "Palma",
+    "pais": "Espanha"
+  },
+  {
+    "codigo": "AGP",
+    "nome": "Aeroporto Internacional de Málaga",
+    "cidade": "Málaga",
+    "pais": "Espanha"
+  },
+  {
+    "codigo": "ALC",
+    "nome": "Aeroporto Internacional de Alicante",
+    "cidade": "Alicante",
+    "pais": "Espanha"
+  },
+  {
+    "codigo": "VLC",
+    "nome": "Aeroporto Internacional de Valencia",
+    "cidade": "Valência",
+    "pais": "Espanha"
+  },
+  {
+    "codigo": "LIS",
+    "nome": "Aeroporto Internacional Humberto Delgado",
+    "cidade": "Lisboa",
+    "pais": "Portugal"
+  },
+  {
+    "codigo": "OPO",
+    "nome": "Aeroporto Internacional Francisco de Sá Carneiro",
+    "cidade": "Porto",
+    "pais": "Portugal"
+  },
+  {
+    "codigo": "FAO",
+    "nome": "Aeroporto Internacional de Faro",
+    "cidade": "Faro",
+    "pais": "Portugal"
+  },
+  {
+    "codigo": "FNC",
+    "nome": "Aeroporto Internacional da Madeira",
+    "cidade": "Funchal",
+    "pais": "Portugal"
+  },
+  {
+    "codigo": "PDL",
+    "nome": "Aeroporto Internacional João Paulo II",
+    "cidade": "Ponta Delgada",
+    "pais": "Portugal"
+  },
+  {
+    "codigo": "ZRH",
+    "nome": "Aeroporto Internacional de Zurique",
+    "cidade": "Zurique",
+    "pais": "Suíça"
+  },
+  {
+    "codigo": "GVA",
+    "nome": "Aeroporto Internacional de Genebra",
+    "cidade": "Genebra",
+    "pais": "Suíça"
+  },
+  {
+    "codigo": "VIE",
+    "nome": "Aeroporto Internacional de Viena",
+    "cidade": "Viena",
+    "pais": "Áustria"
+  },
+  {
+    "codigo": "PRG",
+    "nome": "Aeroporto Internacional Václav Havel",
+    "cidade": "Praga",
+    "pais": "República Tcheca"
+  },
+  {
+    "codigo": "WAW",
+    "nome": "Aeroporto Internacional Frederic Chopin",
+    "cidade": "Varsóvia",
+    "pais": "Polônia"
+  },
+  {
+    "codigo": "KRK",
+    "nome": "Aeroporto Internacional João Paulo II",
+    "cidade": "Cracóvia",
+    "pais": "Polônia"
+  },
+  {
+    "codigo": "BUD",
+    "nome": "Aeroporto Internacional Ferenc Liszt",
+    "cidade": "Budapeste",
+    "pais": "Hungria"
+  },
+  {
+    "codigo": "BEG",
+    "nome": "Aeroporto Internacional Nikola Tesla",
+    "cidade": "Belgrado",
+    "pais": "Sérvia"
+  },
+  {
+    "codigo": "OTP",
+    "nome": "Aeroporto Internacional Henri Coandă",
+    "cidade": "Bucareste",
+    "pais": "Romênia"
+  },
+  {
+    "codigo": "SOF",
+    "nome": "Aeroporto Internacional de Sófia",
+    "cidade": "Sófia",
+    "pais": "Bulgária"
+  },
+  {
+    "codigo": "SKG",
+    "nome": "Aeroporto Internacional Macedonia",
+    "cidade": "Thessaloníki",
+    "pais": "Grécia"
+  },
+  {
+    "codigo": "ATH",
+    "nome": "Aeroporto Internacional Eleftherios Venizelos",
+    "cidade": "Atenas",
+    "pais": "Grécia"
+  },
+  {
+    "codigo": "HER",
+    "nome": "Aeroporto Internacional Nikos Kazantzakis",
+    "cidade": "Heraklion",
+    "pais": "Grécia"
+  },
+  {
+    "codigo": "CPH",
+    "nome": "Aeroporto Internacional de Copenhagen",
+    "cidade": "Copenhague",
+    "pais": "Dinamarca"
+  },
+  {
+    "codigo": "ARN",
+    "nome": "Aeroporto Internacional de Estocolmo",
+    "cidade": "Estocolmo",
+    "pais": "Suécia"
+  },
+  {
+    "codigo": "GOT",
+    "nome": "Aeroporto Internacional de Gotemburgo",
+    "cidade": "Gotemburgo",
+    "pais": "Suécia"
+  },
+  {
+    "codigo": "OSL",
+    "nome": "Aeroporto Internacional de Oslo",
+    "cidade": "Oslo",
+    "pais": "Noruega"
+  },
+  {
+    "codigo": "HEL",
+    "nome": "Aeroporto Internacional de Helsinque",
+    "cidade": "Helsinque",
+    "pais": "Finlândia"
+  },
+  {
+    "codigo": "TLL",
+    "nome": "Aeroporto Internacional de Tallinn",
+    "cidade": "Tallinn",
+    "pais": "Estônia"
+  },
+  {
+    "codigo": "RIX",
+    "nome": "Aeroporto Internacional de Riga",
+    "cidade": "Riga",
+    "pais": "Letônia"
+  },
+  {
+    "codigo": "VNO",
+    "nome": "Aeroporto Internacional de Vilnius",
+    "cidade": "Vilnius",
+    "pais": "Lituânia"
+  },
+  {
+    "codigo": "LJU",
+    "nome": "Aeroporto Internacional Jože Pučnik",
+    "cidade": "Liubliana",
+    "pais": "Eslovênia"
+  },
+  {
+    "codigo": "ZAG",
+    "nome": "Aeroporto Internacional de Zagreb",
+    "cidade": "Zagreb",
+    "pais": "Croácia"
+  },
+  {
+    "codigo": "DBV",
+    "nome": "Aeroporto Internacional de Dubrovnik",
+    "cidade": "Dubrovnik",
+    "pais": "Croácia"
+  },
+  {
+    "codigo": "SPU",
+    "nome": "Aeroporto Internacional de Split",
+    "cidade": "Split",
+    "pais": "Croácia"
+  },
+  {
+    "codigo": "TIA",
+    "nome": "Aeroporto Internacional Nënë Tereza",
+    "cidade": "Tirana",
+    "pais": "Albânia"
+  },
+  {
+    "codigo": "SKP",
+    "nome": "Aeroporto Internacional de Skopje",
+    "cidade": "Skopje",
+    "pais": "Macedônia do Norte"
+  },
+  {
+    "codigo": "SVO",
+    "nome": "Aeroporto Internacional Sheremetyevo",
+    "cidade": "Moscou",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "DME",
+    "nome": "Aeroporto Internacional Domodedovo",
+    "cidade": "Moscou",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "VKO",
+    "nome": "Aeroporto Internacional Vnukovo",
+    "cidade": "Moscou",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "LED",
+    "nome": "Aeroporto Internacional Pulkovo",
+    "cidade": "São Petersburgo",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "SVX",
+    "nome": "Aeroporto Internacional Koltsovo",
+    "cidade": "Ecaterimburgo",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "KJA",
+    "nome": "Aeroporto Internacional de Krasnoyarsk",
+    "cidade": "Krasnoyarsk",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "IKT",
+    "nome": "Aeroporto Internacional de Irkutsk",
+    "cidade": "Irkutsk",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "VVO",
+    "nome": "Aeroporto Internacional de Vladivostok",
+    "cidade": "Vladivostok",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "KBP",
+    "nome": "Aeroporto Internacional Boryspil",
+    "cidade": "Kiev",
+    "pais": "Ucrânia"
+  },
+  {
+    "codigo": "IEV",
+    "nome": "Aeroporto Internacional Igor Sikorsky",
+    "cidade": "Kiev",
+    "pais": "Ucrânia"
+  },
+  {
+    "codigo": "IST",
+    "nome": "Aeroporto Internacional de Istambul",
+    "cidade": "Istambul",
+    "pais": "Turquia"
+  },
+  {
+    "codigo": "SAW",
+    "nome": "Aeroporto de Sabiha Gökçen",
+    "cidade": "Istambul",
+    "pais": "Turquia"
+  },
+  {
+    "codigo": "ESB",
+    "nome": "Aeroporto Internacional Esenboğa",
+    "cidade": "Ancara",
+    "pais": "Turquia"
+  },
+  {
+    "codigo": "AYT",
+    "nome": "Aeroporto Internacional de Antalya",
+    "cidade": "Antalya",
+    "pais": "Turquia"
+  },
+  {
+    "codigo": "ADB",
+    "nome": "Aeroporto Internacional Adnan Menderes",
+    "cidade": "Izmir",
+    "pais": "Turquia"
+  },
+  {
     "codigo": "DXB",
-    "nome": "Dubai International Airport",
+    "nome": "Aeroporto Internacional de Dubai",
     "cidade": "Dubai",
     "pais": "Emirados Árabes Unidos"
   },
   {
     "codigo": "AUH",
-    "nome": "Abu Dhabi International Airport",
+    "nome": "Aeroporto Internacional de Abu Dhabi",
     "cidade": "Abu Dhabi",
     "pais": "Emirados Árabes Unidos"
   },
   {
+    "codigo": "SHJ",
+    "nome": "Aeroporto Internacional de Sharjah",
+    "cidade": "Sharjah",
+    "pais": "Emirados Árabes Unidos"
+  },
+  {
     "codigo": "DOH",
-    "nome": "Hamad International Airport",
+    "nome": "Aeroporto Internacional Hamad",
     "cidade": "Doha",
     "pais": "Catar"
   },
   {
+    "codigo": "BAH",
+    "nome": "Aeroporto Internacional de Barein",
+    "cidade": "Manama",
+    "pais": "Barein"
+  },
+  {
+    "codigo": "KWI",
+    "nome": "Aeroporto Internacional do Kuwait",
+    "cidade": "Kuwait",
+    "pais": "Kuwait"
+  },
+  {
+    "codigo": "MCT",
+    "nome": "Aeroporto Internacional de Mascate",
+    "cidade": "Mascate",
+    "pais": "Omã"
+  },
+  {
+    "codigo": "RUH",
+    "nome": "Aeroporto Internacional Rei Khalid",
+    "cidade": "Riade",
+    "pais": "Arábia Saudita"
+  },
+  {
+    "codigo": "JED",
+    "nome": "Aeroporto Internacional Rei Abdulaziz",
+    "cidade": "Jidá",
+    "pais": "Arábia Saudita"
+  },
+  {
+    "codigo": "DMM",
+    "nome": "Aeroporto Internacional Rei Fahd",
+    "cidade": "Dammam",
+    "pais": "Arábia Saudita"
+  },
+  {
+    "codigo": "MED",
+    "nome": "Aeroporto Internacional Príncipe Mohammad bin Abdulaziz",
+    "cidade": "Medina",
+    "pais": "Arábia Saudita"
+  },
+  {
+    "codigo": "AMM",
+    "nome": "Aeroporto Internacional Rainha Alia",
+    "cidade": "Amã",
+    "pais": "Jordânia"
+  },
+  {
+    "codigo": "BEY",
+    "nome": "Aeroporto Internacional de Beirute",
+    "cidade": "Beirute",
+    "pais": "Líbano"
+  },
+  {
     "codigo": "TLV",
-    "nome": "Ben Gurion Airport",
+    "nome": "Aeroporto Internacional Ben Gurion",
     "cidade": "Tel Aviv",
     "pais": "Israel"
   },
   {
     "codigo": "CAI",
-    "nome": "Cairo International Airport",
+    "nome": "Aeroporto Internacional do Cairo",
     "cidade": "Cairo",
     "pais": "Egito"
   },
   {
-    "codigo": "IST",
-    "nome": "Istanbul Airport",
-    "cidade": "Istambul",
-    "pais": "Turquia"
+    "codigo": "HRG",
+    "nome": "Aeroporto Internacional de Hurghada",
+    "cidade": "Hurghada",
+    "pais": "Egito"
   },
   {
-    "codigo": "PEK",
-    "nome": "Beijing Capital International Airport",
-    "cidade": "Pequim",
-    "pais": "China"
+    "codigo": "SSH",
+    "nome": "Aeroporto Internacional de Sharm el-Sheikh",
+    "cidade": "Sharm el-Sheikh",
+    "pais": "Egito"
   },
   {
-    "codigo": "PVG",
-    "nome": "Shanghai Pudong International Airport",
-    "cidade": "Xangai",
-    "pais": "China"
-  },
-  {
-    "codigo": "HKG",
-    "nome": "Hong Kong International Airport",
-    "cidade": "Hong Kong",
-    "pais": "China"
-  },
-  {
-    "codigo": "CAN",
-    "nome": "Guangzhou Baiyun International Airport",
-    "cidade": "Guangzhou",
-    "pais": "China"
-  },
-  {
-    "codigo": "NRT",
-    "nome": "Narita International Airport",
-    "cidade": "Tóquio",
-    "pais": "Japão"
-  },
-  {
-    "codigo": "HND",
-    "nome": "Tokyo Haneda Airport",
-    "cidade": "Tóquio",
-    "pais": "Japão"
-  },
-  {
-    "codigo": "KIX",
-    "nome": "Kansai International Airport",
-    "cidade": "Osaka",
-    "pais": "Japão"
-  },
-  {
-    "codigo": "SIN",
-    "nome": "Singapore Changi Airport",
-    "cidade": "Singapura",
-    "pais": "Singapura"
-  },
-  {
-    "codigo": "BKK",
-    "nome": "Suvarnabhumi Airport",
-    "cidade": "Bangkok",
-    "pais": "Tailândia"
-  },
-  {
-    "codigo": "HKT",
-    "nome": "Phuket International Airport",
-    "cidade": "Phuket",
-    "pais": "Tailândia"
-  },
-  {
-    "codigo": "KUL",
-    "nome": "Kuala Lumpur International Airport",
-    "cidade": "Kuala Lumpur",
-    "pais": "Malásia"
-  },
-  {
-    "codigo": "CGK",
-    "nome": "Soekarno-Hatta International Airport",
-    "cidade": "Jacarta",
-    "pais": "Indonésia"
-  },
-  {
-    "codigo": "DPS",
-    "nome": "Ngurah Rai International Airport",
-    "cidade": "Bali",
-    "pais": "Indonésia"
-  },
-  {
-    "codigo": "MNL",
-    "nome": "Ninoy Aquino International Airport",
-    "cidade": "Manila",
-    "pais": "Filipinas"
-  },
-  {
-    "codigo": "HAN",
-    "nome": "Noi Bai International Airport",
-    "cidade": "Hanói",
-    "pais": "Vietnã"
-  },
-  {
-    "codigo": "SGN",
-    "nome": "Tan Son Nhat International Airport",
-    "cidade": "Ho Chi Minh",
-    "pais": "Vietnã"
-  },
-  {
-    "codigo": "REP",
-    "nome": "Siem Reap International Airport",
-    "cidade": "Siem Reap",
-    "pais": "Camboja"
-  },
-  {
-    "codigo": "ICN",
-    "nome": "Incheon International Airport",
-    "cidade": "Seul",
-    "pais": "Coreia do Sul"
-  },
-  {
-    "codigo": "TPE",
-    "nome": "Taiwan Taoyuan International Airport",
-    "cidade": "Taipei",
-    "pais": "Taiwan"
-  },
-  {
-    "codigo": "DEL",
-    "nome": "Indira Gandhi International Airport",
-    "cidade": "Nova Delhi",
-    "pais": "Índia"
-  },
-  {
-    "codigo": "BOM",
-    "nome": "Chhatrapati Shivaji Maharaj International",
-    "cidade": "Mumbai",
-    "pais": "Índia"
-  },
-  {
-    "codigo": "BLR",
-    "nome": "Kempegowda International Airport",
-    "cidade": "Bangalore",
-    "pais": "Índia"
-  },
-  {
-    "codigo": "SYD",
-    "nome": "Sydney Kingsford Smith Airport",
-    "cidade": "Sydney",
-    "pais": "Austrália"
-  },
-  {
-    "codigo": "MEL",
-    "nome": "Melbourne Airport",
-    "cidade": "Melbourne",
-    "pais": "Austrália"
-  },
-  {
-    "codigo": "BNE",
-    "nome": "Brisbane Airport",
-    "cidade": "Brisbane",
-    "pais": "Austrália"
-  },
-  {
-    "codigo": "PER",
-    "nome": "Perth Airport",
-    "cidade": "Perth",
-    "pais": "Austrália"
-  },
-  {
-    "codigo": "AKL",
-    "nome": "Auckland Airport",
-    "cidade": "Auckland",
-    "pais": "Nova Zelândia"
-  },
-  {
-    "codigo": "CHC",
-    "nome": "Christchurch International Airport",
-    "cidade": "Christchurch",
-    "pais": "Nova Zelândia"
-  },
-  {
-    "codigo": "NAN",
-    "nome": "Nadi International Airport",
-    "cidade": "Nadi",
-    "pais": "Fiji"
-  },
-  {
-    "codigo": "PPT",
-    "nome": "Faa'a International Airport",
-    "cidade": "Papeete",
-    "pais": "Polinésia Francesa"
-  },
-  {
-    "codigo": "JNB",
-    "nome": "O.R. Tambo International Airport",
-    "cidade": "Joanesburgo",
-    "pais": "África do Sul"
-  },
-  {
-    "codigo": "CPT",
-    "nome": "Cape Town International Airport",
-    "cidade": "Cidade do Cabo",
-    "pais": "África do Sul"
+    "codigo": "LXR",
+    "nome": "Aeroporto Internacional de Luxor",
+    "cidade": "Luxor",
+    "pais": "Egito"
   },
   {
     "codigo": "CMN",
-    "nome": "Mohammed V International Airport",
+    "nome": "Aeroporto Internacional Mohammed V",
     "cidade": "Casablanca",
     "pais": "Marrocos"
   },
   {
     "codigo": "RAK",
-    "nome": "Marrakech Menara Airport",
+    "nome": "Aeroporto Internacional Marrakech Menara",
     "cidade": "Marrakech",
     "pais": "Marrocos"
   },
   {
+    "codigo": "FEZ",
+    "nome": "Aeroporto Internacional de Fez",
+    "cidade": "Fez",
+    "pais": "Marrocos"
+  },
+  {
+    "codigo": "TUN",
+    "nome": "Aeroporto Internacional Tunis-Carthage",
+    "cidade": "Túnis",
+    "pais": "Tunísia"
+  },
+  {
+    "codigo": "ALG",
+    "nome": "Aeroporto Internacional Houari Boumediene",
+    "cidade": "Argel",
+    "pais": "Argélia"
+  },
+  {
+    "codigo": "TIP",
+    "nome": "Aeroporto Internacional de Trípoli",
+    "cidade": "Trípoli",
+    "pais": "Líbia"
+  },
+  {
+    "codigo": "KRT",
+    "nome": "Aeroporto Internacional de Cartum",
+    "cidade": "Cartum",
+    "pais": "Sudão"
+  },
+  {
     "codigo": "ADD",
-    "nome": "Addis Ababa Bole International",
-    "cidade": "Addis Ababa",
+    "nome": "Aeroporto Internacional Bole",
+    "cidade": "Adis Abeba",
     "pais": "Etiópia"
   },
   {
-    "codigo": "NBO",
-    "nome": "Jomo Kenyatta International Airport",
-    "cidade": "Nairobi",
+    "codigo": "NBI",
+    "nome": "Aeroporto Internacional Nairobi (Wilson)",
+    "cidade": "Nairóbi",
     "pais": "Quênia"
   },
   {
+    "codigo": "NBO",
+    "nome": "Aeroporto Internacional Jomo Kenyatta",
+    "cidade": "Nairóbi",
+    "pais": "Quênia"
+  },
+  {
+    "codigo": "MBA",
+    "nome": "Aeroporto Internacional Mombasa",
+    "cidade": "Mombaça",
+    "pais": "Quênia"
+  },
+  {
+    "codigo": "DAR",
+    "nome": "Aeroporto Internacional Julius Nyerere",
+    "cidade": "Dar es Salaam",
+    "pais": "Tanzânia"
+  },
+  {
+    "codigo": "JRO",
+    "nome": "Aeroporto Internacional Kilimanjaro",
+    "cidade": "Arusha",
+    "pais": "Tanzânia"
+  },
+  {
+    "codigo": "EBB",
+    "nome": "Aeroporto Internacional Entebbe",
+    "cidade": "Entebbe",
+    "pais": "Uganda"
+  },
+  {
+    "codigo": "KGL",
+    "nome": "Aeroporto Internacional de Kigali",
+    "cidade": "Kigali",
+    "pais": "Ruanda"
+  },
+  {
     "codigo": "LOS",
-    "nome": "Murtala Muhammed International Airport",
+    "nome": "Aeroporto Internacional Murtala Muhammed",
     "cidade": "Lagos",
     "pais": "Nigéria"
+  },
+  {
+    "codigo": "ABV",
+    "nome": "Aeroporto Internacional Nnamdi Azikiwe",
+    "cidade": "Abuja",
+    "pais": "Nigéria"
+  },
+  {
+    "codigo": "ACC",
+    "nome": "Aeroporto Internacional de Kotoka",
+    "cidade": "Acra",
+    "pais": "Gana"
+  },
+  {
+    "codigo": "ABJ",
+    "nome": "Aeroporto Internacional Félix-Houphouët-Boigny",
+    "cidade": "Abidjan",
+    "pais": "Costa do Marfim"
+  },
+  {
+    "codigo": "DKR",
+    "nome": "Aeroporto Internacional Leopold Sédar Senghor",
+    "cidade": "Dacar",
+    "pais": "Senegal"
+  },
+  {
+    "codigo": "DSS",
+    "nome": "Aeroporto Internacional Blaise Diagne",
+    "cidade": "Dacar",
+    "pais": "Senegal"
+  },
+  {
+    "codigo": "CMB",
+    "nome": "Aeroporto Internacional Bandaranaike",
+    "cidade": "Colombo",
+    "pais": "Sri Lanka"
+  },
+  {
+    "codigo": "CPT",
+    "nome": "Aeroporto Internacional da Cidade do Cabo",
+    "cidade": "Cidade do Cabo",
+    "pais": "África do Sul"
+  },
+  {
+    "codigo": "JNB",
+    "nome": "Aeroporto Internacional O.R. Tambo",
+    "cidade": "Joanesburgo",
+    "pais": "África do Sul"
+  },
+  {
+    "codigo": "DUR",
+    "nome": "Aeroporto Internacional King Shaka",
+    "cidade": "Durban",
+    "pais": "África do Sul"
+  },
+  {
+    "codigo": "HRE",
+    "nome": "Aeroporto Internacional Robert Gabriel Mugabe",
+    "cidade": "Harare",
+    "pais": "Zimbábue"
+  },
+  {
+    "codigo": "GBE",
+    "nome": "Aeroporto Internacional de Gaborone",
+    "cidade": "Gaborone",
+    "pais": "Botsuana"
+  },
+  {
+    "codigo": "MPM",
+    "nome": "Aeroporto Internacional de Maputo",
+    "cidade": "Maputo",
+    "pais": "Moçambique"
+  },
+  {
+    "codigo": "TNR",
+    "nome": "Aeroporto Internacional Ivato",
+    "cidade": "Antananarivo",
+    "pais": "Madagáscar"
+  },
+  {
+    "codigo": "MRU",
+    "nome": "Aeroporto Internacional Sir Seewoosagur Ramgoolam",
+    "cidade": "Port Louis",
+    "pais": "Maurício"
+  },
+  {
+    "codigo": "PEK",
+    "nome": "Aeroporto Internacional Capital de Pequim",
+    "cidade": "Pequim",
+    "pais": "China"
+  },
+  {
+    "codigo": "PKX",
+    "nome": "Aeroporto Internacional Daxing de Pequim",
+    "cidade": "Pequim",
+    "pais": "China"
+  },
+  {
+    "codigo": "PVG",
+    "nome": "Aeroporto Internacional Pudong de Xangai",
+    "cidade": "Xangai",
+    "pais": "China"
+  },
+  {
+    "codigo": "SHA",
+    "nome": "Aeroporto Internacional Hongqiao de Xangai",
+    "cidade": "Xangai",
+    "pais": "China"
+  },
+  {
+    "codigo": "CAN",
+    "nome": "Aeroporto Internacional de Guangzhou",
+    "cidade": "Guangzhou",
+    "pais": "China"
+  },
+  {
+    "codigo": "SZX",
+    "nome": "Aeroporto Internacional de Shenzhen",
+    "cidade": "Shenzhen",
+    "pais": "China"
+  },
+  {
+    "codigo": "CTU",
+    "nome": "Aeroporto Internacional de Chengdu",
+    "cidade": "Chengdu",
+    "pais": "China"
+  },
+  {
+    "codigo": "HGH",
+    "nome": "Aeroporto Internacional de Hangzhou",
+    "cidade": "Hangzhou",
+    "pais": "China"
+  },
+  {
+    "codigo": "XIY",
+    "nome": "Aeroporto Internacional de Xi'an",
+    "cidade": "Xi'an",
+    "pais": "China"
+  },
+  {
+    "codigo": "KMG",
+    "nome": "Aeroporto Internacional de Kunming",
+    "cidade": "Kunming",
+    "pais": "China"
+  },
+  {
+    "codigo": "WUH",
+    "nome": "Aeroporto Internacional de Wuhan",
+    "cidade": "Wuhan",
+    "pais": "China"
+  },
+  {
+    "codigo": "CKG",
+    "nome": "Aeroporto Internacional de Chongqing",
+    "cidade": "Chongqing",
+    "pais": "China"
+  },
+  {
+    "codigo": "NKG",
+    "nome": "Aeroporto Internacional de Nanjing",
+    "cidade": "Nanjing",
+    "pais": "China"
+  },
+  {
+    "codigo": "TSN",
+    "nome": "Aeroporto Internacional de Tianjin",
+    "cidade": "Tianjin",
+    "pais": "China"
+  },
+  {
+    "codigo": "HKG",
+    "nome": "Aeroporto Internacional de Hong Kong",
+    "cidade": "Hong Kong",
+    "pais": "Hong Kong"
+  },
+  {
+    "codigo": "MFM",
+    "nome": "Aeroporto Internacional de Macau",
+    "cidade": "Macau",
+    "pais": "Macau"
+  },
+  {
+    "codigo": "TPE",
+    "nome": "Aeroporto Internacional Taiwan Taoyuan",
+    "cidade": "Taipei",
+    "pais": "Taiwan"
+  },
+  {
+    "codigo": "KHH",
+    "nome": "Aeroporto Internacional de Kaohsiung",
+    "cidade": "Kaohsiung",
+    "pais": "Taiwan"
+  },
+  {
+    "codigo": "NRT",
+    "nome": "Aeroporto Internacional de Narita",
+    "cidade": "Tóquio",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "HND",
+    "nome": "Aeroporto Internacional de Haneda",
+    "cidade": "Tóquio",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "KIX",
+    "nome": "Aeroporto Internacional de Kansai",
+    "cidade": "Osaka",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "ITM",
+    "nome": "Aeroporto de Itami",
+    "cidade": "Osaka",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "NGO",
+    "nome": "Aeroporto Internacional Chubu Centrair",
+    "cidade": "Nagoia",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "CTS",
+    "nome": "Aeroporto Internacional New Chitose",
+    "cidade": "Sapporo",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "FUK",
+    "nome": "Aeroporto de Fukuoka",
+    "cidade": "Fukuoka",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "OKA",
+    "nome": "Aeroporto Internacional de Naha",
+    "cidade": "Okinawa",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "ICN",
+    "nome": "Aeroporto Internacional de Incheon",
+    "cidade": "Seul",
+    "pais": "Coreia do Sul"
+  },
+  {
+    "codigo": "GMP",
+    "nome": "Aeroporto Internacional de Gimpo",
+    "cidade": "Seul",
+    "pais": "Coreia do Sul"
+  },
+  {
+    "codigo": "PUS",
+    "nome": "Aeroporto Internacional de Gimhae",
+    "cidade": "Busan",
+    "pais": "Coreia do Sul"
+  },
+  {
+    "codigo": "CJU",
+    "nome": "Aeroporto Internacional de Jeju",
+    "cidade": "Jeju",
+    "pais": "Coreia do Sul"
+  },
+  {
+    "codigo": "SIN",
+    "nome": "Aeroporto Internacional de Changi",
+    "cidade": "Singapura",
+    "pais": "Singapura"
+  },
+  {
+    "codigo": "KUL",
+    "nome": "Aeroporto Internacional de Kuala Lumpur",
+    "cidade": "Kuala Lumpur",
+    "pais": "Malásia"
+  },
+  {
+    "codigo": "BKI",
+    "nome": "Aeroporto Internacional de Kota Kinabalu",
+    "cidade": "Kota Kinabalu",
+    "pais": "Malásia"
+  },
+  {
+    "codigo": "PEN",
+    "nome": "Aeroporto Internacional de Penang",
+    "cidade": "Penang",
+    "pais": "Malásia"
+  },
+  {
+    "codigo": "CGK",
+    "nome": "Aeroporto Internacional Soekarno-Hatta",
+    "cidade": "Jacarta",
+    "pais": "Indonésia"
+  },
+  {
+    "codigo": "DPS",
+    "nome": "Aeroporto Internacional Ngurah Rai",
+    "cidade": "Denpasar",
+    "pais": "Indonésia"
+  },
+  {
+    "codigo": "SUB",
+    "nome": "Aeroporto Internacional Juanda",
+    "cidade": "Surabaia",
+    "pais": "Indonésia"
+  },
+  {
+    "codigo": "BPN",
+    "nome": "Aeroporto Internacional Sultan Aji Muhammad Sulaiman",
+    "cidade": "Balikpapan",
+    "pais": "Indonésia"
+  },
+  {
+    "codigo": "MNL",
+    "nome": "Aeroporto Internacional Ninoy Aquino",
+    "cidade": "Manila",
+    "pais": "Filipinas"
+  },
+  {
+    "codigo": "CEB",
+    "nome": "Aeroporto Internacional Mactan-Cebu",
+    "cidade": "Cebu",
+    "pais": "Filipinas"
+  },
+  {
+    "codigo": "BKK",
+    "nome": "Aeroporto Internacional Suvarnabhumi",
+    "cidade": "Banguecoque",
+    "pais": "Tailândia"
+  },
+  {
+    "codigo": "DMK",
+    "nome": "Aeroporto Internacional Don Mueang",
+    "cidade": "Banguecoque",
+    "pais": "Tailândia"
+  },
+  {
+    "codigo": "HKT",
+    "nome": "Aeroporto Internacional de Phuket",
+    "cidade": "Phuket",
+    "pais": "Tailândia"
+  },
+  {
+    "codigo": "CNX",
+    "nome": "Aeroporto Internacional de Chiang Mai",
+    "cidade": "Chiang Mai",
+    "pais": "Tailândia"
+  },
+  {
+    "codigo": "HAN",
+    "nome": "Aeroporto Internacional Noi Bai",
+    "cidade": "Hanói",
+    "pais": "Vietnã"
+  },
+  {
+    "codigo": "SGN",
+    "nome": "Aeroporto Internacional Tan Son Nhat",
+    "cidade": "Ho Chi Minh",
+    "pais": "Vietnã"
+  },
+  {
+    "codigo": "DAD",
+    "nome": "Aeroporto Internacional de Da Nang",
+    "cidade": "Da Nang",
+    "pais": "Vietnã"
+  },
+  {
+    "codigo": "PNH",
+    "nome": "Aeroporto Internacional de Phnom Penh",
+    "cidade": "Phnom Penh",
+    "pais": "Camboja"
+  },
+  {
+    "codigo": "REP",
+    "nome": "Aeroporto Internacional de Siem Reap",
+    "cidade": "Siem Reap",
+    "pais": "Camboja"
+  },
+  {
+    "codigo": "VTE",
+    "nome": "Aeroporto Internacional Wattay",
+    "cidade": "Vientiane",
+    "pais": "Laos"
+  },
+  {
+    "codigo": "RGN",
+    "nome": "Aeroporto Internacional de Yangon",
+    "cidade": "Yangon",
+    "pais": "Myanmar"
+  },
+  {
+    "codigo": "DEL",
+    "nome": "Aeroporto Internacional Indira Gandhi",
+    "cidade": "Nova Délhi",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "BOM",
+    "nome": "Aeroporto Internacional Chhatrapati Shivaji Maharaj",
+    "cidade": "Mumbai",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "BLR",
+    "nome": "Aeroporto Internacional de Bengaluru",
+    "cidade": "Bengaluru",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "MAA",
+    "nome": "Aeroporto Internacional de Chennai",
+    "cidade": "Chennai",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "CCU",
+    "nome": "Aeroporto Internacional Netaji Subhas Chandra Bose",
+    "cidade": "Calcutá",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "HYD",
+    "nome": "Aeroporto Internacional Rajiv Gandhi",
+    "cidade": "Hyderabad",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "COK",
+    "nome": "Aeroporto Internacional Cochin",
+    "cidade": "Cochin",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "AMD",
+    "nome": "Aeroporto Internacional Sardar Vallabhbhai Patel",
+    "cidade": "Ahmedabad",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "GOI",
+    "nome": "Aeroporto Internacional de Goa",
+    "cidade": "Goa",
+    "pais": "Índia"
+  },
+  {
+    "codigo": "KTM",
+    "nome": "Aeroporto Internacional Tribhuvan",
+    "cidade": "Catmandu",
+    "pais": "Nepal"
+  },
+  {
+    "codigo": "DAC",
+    "nome": "Aeroporto Internacional Hazrat Shahjalal",
+    "cidade": "Dhaka",
+    "pais": "Bangladesh"
+  },
+  {
+    "codigo": "KHI",
+    "nome": "Aeroporto Internacional Jinnah",
+    "cidade": "Carachi",
+    "pais": "Paquistão"
+  },
+  {
+    "codigo": "LHE",
+    "nome": "Aeroporto Internacional Allama Iqbal",
+    "cidade": "Lahore",
+    "pais": "Paquistão"
+  },
+  {
+    "codigo": "ISB",
+    "nome": "Aeroporto Internacional Islamabad",
+    "cidade": "Islamabade",
+    "pais": "Paquistão"
+  },
+  {
+    "codigo": "KBL",
+    "nome": "Aeroporto Internacional de Cabul",
+    "cidade": "Cabul",
+    "pais": "Afeganistão"
+  },
+  {
+    "codigo": "THR",
+    "nome": "Aeroporto Internacional Imam Khomeini",
+    "cidade": "Teerã",
+    "pais": "Irã"
+  },
+  {
+    "codigo": "IKA",
+    "nome": "Aeroporto Internacional Imam Khomeini",
+    "cidade": "Teerã",
+    "pais": "Irã"
+  },
+  {
+    "codigo": "MHD",
+    "nome": "Aeroporto Internacional Shahid Hasheminejad",
+    "cidade": "Mashhad",
+    "pais": "Irã"
+  },
+  {
+    "codigo": "BGW",
+    "nome": "Aeroporto Internacional de Bagdá",
+    "cidade": "Bagdá",
+    "pais": "Iraque"
+  },
+  {
+    "codigo": "NJF",
+    "nome": "Aeroporto Internacional Al Najaf",
+    "cidade": "An-Nájaf",
+    "pais": "Iraque"
+  },
+  {
+    "codigo": "OVB",
+    "nome": "Aeroporto Internacional Tolmachevo",
+    "cidade": "Novosibirsk",
+    "pais": "Rússia"
+  },
+  {
+    "codigo": "ALA",
+    "nome": "Aeroporto Internacional de Almaty",
+    "cidade": "Almaty",
+    "pais": "Cazaquistão"
+  },
+  {
+    "codigo": "NQZ",
+    "nome": "Aeroporto Internacional Nursultão Nazarbayev",
+    "cidade": "Astana",
+    "pais": "Cazaquistão"
+  },
+  {
+    "codigo": "TAS",
+    "nome": "Aeroporto Internacional Islam Karimov",
+    "cidade": "Tashkent",
+    "pais": "Uzbequistão"
+  },
+  {
+    "codigo": "SYD",
+    "nome": "Aeroporto Internacional Kingsford Smith",
+    "cidade": "Sydney",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "MEL",
+    "nome": "Aeroporto Internacional de Melbourne",
+    "cidade": "Melbourne",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "BNE",
+    "nome": "Aeroporto Internacional de Brisbane",
+    "cidade": "Brisbane",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "PER",
+    "nome": "Aeroporto Internacional de Perth",
+    "cidade": "Perth",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "ADL",
+    "nome": "Aeroporto Internacional de Adelaide",
+    "cidade": "Adelaide",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "CBR",
+    "nome": "Aeroporto Internacional de Canberra",
+    "cidade": "Canberra",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "DRW",
+    "nome": "Aeroporto Internacional de Darwin",
+    "cidade": "Darwin",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "CNS",
+    "nome": "Aeroporto Internacional de Cairns",
+    "cidade": "Cairns",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "OOL",
+    "nome": "Aeroporto Gold Coast",
+    "cidade": "Gold Coast",
+    "pais": "Austrália"
+  },
+  {
+    "codigo": "AKL",
+    "nome": "Aeroporto Internacional de Auckland",
+    "cidade": "Auckland",
+    "pais": "Nova Zelândia"
+  },
+  {
+    "codigo": "CHC",
+    "nome": "Aeroporto Internacional de Christchurch",
+    "cidade": "Christchurch",
+    "pais": "Nova Zelândia"
+  },
+  {
+    "codigo": "WLG",
+    "nome": "Aeroporto Internacional de Wellington",
+    "cidade": "Wellington",
+    "pais": "Nova Zelândia"
+  },
+  {
+    "codigo": "NAN",
+    "nome": "Aeroporto Internacional Nadi",
+    "cidade": "Nadi",
+    "pais": "Fiji"
+  },
+  {
+    "codigo": "PPT",
+    "nome": "Aeroporto Internacional Faa'a",
+    "cidade": "Papeete",
+    "pais": "Polinésia Francesa"
+  },
+  {
+    "codigo": "AGA",
+    "nome": "Aeroporto Internacional Al Massira",
+    "cidade": "Agadir",
+    "pais": "Marrocos"
+  },
+  {
+    "codigo": "OUA",
+    "nome": "Aeroporto Internacional de Ouagadougou",
+    "cidade": "Ouagadougou",
+    "pais": "Burkina Faso"
+  },
+  {
+    "codigo": "BKO",
+    "nome": "Aeroporto Internacional Modibo Keïta Senou",
+    "cidade": "Bamaco",
+    "pais": "Mali"
+  },
+  {
+    "codigo": "COO",
+    "nome": "Aeroporto Internacional Cadjehoun",
+    "cidade": "Cotonu",
+    "pais": "Benim"
+  },
+  {
+    "codigo": "LFW",
+    "nome": "Aeroporto Internacional de Lomé",
+    "cidade": "Lomé",
+    "pais": "Togo"
+  },
+  {
+    "codigo": "ROB",
+    "nome": "Aeroporto Internacional Roberts",
+    "cidade": "Monróvia",
+    "pais": "Libéria"
+  },
+  {
+    "codigo": "FNA",
+    "nome": "Aeroporto Internacional Lungi",
+    "cidade": "Freetown",
+    "pais": "Serra Leoa"
+  },
+  {
+    "codigo": "CKY",
+    "nome": "Aeroporto Internacional Ahmed Sékou Touré",
+    "cidade": "Conacri",
+    "pais": "Guiné"
+  },
+  {
+    "codigo": "OXB",
+    "nome": "Aeroporto Internacional Osvaldo Vieira",
+    "cidade": "Bissau",
+    "pais": "Guiné-Bissau"
+  },
+  {
+    "codigo": "NIM",
+    "nome": "Aeroporto Internacional Diori Hamani",
+    "cidade": "Niamey",
+    "pais": "Níger"
+  },
+  {
+    "codigo": "NDJ",
+    "nome": "Aeroporto Internacional Hassan Djamous",
+    "cidade": "N'Djamena",
+    "pais": "Chade"
+  },
+  {
+    "codigo": "BZV",
+    "nome": "Aeroporto Internacional Maya-Maya",
+    "cidade": "Brazzaville",
+    "pais": "Congo"
+  },
+  {
+    "codigo": "FIH",
+    "nome": "Aeroporto Internacional de Ndjili",
+    "cidade": "Kinshasa",
+    "pais": "DR Congo"
+  },
+  {
+    "codigo": "LBV",
+    "nome": "Aeroporto Internacional Leon M'ba",
+    "cidade": "Libreville",
+    "pais": "Gabão"
+  },
+  {
+    "codigo": "DLA",
+    "nome": "Aeroporto Internacional de Douala",
+    "cidade": "Douala",
+    "pais": "Camarões"
+  },
+  {
+    "codigo": "SSG",
+    "nome": "Aeroporto Internacional de Malabo",
+    "cidade": "Malabo",
+    "pais": "Guiné Equatorial"
+  },
+  {
+    "codigo": "BGF",
+    "nome": "Aeroporto Internacional M'poko",
+    "cidade": "Bangui",
+    "pais": "Rep. Centro-Africana"
+  },
+  {
+    "codigo": "LON",
+    "nome": "Cidade de Londres (Multi-aeroporto)",
+    "cidade": "Londres",
+    "pais": "Reino Unido"
+  },
+  {
+    "codigo": "NYC",
+    "nome": "Cidade de Nova York (Multi-aeroporto)",
+    "cidade": "Nova York",
+    "pais": "Estados Unidos"
+  },
+  {
+    "codigo": "BJS",
+    "nome": "Cidade de Pequim (Multi-aeroporto)",
+    "cidade": "Pequim",
+    "pais": "China"
+  },
+  {
+    "codigo": "TYO",
+    "nome": "Cidade de Tóquio (Multi-aeroporto)",
+    "cidade": "Tóquio",
+    "pais": "Japão"
+  },
+  {
+    "codigo": "PAR",
+    "nome": "Cidade de Paris (Multi-aeroporto)",
+    "cidade": "Paris",
+    "pais": "França"
+  },
+  {
+    "codigo": "MIL",
+    "nome": "Cidade de Milão (Multi-aeroporto)",
+    "cidade": "Milão",
+    "pais": "Itália"
+  },
+  {
+    "codigo": "OSA",
+    "nome": "Cidade de Osaka (Multi-aeroporto)",
+    "cidade": "Osaka",
+    "pais": "Japão"
   }
 ]
