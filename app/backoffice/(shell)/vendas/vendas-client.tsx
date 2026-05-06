@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -71,9 +72,9 @@ type FormState = {
   data_ida: string;
   data_volta: string;
   data_venda: string;
-  valor_total: string;
-  taxa_rav: string;
-  taxa_du: string;
+  valor_total: number;
+  taxa_rav: number;
+  taxa_du: number;
   status: string;
   forma_pagamento: string;
   observacoes: string;
@@ -90,9 +91,9 @@ const emptyForm = (): FormState => ({
   data_ida: "",
   data_volta: "",
   data_venda: new Date().toISOString().slice(0, 10),
-  valor_total: "",
-  taxa_rav: "0",
-  taxa_du: "0",
+  valor_total: 0,
+  taxa_rav: 0,
+  taxa_du: 0,
   status: "pendente",
   forma_pagamento: "",
   observacoes: "",
@@ -166,9 +167,9 @@ export function VendasClient() {
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
       data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
-      valor_total: String(v.valor_total ?? ""),
-      taxa_rav: String(v.taxa_rav ?? "0"),
-      taxa_du: String(v.taxa_du ?? "0"),
+      valor_total: Number(v.valor_total ?? 0),
+      taxa_rav: Number(v.taxa_rav ?? 0),
+      taxa_du: Number(v.taxa_du ?? 0),
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       observacoes: v.observacoes ?? "",
@@ -179,7 +180,7 @@ export function VendasClient() {
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (!form.cliente_id) { toast.error("Selecione um cliente."); return; }
-    if (!form.valor_total || Number(form.valor_total) <= 0) { toast.error("Informe um valor total válido."); return; }
+    if (!form.valor_total || form.valor_total <= 0) { toast.error("Informe um valor total válido."); return; }
     setSaving(true);
     try {
       const descricao =
@@ -197,9 +198,9 @@ export function VendasClient() {
         data_ida: form.data_ida || null,
         data_volta: form.data_volta || null,
         data_venda: form.data_venda,
-        valor_total: Number(form.valor_total),
-        taxa_rav: Number(form.taxa_rav),
-        taxa_du: Number(form.taxa_du),
+        valor_total: form.valor_total,
+        taxa_rav: form.taxa_rav,
+        taxa_du: form.taxa_du,
         status: form.status,
         forma_pagamento: form.forma_pagamento || null,
         observacoes: form.observacoes || null,
@@ -235,8 +236,10 @@ export function VendasClient() {
     }
   }
 
-  const f = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const f =
+    (key: Exclude<keyof FormState, "valor_total" | "taxa_rav" | "taxa_du">) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   function handleCompanhiaSelect(c: Companhia) {
     setForm((prev) => ({
@@ -373,15 +376,15 @@ export function VendasClient() {
               </div>
               <div className="space-y-1.5">
                 <Label>Valor total (R$) *</Label>
-                <Input type="number" step="0.01" min="0" value={form.valor_total} onChange={f("valor_total")} required />
+                <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
               </div>
               <div className="space-y-1.5">
                 <Label>Taxa RAV (R$)</Label>
-                <Input type="number" step="0.01" min="0" value={form.taxa_rav} onChange={f("taxa_rav")} />
+                <CurrencyInput value={form.taxa_rav} onValueChange={(v) => setForm((p) => ({ ...p, taxa_rav: v ?? 0 }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Taxa DU (R$)</Label>
-                <Input type="number" step="0.01" min="0" value={form.taxa_du} onChange={f("taxa_du")} />
+                <CurrencyInput value={form.taxa_du} onValueChange={(v) => setForm((p) => ({ ...p, taxa_du: v ?? 0 }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>

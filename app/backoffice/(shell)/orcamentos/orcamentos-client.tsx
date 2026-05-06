@@ -13,6 +13,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
@@ -60,6 +61,7 @@ type Orcamento = {
   bagagens?: { bolsa?: number; mao?: number; grande?: number } | null;
   voos: Voo[];
   valor_total: number | string;
+  rav_du?: number | string | null;
   forma_pagamento: string | null;
   observacoes: string | null;
   status: string;
@@ -81,7 +83,8 @@ type FormState = {
   com_bagagem: boolean;
   bagagens: { bolsa: number; mao: number; grande: number };
   voos: Voo[];
-  valor_total: string;
+  valor_total: number;
+  rav_du: number;
   forma_pagamento: string;
   observacoes: string;
   status: string;
@@ -175,7 +178,8 @@ const emptyForm = (): FormState => ({
   com_bagagem: true,
   bagagens: { bolsa: 1, mao: 1, grande: 1 },
   voos: [{ tipo: "ida", origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }],
-  valor_total: "",
+  valor_total: 0,
+  rav_du: 0,
   forma_pagamento: PAGAMENTO_PADRAO,
   observacoes: "",
   status: "pendente",
@@ -349,7 +353,8 @@ export function OrcamentosClient() {
       com_bagagem: temAlgumaBagagem(bagagens),
       bagagens,
       voos: o.voos?.length ? o.voos : emptyForm().voos,
-      valor_total: String(o.valor_total ?? ""),
+      valor_total: Number(o.valor_total ?? 0),
+      rav_du: Number(o.rav_du ?? 0),
       forma_pagamento: o.forma_pagamento ?? PAGAMENTO_PADRAO,
       observacoes: o.observacoes ?? "",
       status: o.status ?? "pendente",
@@ -361,7 +366,7 @@ export function OrcamentosClient() {
     e.preventDefault();
     if (!form.cliente_id) { toast.error("Selecione um cliente válido."); return; }
     if (!profile?.id) { toast.error("Sessão inválida. Faça login novamente."); return; }
-    if (!form.valor_total || Number(form.valor_total) <= 0) { toast.error("Informe um valor total maior que zero."); return; }
+    if (!form.valor_total || form.valor_total <= 0) { toast.error("Informe um valor total maior que zero."); return; }
     setSaving(true);
     try {
       const bagagensNorm = normalizeBagagens(form.bagagens);
@@ -378,7 +383,8 @@ export function OrcamentosClient() {
         bagagens: bagagensNorm,
         descricao_bagagem: descricaoBagagens(bagagensNorm),
         voos: form.voos,
-        valor_total: Number(form.valor_total),
+        valor_total: form.valor_total,
+        rav_du: form.rav_du,
         formas_pagamento: form.forma_pagamento.trim() || "",
         observacoes: form.observacoes.trim() || null,
         status: form.status,
@@ -785,10 +791,14 @@ export function OrcamentosClient() {
               })}
             </fieldset>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label>Valor total *</Label>
-                <Input type="number" step="0.01" min="0" value={form.valor_total} onChange={(e) => setForm({ ...form, valor_total: e.target.value })} required />
+                <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>RAV/DU</Label>
+                <CurrencyInput value={form.rav_du} onValueChange={(v) => setForm((p) => ({ ...p, rav_du: v ?? 0 }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>

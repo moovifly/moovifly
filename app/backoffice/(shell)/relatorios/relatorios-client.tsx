@@ -28,13 +28,21 @@ type Venda = {
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
 
+type OrcamentoRavDu = {
+  rav_du: number | string | null;
+  status: string;
+  data_orcamento: string;
+};
+
 export function RelatoriosClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile, effectiveProfile } = useAuth();
 
   const isVendedor = effectiveProfile?.tipo === "vendedor";
+  const isAdmin = effectiveProfile?.tipo === "administrador";
 
   const [items, setItems] = useState<Venda[]>([]);
+  const [orcRavDu, setOrcRavDu] = useState<OrcamentoRavDu[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
@@ -47,16 +55,29 @@ export function RelatoriosClient() {
   async function load() {
     setLoading(true);
     try {
-      let q = supabase
+      let qVendas = supabase
         .from("vendas")
         .select("id, numero_venda, destino, valor_total, taxa_rav, status, data_venda, clientes(nome), usuarios(nome)")
         .gte("data_venda", dateFrom)
         .lte("data_venda", dateTo)
         .order("data_venda", { ascending: false });
-      if (statusFilter) q = q.eq("status", statusFilter);
-      const { data, error } = await q;
-      if (error) throw error;
-      setItems((data ?? []) as unknown as Venda[]);
+      if (statusFilter) qVendas = qVendas.eq("status", statusFilter);
+
+      const [{ data: vendas, error: vendasError }, { data: orcs, error: orcsError }] = await Promise.all([
+        qVendas,
+        isAdmin
+          ? supabase
+              .from("orcamentos")
+              .select("rav_du, status, data_orcamento")
+              .gte("data_orcamento", dateFrom)
+              .lte("data_orcamento", dateTo)
+          : Promise.resolve({ data: [] as unknown as OrcamentoRavDu[], error: null }),
+      ]);
+
+      if (vendasError) throw vendasError;
+      if (orcsError) throw orcsError;
+      setItems((vendas ?? []) as unknown as Venda[]);
+      setOrcRavDu((orcs ?? []) as unknown as OrcamentoRavDu[]);
     } catch (err) {
       toast.error("Erro ao carregar relatório", { description: formatSupabaseError(err) });
     } finally {
@@ -76,6 +97,13 @@ export function RelatoriosClient() {
         .reduce((sum, v) => sum + Number(v.valor_total ?? 0), 0),
     [items],
   );
+
+  const totalRavDu = useMemo(() => {
+    if (!isAdmin) return 0;
+    return orcRavDu
+      .filter((o) => ["aprovado", "convertido"].includes(o.status))
+      .reduce((sum, o) => sum + Number(o.rav_du ?? 0), 0);
+  }, [orcRavDu, isAdmin]);
 
   if (isVendedor) {
     return (
@@ -119,7 +147,7 @@ export function RelatoriosClient() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className={["grid gap-4", isAdmin ? "sm:grid-cols-4" : "sm:grid-cols-3"].join(" ")}>
           <Card>
             <CardContent className="p-4">
               <p className="text-xs text-[var(--text-secondary)] uppercase">Total de vendas</p>
@@ -132,6 +160,14 @@ export function RelatoriosClient() {
               <p className="text-2xl font-semibold text-foreground">{formatCurrency(totalFaturamento)}</p>
             </CardContent>
           </Card>
+          {isAdmin && (
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-[var(--text-secondary)] uppercase">RAV/DU</p>
+                <p className="text-2xl font-semibold text-foreground">{formatCurrency(totalRavDu)}</p>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardContent className="p-4">
               <p className="text-xs text-[var(--text-secondary)] uppercase">Ticket médio</p>

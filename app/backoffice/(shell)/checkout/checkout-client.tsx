@@ -2,6 +2,7 @@
 
 import { ExternalLink, Loader2, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
@@ -29,6 +30,7 @@ type Venda = { id: string; numero_venda: string; destino: string | null; valor_t
 
 export function CheckoutClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
+  const searchParams = useSearchParams();
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [loadingPag, setLoadingPag] = useState(true);
@@ -50,12 +52,18 @@ export function CheckoutClient() {
     const { data } = await supabase
       .from("vendas")
       .select("id, numero_venda, destino, valor_total")
-      .in("status", ["confirmada", "pendente"])
+      .in("status", ["pendente", "confirmada", "concluida"])
       .order("numero_venda", { ascending: false });
     setVendas((data ?? []) as Venda[]);
   }
 
   useEffect(() => { loadPagamentos(); loadVendas(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const id = searchParams.get("id");
+    if (id && !selectedVenda) setSelectedVenda(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   async function criarCheckout() {
     if (!selectedVenda) { toast.error("Selecione uma venda."); return; }

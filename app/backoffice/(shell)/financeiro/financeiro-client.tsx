@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -77,13 +78,13 @@ export function FinanceiroClient() {
   const [addPagasOpen, setAddPagasOpen] = useState(false);
   const [addComissaoOpen, setAddComissaoOpen] = useState(false);
 
-  const [recForm, setRecForm] = useState({ descricao: "", valor: "", data_vencimento: "" });
-  const [pagForm, setPagForm] = useState({ fornecedor: "", descricao: "", valor: "", data_vencimento: "" });
-  const [pagaForm, setPagaForm] = useState({ fornecedor: "", descricao: "", valor: "", data_pagamento: "" });
+  const [recForm, setRecForm] = useState({ descricao: "", valor: 0, data_vencimento: "" });
+  const [pagForm, setPagForm] = useState({ fornecedor: "", descricao: "", valor: 0, data_vencimento: "" });
+  const [pagaForm, setPagaForm] = useState({ fornecedor: "", descricao: "", valor: 0, data_pagamento: "" });
   const [comForm, setComForm] = useState({
     vendedor_id: "",
-    valor_venda: "",
-    base_calculo: "",
+    valor_venda: 0,
+    base_calculo: null as number | null,
     percentual_comissao: "",
     status: "pendente",
     data_pagamento: "",
@@ -161,7 +162,7 @@ export function FinanceiroClient() {
     try {
       const payload = {
         descricao: recForm.descricao.trim(),
-        valor: Number(recForm.valor),
+        valor: recForm.valor,
         data_vencimento: recForm.data_vencimento,
         status: "pendente",
       };
@@ -173,7 +174,7 @@ export function FinanceiroClient() {
       if (error) throw error;
       toast.success("Conta a receber adicionada!");
       setAddReceberOpen(false);
-      setRecForm({ descricao: "", valor: "", data_vencimento: "" });
+      setRecForm({ descricao: "", valor: 0, data_vencimento: "" });
       load();
     } catch (err) {
       toast.error("Erro ao adicionar", { description: formatSupabaseError(err) });
@@ -189,7 +190,7 @@ export function FinanceiroClient() {
       const payload: Record<string, unknown> = {
         fornecedor: (base.fornecedor ?? "").trim(),
         descricao: (base.descricao ?? "").trim(),
-        valor: Number(base.valor),
+        valor: base.valor,
         status,
       };
       if (!payload.fornecedor || !payload.descricao || !Number.isFinite(payload.valor)) {
@@ -213,10 +214,10 @@ export function FinanceiroClient() {
       toast.success(status === "pago" ? "Conta paga adicionada!" : "Conta a pagar adicionada!");
       if (status === "pago") {
         setAddPagasOpen(false);
-        setPagaForm({ fornecedor: "", descricao: "", valor: "", data_pagamento: "" });
+        setPagaForm({ fornecedor: "", descricao: "", valor: 0, data_pagamento: "" });
       } else {
         setAddPagarOpen(false);
-        setPagForm({ fornecedor: "", descricao: "", valor: "", data_vencimento: "" });
+        setPagForm({ fornecedor: "", descricao: "", valor: 0, data_vencimento: "" });
       }
       load();
     } catch (err) {
@@ -229,8 +230,8 @@ export function FinanceiroClient() {
   async function criarComissaoManual() {
     setSaving(true);
     try {
-      const valor_venda = Number(comForm.valor_venda);
-      const base_calculo = comForm.base_calculo ? Number(comForm.base_calculo) : valor_venda;
+      const valor_venda = comForm.valor_venda;
+      const base_calculo = comForm.base_calculo ?? valor_venda;
       const percentual = Number(comForm.percentual_comissao);
       const valor_comissao = Math.round(((base_calculo * percentual) / 100) * 100) / 100;
 
@@ -267,8 +268,8 @@ export function FinanceiroClient() {
       setAddComissaoOpen(false);
       setComForm({
         vendedor_id: "",
-        valor_venda: "",
-        base_calculo: "",
+        valor_venda: 0,
+        base_calculo: null,
         percentual_comissao: "",
         status: "pendente",
         data_pagamento: "",
@@ -351,7 +352,7 @@ export function FinanceiroClient() {
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>Contas a Receber</CardTitle>
                 {isManager && (
-                  <Button size="sm" onClick={() => { setAddReceberOpen(true); setRecForm({ descricao: "", valor: "", data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
+                  <Button size="sm" onClick={() => { setAddReceberOpen(true); setRecForm({ descricao: "", valor: 0, data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
                     <Plus className="h-4 w-4" /> Adicionar
                   </Button>
                 )}
@@ -415,7 +416,7 @@ export function FinanceiroClient() {
                 <Card>
                   <CardHeader className="flex-row items-center justify-between space-y-0">
                     <CardTitle>Contas a Pagar</CardTitle>
-                    <Button size="sm" onClick={() => { setAddPagarOpen(true); setPagForm({ fornecedor: "", descricao: "", valor: "", data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
+                    <Button size="sm" onClick={() => { setAddPagarOpen(true); setPagForm({ fornecedor: "", descricao: "", valor: 0, data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
                       <Plus className="h-4 w-4" /> Adicionar
                     </Button>
                   </CardHeader>
@@ -532,7 +533,7 @@ export function FinanceiroClient() {
                 <Card>
                   <CardHeader className="flex-row items-center justify-between space-y-0">
                     <CardTitle>Contas Pagas</CardTitle>
-                    <Button size="sm" onClick={() => { setAddPagasOpen(true); setPagaForm({ fornecedor: "", descricao: "", valor: "", data_pagamento: new Date().toISOString().slice(0, 10) }); }}>
+                    <Button size="sm" onClick={() => { setAddPagasOpen(true); setPagaForm({ fornecedor: "", descricao: "", valor: 0, data_pagamento: new Date().toISOString().slice(0, 10) }); }}>
                       <Plus className="h-4 w-4" /> Adicionar
                     </Button>
                   </CardHeader>
@@ -738,7 +739,7 @@ export function FinanceiroClient() {
             </div>
             <div className="space-y-1.5">
               <Label>Valor</Label>
-              <Input inputMode="decimal" value={recForm.valor} onChange={(e) => setRecForm((p) => ({ ...p, valor: e.target.value }))} />
+              <CurrencyInput value={recForm.valor} onValueChange={(v) => setRecForm((p) => ({ ...p, valor: v ?? 0 }))} />
             </div>
             <div className="space-y-1.5">
               <Label>Vencimento</Label>
@@ -773,7 +774,7 @@ export function FinanceiroClient() {
             </div>
             <div className="space-y-1.5">
               <Label>Valor</Label>
-              <Input inputMode="decimal" value={pagForm.valor} onChange={(e) => setPagForm((p) => ({ ...p, valor: e.target.value }))} />
+              <CurrencyInput value={pagForm.valor} onValueChange={(v) => setPagForm((p) => ({ ...p, valor: v ?? 0 }))} />
             </div>
           </div>
           <DialogFooter>
@@ -804,7 +805,7 @@ export function FinanceiroClient() {
             </div>
             <div className="space-y-1.5">
               <Label>Valor</Label>
-              <Input inputMode="decimal" value={pagaForm.valor} onChange={(e) => setPagaForm((p) => ({ ...p, valor: e.target.value }))} />
+              <CurrencyInput value={pagaForm.valor} onValueChange={(v) => setPagaForm((p) => ({ ...p, valor: v ?? 0 }))} />
             </div>
           </div>
           <DialogFooter>
@@ -836,11 +837,16 @@ export function FinanceiroClient() {
             </div>
             <div className="space-y-1.5">
               <Label>Valor da venda</Label>
-              <Input inputMode="decimal" value={comForm.valor_venda} onChange={(e) => setComForm((p) => ({ ...p, valor_venda: e.target.value }))} />
+              <CurrencyInput value={comForm.valor_venda} onValueChange={(v) => setComForm((p) => ({ ...p, valor_venda: v ?? 0 }))} />
             </div>
             <div className="space-y-1.5">
               <Label>Base de cálculo</Label>
-              <Input inputMode="decimal" value={comForm.base_calculo} onChange={(e) => setComForm((p) => ({ ...p, base_calculo: e.target.value }))} placeholder="Se vazio, usa o valor da venda" />
+              <CurrencyInput
+                allowEmpty
+                value={comForm.base_calculo}
+                onValueChange={(v) => setComForm((p) => ({ ...p, base_calculo: v }))}
+                placeholder="Se vazio, usa o valor da venda"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>% Comissão</Label>
