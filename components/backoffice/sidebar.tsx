@@ -30,17 +30,12 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/backoffice/dashboard/", label: "Dashboard", icon: LayoutGrid },
-  { href: "/backoffice/clientes/", label: "Clientes", icon: Users },
+  { href: "/backoffice/clientes/", label: "Clientes", icon: Users, roles: ["administrador", "gerente"] },
   { href: "/backoffice/orcamentos/", label: "Orçamentos", icon: FileText },
   { href: "/backoffice/vendas/", label: "Vendas", icon: ShoppingCart },
-  {
-    href: "/backoffice/relatorios/",
-    label: "Relatórios",
-    icon: BarChart3,
-    roles: ["administrador", "gerente"],
-  },
-  { href: "/backoffice/financeiro/", label: "Financeiro", icon: Wallet },
-  { href: "/backoffice/checkout/", label: "Checkout", icon: CreditCard },
+  { href: "/backoffice/relatorios/", label: "Relatórios", icon: BarChart3 },
+  { href: "/backoffice/financeiro/", label: "Financeiro", icon: Wallet, roles: ["administrador", "gerente"] },
+  { href: "/backoffice/checkout/", label: "Checkout", icon: CreditCard, roles: ["administrador", "gerente"] },
 ];
 
 const SECONDARY_ITEMS: NavItem[] = [
@@ -54,9 +49,10 @@ const SECONDARY_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname() ?? "";
-  const { profile, signOut } = useAuth();
+  const { profile, effectiveProfile, signOut } = useAuth();
 
-  const canAccess = (roles?: string[]) => !roles || (profile && roles.includes(profile.tipo));
+  const canAccess = (roles?: string[]) =>
+    !roles || (effectiveProfile && roles.includes(effectiveProfile.tipo));
 
   const handleLogout = async () => {
     const ok = await showConfirm({

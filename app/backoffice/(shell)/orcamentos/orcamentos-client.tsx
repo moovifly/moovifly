@@ -800,7 +800,7 @@ export function OrcamentosClient() {
 
             <div className="space-y-1.5">
               <Label>Formas de pagamento</Label>
-              <Textarea rows={3} value={form.forma_pagamento} readOnly className="cursor-default select-text" placeholder="Selecione uma companhia aérea para preencher automaticamente." />
+              <Textarea rows={3} value={form.forma_pagamento} onChange={(e) => setForm({ ...form, forma_pagamento: e.target.value })} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
             </div>
 
             <div className="space-y-1.5">

@@ -391,7 +391,7 @@ export function VendasClient() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Forma de pagamento</Label>
-                <Input value={form.forma_pagamento} readOnly className="cursor-default select-text" placeholder="Selecione uma companhia aérea para preencher automaticamente." />
+                <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Observações</Label>

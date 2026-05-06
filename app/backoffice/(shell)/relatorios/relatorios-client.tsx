@@ -14,6 +14,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { RelatoriosVendedor } from "./relatorios-vendedor";
 
 type Venda = {
   id: string;
@@ -29,7 +30,10 @@ type Venda = {
 
 export function RelatoriosClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
-  const { profile } = useAuth();
+  const { profile, effectiveProfile } = useAuth();
+
+  const isVendedor = effectiveProfile?.tipo === "vendedor";
+
   const [items, setItems] = useState<Venda[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -61,11 +65,29 @@ export function RelatoriosClient() {
   }
 
   useEffect(() => {
-    if (profile) load();
+    if (profile && !isVendedor) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, dateFrom, dateTo, statusFilter]);
+  }, [profile?.id, dateFrom, dateTo, statusFilter, isVendedor]);
 
-  const totalFaturamento = useMemo(() => items.filter((v) => ["confirmada", "concluida"].includes(v.status)).reduce((sum, v) => sum + Number(v.valor_total ?? 0), 0), [items]);
+  const totalFaturamento = useMemo(
+    () =>
+      items
+        .filter((v) => ["confirmada", "concluida"].includes(v.status))
+        .reduce((sum, v) => sum + Number(v.valor_total ?? 0), 0),
+    [items],
+  );
+
+  if (isVendedor) {
+    return (
+      <>
+        <Topbar
+          title="Meus Relatórios"
+          subtitle="Suas vendas, comissões e desempenho"
+        />
+        <RelatoriosVendedor />
+      </>
+    );
+  }
 
   return (
     <>

@@ -20,21 +20,24 @@ import { MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
 type AuthContextValue = {
   loading: boolean;
   profile: UserProfile | null;
+  effectiveProfile: UserProfile | null;
   userId: string | null;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
+  viewAsVendedor: boolean;
+  setViewAsVendedor: (v: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const ADMIN_ONLY = ["/backoffice/configuracoes"];
-const MANAGER_PAGES = ["/backoffice/relatorios"];
+const VENDEDOR_RESTRICTED = ["/backoffice/clientes", "/backoffice/financeiro", "/backoffice/checkout"];
 const PUBLIC_BACKOFFICE = ["/backoffice/login"];
 
+const VIEW_AS_KEY = "moovifly_view_as_vendedor";
 
 const PROFILE_FETCH_MS = 25_000;
 
-/** Evita getUserProfile pendurado indefinidamente (rede/RLS), que deixava loading eterno no dashboard. */
 async function getUserProfileWithTimeout(userId: string) {
   try {
     return await Promise.race([
@@ -49,7 +52,6 @@ async function getUserProfileWithTimeout(userId: string) {
   }
 }
 
-/** Navegação completa; usa NEXT_PUBLIC_APP_URL em produção para não trocar de origem (www vs apex), senão o Supabase perde a sessão. */
 function goBackoffice(path: string) {
   if (typeof window !== "undefined") window.location.assign(publicUrlForPath(path));
 }
@@ -60,8 +62,8 @@ function checkPagePermissions(pathname: string, profile: UserProfile): string | 
       return "/backoffice/dashboard";
     }
   }
-  for (const page of MANAGER_PAGES) {
-    if (pathname.startsWith(page) && !["administrador", "gerente"].includes(profile.tipo)) {
+  for (const page of VENDEDOR_RESTRICTED) {
+    if (pathname.startsWith(page) && profile.tipo === "vendedor") {
       return "/backoffice/dashboard";
     }
   }
@@ -73,10 +75,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [viewAsVendedor, setViewAsVendedorState] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem(VIEW_AS_KEY) === "1";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
   const initialized = useRef(false);
 
   const isBackofficePage = pathname.startsWith("/backoffice");
   const isLoginPage = PUBLIC_BACKOFFICE.some((p) => pathname.startsWith(p));
+
+  const setViewAsVendedor = useCallback((v: boolean) => {
+    setViewAsVendedorState(v);
+    try {
+      if (v) sessionStorage.setItem(VIEW_AS_KEY, "1");
+      else sessionStorage.removeItem(VIEW_AS_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const effectiveProfile = useMemo<UserProfile | null>(() => {
+    if (!profile) return null;
+    if (viewAsVendedor && profile.tipo === "administrador") {
+      return { ...profile, tipo: "vendedor" };
+    }
+    return profile;
+  }, [profile, viewAsVendedor]);
 
   const handleSession = useCallback(
     async (sessionUserId: string | null) => {
@@ -146,7 +176,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const redirect = checkPagePermissions(pathname, nextProfile);
+      const effective = viewAsVendedor && nextProfile.tipo === "administrador"
+        ? { ...nextProfile, tipo: "vendedor" as const }
+        : nextProfile;
+      const redirect = checkPagePermissions(pathname, effective);
       if (redirect) {
         if (typeof window !== "undefined") {
           alert("Você não tem permissão para acessar esta página.");
@@ -154,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         goBackoffice(`${redirect}/`);
       }
     },
-    [pathname, isBackofficePage, isLoginPage],
+    [pathname, isBackofficePage, isLoginPage, viewAsVendedor],
   );
 
   const refreshProfile = useCallback(async () => {
@@ -201,24 +234,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [handleSession]);
 
   useEffect(() => {
-    if (!profile) return;
-    const redirect = checkPagePermissions(pathname, profile);
+    if (!effectiveProfile) return;
+    const redirect = checkPagePermissions(pathname, effectiveProfile);
     if (redirect) goBackoffice(`${redirect}/`);
-  }, [pathname, profile]);
+  }, [pathname, effectiveProfile]);
 
   const signOut = useCallback(async () => {
     await authSignOut();
     setProfile(null);
     setUserId(null);
+    setViewAsVendedor(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("userProfile");
     }
     goBackoffice("/backoffice/login/");
-  }, []);
+  }, [setViewAsVendedor]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ loading, profile, userId, refreshProfile, signOut }),
-    [loading, profile, userId, refreshProfile, signOut],
+    () => ({ loading, profile, effectiveProfile, userId, refreshProfile, signOut, viewAsVendedor, setViewAsVendedor }),
+    [loading, profile, effectiveProfile, userId, refreshProfile, signOut, viewAsVendedor, setViewAsVendedor],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
