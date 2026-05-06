@@ -247,7 +247,7 @@ export function OrcamentosClient() {
       const bagagens = normalizeBagagens(
         o.bagagens ?? (o.com_bagagem ? { bolsa: 1, mao: 1, grande: 1 } : { bolsa: 0, mao: 0, grande: 0 }),
       );
-      downloadOrcamentoPdf(
+      await downloadOrcamentoPdf(
         {
           numero_orcamento: o.numero_orcamento ?? undefined,
           data_orcamento: o.data_orcamento,
