@@ -17,20 +17,24 @@ export function Confessional() {
       <div className="absolute inset-0 opacity-20">
         <div className="absolute -right-32 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-[#7FA984] blur-3xl" />
       </div>
-      <div className="relative mx-auto max-w-4xl space-y-8 px-4 text-center md:px-8">
+      <div className="relative mx-auto max-w-5xl space-y-5 px-4 text-center sm:max-w-6xl md:px-8 lg:max-w-7xl">
         <span className="inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-white/70">
           Nossa Missão
         </span>
-        {PHRASES.map((p, i) => (
-          <p
-            key={i}
-            className={`font-display text-2xl leading-snug tracking-tight md:text-3xl lg:text-4xl ${
-              i === PHRASES.length - 1 ? "font-bold text-white" : "text-white/80"
-            }`}
-          >
-            {p}
-          </p>
-        ))}
+        <div className="space-y-4">
+          {PHRASES.map((p, i) => (
+            <p
+              key={i}
+              className={`text-balance font-display text-xl leading-relaxed tracking-tight sm:text-2xl md:text-3xl ${
+                i === PHRASES.length - 1
+                  ? "font-bold text-white"
+                  : "text-white/80"
+              }`}
+            >
+              {p}
+            </p>
+          ))}
+        </div>
       </div>
     </section>
   );

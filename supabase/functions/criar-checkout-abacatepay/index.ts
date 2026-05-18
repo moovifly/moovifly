@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: venda, error: vendaError } = await supabase
       .from("vendas")
-      .select("*, clientes(nome, email, cpf_cnpj, telefone)")
+      .select("*, clientes(nome, email, cpf, telefone)")
       .eq("id", venda_id)
       .single();
 
@@ -39,15 +39,16 @@ Deno.serve(async (req: Request) => {
     const abacateApiKey = Deno.env.get("ABACATEPAY_API_KEY")!;
     const baseUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "https://moovifly.com.br";
 
-    // Criar produto no AbacatePay
-    const productRes = await fetch("https://api.abacatepay.com/v1/products/create", {
+    // Criar produto no AbacatePay (API v2)
+    const productRes = await fetch("https://api.abacatepay.com/v2/products/create", {
       method: "POST",
       headers: { "Authorization": `Bearer ${abacateApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
+        externalId: venda_id,
         name: `Viagem — ${venda.destino ?? venda.numero_venda}`,
         description: `Venda ${venda.numero_venda} — MooviFly Turismo`,
         price: Math.round(Number(venda.valor_total) * 100),
-        quantity: 1,
+        currency: "BRL",
       }),
     });
 
@@ -58,20 +59,22 @@ Deno.serve(async (req: Request) => {
 
     const product = await productRes.json();
 
-    // Criar cobrança/checkout
-    const billingRes = await fetch("https://api.abacatepay.com/v1/billing/create", {
+    // Criar checkout
+    const billingRes = await fetch("https://api.abacatepay.com/v2/checkouts/create", {
       method: "POST",
       headers: { "Authorization": `Bearer ${abacateApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        products: [{ productId: product.data.id, quantity: 1 }],
-        customer: {
-          name: cliente?.nome ?? "Cliente MooviFly",
-          email: cliente?.email ?? "",
-          document: cliente?.cpf_cnpj?.replace(/\D/g, "") ?? "",
-          phone: cliente?.telefone?.replace(/\D/g, "") ?? "",
-        },
+        items: [{ id: product.data.id, quantity: 1 }],
+        externalId: venda.numero_venda ?? venda_id,
         returnUrl: `${baseUrl}/backoffice/checkout`,
         completionUrl: `${baseUrl}/backoffice/checkout?paid=1`,
+        metadata: {
+          venda_id,
+          cliente_nome: cliente?.nome ?? null,
+          cliente_email: cliente?.email ?? null,
+          cliente_documento: cliente?.cpf?.replace(/\D/g, "") ?? null,
+          cliente_telefone: cliente?.telefone?.replace(/\D/g, "") ?? null,
+        },
       }),
     });
 
@@ -81,7 +84,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const billing = await billingRes.json();
-    const checkoutUrl: string = billing.data?.url ?? billing.data?.checkoutUrl ?? "";
+    const checkoutUrl: string = billing.data?.url ?? "";
 
     // Salvar no banco
     await supabase.from("pagamentos").insert({
