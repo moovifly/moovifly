@@ -69,12 +69,27 @@ type Orcamento = {
   vendedor?: { id: string; nome: string } | null;
 };
 
-type Cliente = { id: string; nome: string; email: string | null };
+type ContatoEditForm = {
+  id: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  cpf: string;
+  rg: string;
+  data_nascimento: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  observacoes: string;
+  status: string;
+};
 
 type FormState = {
   id: string | null;
   cliente_id: string | null;
   cliente_nome: string;
+  lead_telefone: string;
   data_orcamento: string;
   tipo_viagem: "nacional" | "internacional";
   adultos: number;
@@ -170,6 +185,7 @@ const emptyForm = (): FormState => ({
   id: null,
   cliente_id: null,
   cliente_nome: "",
+  lead_telefone: "",
   data_orcamento: new Date().toISOString().slice(0, 10),
   tipo_viagem: "nacional",
   adultos: 1,
@@ -213,7 +229,6 @@ export function OrcamentosClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile } = useAuth();
   const [items, setItems] = useState<Orcamento[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -223,6 +238,9 @@ export function OrcamentosClient() {
   const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
   const [companhias, setCompanhias] = useState<Companhia[]>([]);
   const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [editContatoOpen, setEditContatoOpen] = useState(false);
+  const [editContatoForm, setEditContatoForm] = useState<ContatoEditForm | null>(null);
+  const [savingContato, setSavingContato] = useState(false);
 
   async function ensureRelations(o: Orcamento) {
     const clienteId = o.cliente_id;
@@ -286,10 +304,7 @@ export function OrcamentosClient() {
       let q = supabase.from("orcamentos").select("*").order("data_orcamento", { ascending: false });
       if (profile?.tipo === "vendedor") q = q.eq("vendedor_id", profile.id);
 
-      const [{ data: orcs, error }, { data: clientesList }] = await Promise.all([
-        q,
-        supabase.from("clientes").select("id, nome, email").eq("status", "ativo").order("nome"),
-      ]);
+      const { data: orcs, error } = await q;
       if (error) throw error;
 
       const rawOrcs = (orcs ?? []) as Record<string, unknown>[];
@@ -313,7 +328,6 @@ export function OrcamentosClient() {
         })),
       );
 
-      setClientes((clientesList ?? []) as Cliente[]);
     } catch (err) {
       toast.error("Erro ao carregar orçamentos", { description: formatSupabaseError(err) });
     } finally {
@@ -345,6 +359,7 @@ export function OrcamentosClient() {
       id: o.id,
       cliente_id: o.cliente_id,
       cliente_nome: o.cliente?.nome ?? "",
+      lead_telefone: "",
       data_orcamento: o.data_orcamento.slice(0, 10),
       tipo_viagem: (o.tipo_viagem === "internacional" ? "internacional" : "nacional") as "nacional" | "internacional",
       adultos: o.adultos ?? 1,
@@ -364,15 +379,32 @@ export function OrcamentosClient() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    if (!form.cliente_id) { toast.error("Selecione um cliente válido."); return; }
+    if (!form.cliente_nome.trim()) { toast.error("Informe o nome do lead."); return; }
     if (!profile?.id) { toast.error("Sessão inválida. Faça login novamente."); return; }
     if (!form.valor_total || form.valor_total <= 0) { toast.error("Informe um valor total maior que zero."); return; }
     setSaving(true);
     try {
       const bagagensNorm = normalizeBagagens(form.bagagens);
       const comBagagem = temAlgumaBagagem(bagagensNorm);
+
+      let clienteId = form.cliente_id;
+      if (!form.id && !clienteId) {
+        const { data: novoCliente, error: cliErr } = await supabase
+          .from("clientes")
+          .insert([{
+            nome: form.cliente_nome.trim(),
+            telefone: form.lead_telefone.trim() || null,
+            status: "ativo",
+            vendedor_id: profile.id,
+          }])
+          .select("id")
+          .single();
+        if (cliErr) throw cliErr;
+        clienteId = novoCliente.id;
+      }
+
       const payload = {
-        cliente_id: form.cliente_id,
+        cliente_id: clienteId,
         vendedor_id: profile.id,
         data_orcamento: form.data_orcamento,
         tipo_viagem: form.tipo_viagem,
@@ -396,12 +428,17 @@ export function OrcamentosClient() {
       } else {
         const { data: inserted, error } = await supabase.from("orcamentos").insert([payload]).select("*").single();
         if (error) throw error;
-        toast.success("Orçamento cadastrado!");
+        const cliIdFinal = clienteId;
+        toast.success("Orçamento cadastrado!", {
+          description: "Contato criado. Edite para adicionar mais informações.",
+          action: cliIdFinal ? { label: "Editar contato", onClick: () => openEditContato(cliIdFinal) } : undefined,
+          duration: 8000,
+        });
         if (inserted) {
           const created = rowToOrcamento(inserted as unknown as Record<string, unknown>);
           await gerarPdf({
             ...created,
-            cliente: form.cliente_id ? { id: form.cliente_id, nome: form.cliente_nome || "—" } : null,
+            cliente: clienteId ? { id: clienteId, nome: form.cliente_nome || "—" } : null,
             vendedor: profile?.id ? { id: profile.id, nome: profile?.nome ?? "—" } : null,
           });
         }
@@ -412,6 +449,63 @@ export function OrcamentosClient() {
       toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function openEditContato(id: string) {
+    try {
+      const { data, error } = await supabase.from("clientes").select("*").eq("id", id).single();
+      if (error) throw error;
+      setEditContatoForm({
+        id: data.id,
+        nome: data.nome ?? "",
+        email: data.email ?? "",
+        telefone: data.telefone ?? "",
+        cpf: data.cpf ?? "",
+        rg: data.rg ?? "",
+        data_nascimento: data.data_nascimento ?? "",
+        endereco: data.endereco ?? "",
+        cidade: data.cidade ?? "",
+        estado: data.estado ?? "",
+        cep: data.cep ?? "",
+        observacoes: data.observacoes ?? "",
+        status: data.status ?? "ativo",
+      });
+      setEditContatoOpen(true);
+    } catch (err) {
+      toast.error("Não foi possível carregar o contato", { description: formatSupabaseError(err) });
+    }
+  }
+
+  async function handleSaveContato(e: FormEvent) {
+    e.preventDefault();
+    if (!editContatoForm) return;
+    if (!editContatoForm.nome.trim()) { toast.error("Informe o nome do contato."); return; }
+    setSavingContato(true);
+    try {
+      const { error } = await supabase.from("clientes").update({
+        nome: editContatoForm.nome.trim(),
+        email: editContatoForm.email || null,
+        telefone: editContatoForm.telefone || null,
+        cpf: editContatoForm.cpf || null,
+        rg: editContatoForm.rg || null,
+        data_nascimento: editContatoForm.data_nascimento || null,
+        endereco: editContatoForm.endereco || null,
+        cidade: editContatoForm.cidade || null,
+        estado: editContatoForm.estado || null,
+        cep: editContatoForm.cep || null,
+        observacoes: editContatoForm.observacoes || null,
+        status: editContatoForm.status,
+      }).eq("id", editContatoForm.id);
+      if (error) throw error;
+      toast.success("Contato atualizado!");
+      setEditContatoOpen(false);
+      setEditContatoForm(null);
+      await load();
+    } catch (err) {
+      toast.error("Erro ao salvar contato", { description: formatSupabaseError(err) });
+    } finally {
+      setSavingContato(false);
     }
   }
 
@@ -642,22 +736,58 @@ export function OrcamentosClient() {
             <DialogDescription>Preencha os dados do orçamento.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Cliente *</Label>
-                <Autocomplete
-                  value={form.cliente_nome}
-                  onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
-                  onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as Cliente).id }))}
-                  options={clientes.filter((c) => c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase())).map((c) => ({ value: c, label: c.nome, description: c.email ?? "" }))}
-                  placeholder="Digite o nome do cliente..."
-                />
+            {form.id ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Cliente</Label>
+                    {form.cliente_id && (
+                      <button
+                        type="button"
+                        onClick={() => openEditContato(form.cliente_id!)}
+                        className="flex items-center gap-1 text-xs text-[var(--accent-600)] hover:underline"
+                      >
+                        <Pencil className="h-3 w-3" />Editar contato
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-2 text-sm min-h-[2.25rem]">
+                    {form.cliente_nome || "—"}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Data do orçamento *</Label>
+                  <Input type="date" value={form.data_orcamento} onChange={(e) => setForm({ ...form, data_orcamento: e.target.value })} required />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Data do orçamento *</Label>
-                <Input type="date" value={form.data_orcamento} onChange={(e) => setForm({ ...form, data_orcamento: e.target.value })} required />
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Nome do lead *</Label>
+                    <Input
+                      value={form.cliente_nome}
+                      onChange={(e) => setForm((f) => ({ ...f, cliente_nome: e.target.value, cliente_id: null }))}
+                      placeholder="Nome completo"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Telefone (WhatsApp)</Label>
+                    <Input
+                      type="tel"
+                      value={form.lead_telefone}
+                      onChange={(e) => setForm((f) => ({ ...f, lead_telefone: e.target.value }))}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5 sm:max-w-[50%]">
+                  <Label>Data do orçamento *</Label>
+                  <Input type="date" value={form.data_orcamento} onChange={(e) => setForm({ ...form, data_orcamento: e.target.value })} required />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label>Tipo de viagem</Label>
@@ -823,6 +953,76 @@ export function OrcamentosClient() {
               <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Cadastrar"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editContatoOpen} onOpenChange={(v) => { setEditContatoOpen(v); if (!v) setEditContatoForm(null); }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar contato</DialogTitle>
+            <DialogDescription>Adicione mais informações ao contato criado com o orçamento.</DialogDescription>
+          </DialogHeader>
+          {editContatoForm && (
+            <form onSubmit={handleSaveContato} className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Nome *</Label>
+                  <Input value={editContatoForm.nome} onChange={(e) => setEditContatoForm((f) => f ? { ...f, nome: e.target.value } : f)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Telefone (WhatsApp)</Label>
+                  <Input type="tel" value={editContatoForm.telefone} onChange={(e) => setEditContatoForm((f) => f ? { ...f, telefone: e.target.value } : f)} placeholder="(11) 99999-9999" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>E-mail</Label>
+                  <Input type="email" value={editContatoForm.email} onChange={(e) => setEditContatoForm((f) => f ? { ...f, email: e.target.value } : f)} placeholder="email@exemplo.com" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>CPF</Label>
+                  <Input value={editContatoForm.cpf} onChange={(e) => setEditContatoForm((f) => f ? { ...f, cpf: e.target.value } : f)} placeholder="000.000.000-00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>RG</Label>
+                  <Input value={editContatoForm.rg} onChange={(e) => setEditContatoForm((f) => f ? { ...f, rg: e.target.value } : f)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Data de nascimento</Label>
+                  <Input type="date" value={editContatoForm.data_nascimento} onChange={(e) => setEditContatoForm((f) => f ? { ...f, data_nascimento: e.target.value } : f)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>CEP</Label>
+                  <Input value={editContatoForm.cep} onChange={(e) => setEditContatoForm((f) => f ? { ...f, cep: e.target.value } : f)} placeholder="00000-000" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Endereço</Label>
+                  <Input value={editContatoForm.endereco} onChange={(e) => setEditContatoForm((f) => f ? { ...f, endereco: e.target.value } : f)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Cidade</Label>
+                  <Input value={editContatoForm.cidade} onChange={(e) => setEditContatoForm((f) => f ? { ...f, cidade: e.target.value } : f)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Estado</Label>
+                  <Input value={editContatoForm.estado} onChange={(e) => setEditContatoForm((f) => f ? { ...f, estado: e.target.value } : f)} placeholder="SP" maxLength={2} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Observações</Label>
+                  <Textarea rows={2} value={editContatoForm.observacoes} onChange={(e) => setEditContatoForm((f) => f ? { ...f, observacoes: e.target.value } : f)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Status</Label>
+                  <Select value={editContatoForm.status} onChange={(e) => setEditContatoForm((f) => f ? { ...f, status: e.target.value } : f)}>
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => { setEditContatoOpen(false); setEditContatoForm(null); }} disabled={savingContato}>Cancelar</Button>
+                <Button type="submit" disabled={savingContato}>{savingContato ? "Salvando..." : "Salvar contato"}</Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </>
