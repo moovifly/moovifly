@@ -237,6 +237,7 @@ export function OrcamentosClient() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
   const [companhias, setCompanhias] = useState<Companhia[]>([]);
+  const [clientes, setClientes] = useState<{ id: string; nome: string; telefone: string | null }[]>([]);
   const [convertingId, setConvertingId] = useState<string | null>(null);
   const [editContatoOpen, setEditContatoOpen] = useState(false);
   const [editContatoForm, setEditContatoForm] = useState<ContatoEditForm | null>(null);
@@ -301,6 +302,11 @@ export function OrcamentosClient() {
   async function load() {
     setLoading(true);
     try {
+      let qCli = supabase.from("clientes").select("id, nome, telefone").eq("status", "ativo").order("nome");
+      if (profile?.tipo === "vendedor") qCli = qCli.eq("vendedor_id", profile.id);
+      const { data: cliData } = await qCli;
+      setClientes((cliData ?? []) as { id: string; nome: string; telefone: string | null }[]);
+
       let q = supabase.from("orcamentos").select("*").order("data_orcamento", { ascending: false });
       if (profile?.tipo === "vendedor") q = q.eq("vendedor_id", profile.id);
 
@@ -388,6 +394,7 @@ export function OrcamentosClient() {
       const comBagagem = temAlgumaBagagem(bagagensNorm);
 
       let clienteId = form.cliente_id;
+      let novoContatoCriado = false;
       if (!form.id && !clienteId) {
         const { data: novoCliente, error: cliErr } = await supabase
           .from("clientes")
@@ -401,6 +408,7 @@ export function OrcamentosClient() {
           .single();
         if (cliErr) throw cliErr;
         clienteId = novoCliente.id;
+        novoContatoCriado = true;
       }
 
       const payload = {
@@ -430,7 +438,7 @@ export function OrcamentosClient() {
         if (error) throw error;
         const cliIdFinal = clienteId;
         toast.success("Orçamento cadastrado!", {
-          description: "Contato criado. Edite para adicionar mais informações.",
+          description: novoContatoCriado ? "Contato criado. Edite para adicionar mais informações." : undefined,
           action: cliIdFinal ? { label: "Editar contato", onClick: () => openEditContato(cliIdFinal) } : undefined,
           duration: 8000,
         });
@@ -765,11 +773,14 @@ export function OrcamentosClient() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Nome do lead *</Label>
-                    <Input
+                    <Autocomplete
                       value={form.cliente_nome}
-                      onChange={(e) => setForm((f) => ({ ...f, cliente_nome: e.target.value, cliente_id: null }))}
+                      onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
+                      onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as { id: string }).id }))}
+                      options={clientes
+                        .filter((c) => !form.cliente_nome.trim() || c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase()))
+                        .map((c) => ({ value: c, label: c.nome, description: c.telefone ?? undefined }))}
                       placeholder="Nome completo"
-                      required
                     />
                   </div>
                   <div className="space-y-1.5">
