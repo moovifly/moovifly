@@ -1,5 +1,6 @@
 "use client";
 
+import type { AuthChangeEvent } from "@supabase/supabase-js";
 import { Loader2, Lock } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -76,7 +77,7 @@ export function DefinirSenhaForm() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
       if (event === "PASSWORD_RECOVERY") {
         try {
           sessionStorage.setItem(MOOVIFLY_PASSWORD_RECOVERY_KEY, "1");
