@@ -39,6 +39,7 @@ function statusBadge(status: string) {
     case "confirmada":
     case "concluida":
     case "pago":
+    case "paga":
       return "bg-[var(--success-bg)] text-[var(--success-text)]";
     case "cancelada":
       return "bg-[var(--danger-bg)] text-[var(--danger-text)]";
@@ -51,9 +52,11 @@ function statusLabel(status: string) {
   const labels: Record<string, string> = {
     pendente: "Pendente",
     pago: "Pago",
+    paga: "Paga",
     confirmada: "Confirmada",
     concluida: "Concluída",
     cancelada: "Cancelada",
+    cancelado: "Cancelado",
   };
   return labels[status] ?? status;
 }

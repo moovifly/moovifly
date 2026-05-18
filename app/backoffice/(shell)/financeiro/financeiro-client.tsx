@@ -144,7 +144,7 @@ export function FinanceiroClient() {
     try {
       const { error } = await supabase
         .from("comissoes")
-        .update({ status: "pago", data_pagamento: payDate })
+        .update({ status: "paga", data_pagamento: payDate })
         .eq("id", payModal.id);
       if (error) throw error;
       toast.success("Comissão marcada como paga!");
@@ -259,7 +259,7 @@ export function FinanceiroClient() {
         percentual_comissao: percentual,
         valor_comissao,
         status: comForm.status,
-        data_pagamento: comForm.status === "pago" ? (comForm.data_pagamento || new Date().toISOString().slice(0, 10)) : null,
+        data_pagamento: comForm.status === "paga" ? (comForm.data_pagamento || new Date().toISOString().slice(0, 10)) : null,
       };
 
       const { error } = await supabase.from("comissoes").insert(payload);
@@ -322,7 +322,7 @@ export function FinanceiroClient() {
   }
 
   const comissoesPendentes = useMemo(() => comissoes.filter((c) => c.status === "pendente"), [comissoes]);
-  const comissoesPagas = useMemo(() => comissoes.filter((c) => c.status === "pago"), [comissoes]);
+  const comissoesPagas = useMemo(() => comissoes.filter((c) => c.status === "paga"), [comissoes]);
   const contasPagarPendentes = useMemo(() => pagar.filter((c) => c.status === "pendente"), [pagar]);
   const contasPagarPagas = useMemo(() => pagar.filter((c) => c.status === "pago"), [pagar]);
 
@@ -332,7 +332,7 @@ export function FinanceiroClient() {
 
   const receberBadge = { recebido: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
   const pagarBadge = { pago: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
-  const comissaoBadge = { pago: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
+  const comissaoBadge = { paga: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelada: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
 
   return (
     <>
@@ -856,11 +856,11 @@ export function FinanceiroClient() {
               <Label>Status</Label>
               <Select value={comForm.status} onChange={(e) => setComForm((p) => ({ ...p, status: e.target.value }))}>
                 <option value="pendente">Pendente</option>
-                <option value="pago">Pago</option>
-                <option value="cancelado">Cancelado</option>
+                <option value="paga">Paga</option>
+                <option value="cancelada">Cancelada</option>
               </Select>
             </div>
-            {comForm.status === "pago" && (
+            {comForm.status === "paga" && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Data de pagamento</Label>
                 <Input type="date" value={comForm.data_pagamento} onChange={(e) => setComForm((p) => ({ ...p, data_pagamento: e.target.value }))} />
