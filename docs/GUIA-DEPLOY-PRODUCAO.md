@@ -49,9 +49,12 @@ Variáveis adicionais (apenas no Vercel, não no `.env.local` público):
 ### 1.3 Configurar Auth
 
 No Supabase → **Authentication → URL Configuration**:
-- **Site URL**: `https://www.moovifly.com` (ou domínio canónico em produção)
+- **Site URL** (obrigatório para recuperação de senha e convites):
+  `https://www.moovifly.com/auth/callback?next=%2Fbackoffice%2Fdefinir-senha%2F`
+  - Se deixar só `https://moovifly.com`, o e-mail de reset abre a home do site e não a tela de nova senha.
 - **Redirect URLs** (adicione todas; o Supabase aceita wildcards):
   - `https://www.moovifly.com/**`
+  - `https://moovifly.com/**`
   - `https://moovifly.com.br/**`
   - `http://localhost:3000/**`
   - `http://127.0.0.1:3000/**`

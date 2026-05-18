@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { signIn, getUserProfile } from "@/lib/auth";
+import { passwordRecoveryRedirectUrl } from "@/lib/auth-redirect-urls";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
 function translateError(message: string): string {
@@ -33,6 +34,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [sendingRecovery, setSendingRecovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,6 +62,30 @@ export function LoginForm() {
       return await Promise.race([promise, timeout]);
     } finally {
       if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function handleForgotPassword() {
+    const addr = email.trim();
+    if (!addr) {
+      toast.error("Informe seu e-mail no campo acima para receber o link de recuperação.");
+      return;
+    }
+    setSendingRecovery(true);
+    try {
+      const supabase = getSupabaseClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(addr, {
+        redirectTo: passwordRecoveryRedirectUrl(),
+      });
+      if (resetError) throw resetError;
+      toast.success("E-mail enviado", {
+        description: "Abra o link na mensagem para definir uma nova senha (use aba anônima se já estiver logado).",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Não foi possível enviar o e-mail", { description: msg });
+    } finally {
+      setSendingRecovery(false);
     }
   }
 
@@ -196,17 +222,27 @@ export function LoginForm() {
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 cursor-pointer rounded border border-[var(--border-default)] accent-[var(--accent-600)]"
-          />
-          Lembrar-me
-        </label>
+        <div className="flex items-center justify-between gap-2 text-sm">
+          <label className="flex items-center gap-2 text-[var(--text-secondary)]">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 cursor-pointer rounded border border-[var(--border-default)] accent-[var(--accent-600)]"
+            />
+            Lembrar-me
+          </label>
+          <button
+            type="button"
+            onClick={() => void handleForgotPassword()}
+            disabled={sendingRecovery || submitting}
+            className="text-[var(--accent-600)] hover:underline disabled:opacity-50"
+          >
+            {sendingRecovery ? "Enviando…" : "Esqueci minha senha"}
+          </button>
+        </div>
 
-        <Button type="submit" disabled={submitting} className="w-full">
+        <Button type="submit" disabled={submitting || sendingRecovery} className="w-full">
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />

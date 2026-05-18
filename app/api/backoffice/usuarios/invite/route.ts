@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { publicUrlForPath } from "@/lib/public-site-url";
+import { authCallbackRedirectUrl } from "@/lib/auth-redirect-urls";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +24,7 @@ function resolveRedirectTo(request: Request): string {
   const origin = request.headers.get("origin")?.replace(/\/$/, "");
   if (origin) return `${origin}${path}`;
 
-  const envBase = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  if (envBase) {
-    const base = envBase.startsWith("http") ? envBase : `https://${envBase}`;
-    return `${base}${path}`;
-  }
-
-  return publicUrlForPath(path);
+  return authCallbackRedirectUrl("/backoffice/definir-senha/");
 }
 
 export async function POST(request: Request) {
