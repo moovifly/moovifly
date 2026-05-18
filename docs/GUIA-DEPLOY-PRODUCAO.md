@@ -49,8 +49,14 @@ Variáveis adicionais (apenas no Vercel, não no `.env.local` público):
 ### 1.3 Configurar Auth
 
 No Supabase → **Authentication → URL Configuration**:
-- **Site URL**: `https://moovifly.com.br`
-- **Redirect URLs**: `https://moovifly.com.br/backoffice/**`
+- **Site URL**: `https://www.moovifly.com` (ou domínio canónico em produção)
+- **Redirect URLs** (adicione todas; o Supabase aceita wildcards):
+  - `https://www.moovifly.com/**`
+  - `https://moovifly.com.br/**`
+  - `http://localhost:3000/**`
+  - `http://127.0.0.1:3000/**`
+
+Em desenvolvimento local, pode manter `NEXT_PUBLIC_APP_URL` igual à produção no `.env.local` (mesmo Supabase); o app não redireciona para produção após login quando a aba está em `localhost`.
 
 ### 1.4 Deploy das Edge Functions
 
