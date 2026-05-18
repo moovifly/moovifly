@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Search, Trash2, UserPlus } from "lucide-react";
+import { Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -249,7 +250,14 @@ export function ClientesClient() {
                 <TableBody>
                   {filtered.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.nome}</TableCell>
+                      <TableCell className="font-medium">
+                        <BackofficeLink
+                          href={`/backoffice/clientes/${c.id}/`}
+                          className="hover:underline"
+                        >
+                          {c.nome}
+                        </BackofficeLink>
+                      </TableCell>
                       <TableCell className="text-[var(--text-secondary)]">{c.email ?? "—"}</TableCell>
                       <TableCell>{formatPhoneBR(c.telefone) || "—"}</TableCell>
                       <TableCell className="font-mono text-xs">{formatCpfCnpj(c.cpf) || "—"}</TableCell>

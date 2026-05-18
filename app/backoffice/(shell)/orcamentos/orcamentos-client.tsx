@@ -26,6 +26,7 @@ import {
 import { Autocomplete } from "@/components/autocomplete";
 import { showConfirm } from "@/components/confirm-modal";
 import { BolsaMochilaIcon, MalaGrandeIcon, MalaMaoIcon } from "@/components/icons/bagagem";
+import { WhatsAppIcon } from "@/components/icons/whatsapp";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
@@ -223,6 +224,46 @@ function descricaoBagagens(b: FormState["bagagens"]) {
   if (b.mao) parts.push(`${b.mao} mala${b.mao === 1 ? "" : "s"} de mão`);
   if (b.bolsa) parts.push(`${b.bolsa} bolsa/mochila`);
   return parts.length ? parts.join(" + ") : "Sem bagagem incluída neste orçamento.";
+}
+
+function phoneToWaMe(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  return digits.startsWith("55") ? digits : `55${digits}`;
+}
+
+function buildWhatsappUrl(
+  o: Orcamento,
+  clientesTelefones: { id: string; telefone: string | null }[],
+): string | null {
+  const telefone = clientesTelefones.find((c) => c.id === o.cliente_id)?.telefone ?? null;
+  const waNum = phoneToWaMe(telefone);
+  if (!waNum) return null;
+
+  const numero = o.numero_orcamento ?? `#${o.id.slice(0, 6)}`;
+  const clienteNome = o.cliente?.nome ? firstName(o.cliente.nome) : "cliente";
+  const voosIda = o.voos?.filter((v) => v.tipo === "ida") ?? [];
+  const trechos = voosIda.length
+    ? voosIda.map((v) => `${v.origem || "—"} → ${v.destino || "—"}`).join(", ")
+    : null;
+  const dataVoo = voosIda[0]?.data ? formatDate(voosIda[0].data) : null;
+  const valor = formatCurrency(Number(o.valor_total));
+  const pax = `${o.adultos}A · ${o.criancas}C · ${o.bebes}B`;
+
+  const linhas = [
+    `Olá ${clienteNome}! Segue o orçamento ${numero} que preparei para você:`,
+    "",
+    trechos ? `Trecho: ${trechos}` : null,
+    dataVoo ? `Data de ida: ${dataVoo}` : null,
+    `Passageiros: ${pax}`,
+    `Valor total: ${valor}`,
+    o.forma_pagamento ? `Pagamento: ${o.forma_pagamento}` : null,
+    "",
+    "O PDF com todos os detalhes está em anexo. Qualquer duvida, estou a disposicao!",
+  ].filter((l): l is string => l !== null);
+
+  return `https://wa.me/${waNum}?text=${encodeURIComponent(linhas.join("\n"))}`;
 }
 
 export function OrcamentosClient() {
@@ -628,6 +669,17 @@ export function OrcamentosClient() {
     }
   }
 
+  function handleWhatsapp(o: Orcamento) {
+    const url = buildWhatsappUrl(o, clientes);
+    if (!url) {
+      toast.warning("Telefone não cadastrado", {
+        description: "Adicione o telefone do cliente para enviar pelo WhatsApp.",
+      });
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   function addVoo(tipo: "ida" | "volta") {
     setForm((f) => ({ ...f, voos: [...f.voos, { tipo, origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }] }));
   }
@@ -709,6 +761,16 @@ export function OrcamentosClient() {
                               onClick={() => gerarPdf(o)}
                             >
                               <FileText className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              title="Enviar orçamento pelo WhatsApp"
+                              onClick={() => handleWhatsapp(o)}
+                              className="text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                            >
+                              <WhatsAppIcon className="h-4 w-4" />
                             </Button>
                             {podeGerarVenda(o) ? (
                               <Button
