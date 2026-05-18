@@ -2,6 +2,7 @@
 
 import { ArrowRight, Lock, Mail, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -28,7 +29,14 @@ function translateError(message: string): string {
   return message || "Erro ao fazer login. Tente novamente.";
 }
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  otp_expired:
+    "O link de recuperação expirou ou já foi substituído por um mais novo. Use «Esqueci minha senha» e abra apenas o último e-mail recebido (de preferência em aba anônima).",
+  auth: "Não foi possível entrar pelo link do e-mail. Solicite um novo convite ou recuperação de senha.",
+};
+
 export function LoginForm() {
+  const searchParams = useSearchParams();
   const { profile, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,6 +44,13 @@ export function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [sendingRecovery, setSendingRecovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const erro = searchParams.get("erro");
+    if (erro && AUTH_ERROR_MESSAGES[erro]) {
+      setError(AUTH_ERROR_MESSAGES[erro]);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && profile) {

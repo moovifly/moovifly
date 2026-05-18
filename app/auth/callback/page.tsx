@@ -9,6 +9,11 @@ import {
   MOOVIFLY_POS_CONVITE_KEY,
 } from "@/lib/auth-invite-flow";
 import { establishSessionFromUrl } from "@/lib/auth-session-from-url";
+import {
+  loginQueryForAuthError,
+  messageForAuthUrlError,
+  parseAuthErrorFromUrl,
+} from "@/lib/auth-url-errors";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
@@ -31,6 +36,18 @@ function AuthCallbackContent() {
       const next = safeNext(searchParams.get("next"));
       const code = searchParams.get("code");
 
+      const urlError = parseAuthErrorFromUrl();
+      if (urlError) {
+        const msg = messageForAuthUrlError(urlError);
+        setStatus(msg);
+        setTimeout(() => {
+          window.location.replace(
+            publicUrlForPath(`/backoffice/login/?erro=${loginQueryForAuthError(urlError)}`),
+          );
+        }, 4500);
+        return;
+      }
+
       try {
         const flow =
           code || (typeof window !== "undefined" && window.location.hash?.includes("access_token"))
@@ -38,10 +55,10 @@ function AuthCallbackContent() {
             : "none";
 
         if (flow === "none") {
-          setStatus("Link inválido ou expirado.");
+          setStatus("Link inválido ou expirado. Solicite um novo e-mail de recuperação.");
           setTimeout(() => {
             window.location.replace(publicUrlForPath("/backoffice/login/?erro=auth"));
-          }, 2000);
+          }, 3500);
           return;
         }
 
