@@ -4,7 +4,11 @@ import { Loader2 } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
+import {
+  MOOVIFLY_PASSWORD_RECOVERY_KEY,
+  MOOVIFLY_POS_CONVITE_KEY,
+} from "@/lib/auth-invite-flow";
+import { establishSessionFromUrl } from "@/lib/auth-session-from-url";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
@@ -13,21 +17,6 @@ const DEFAULT_NEXT = "/backoffice/definir-senha/";
 function safeNext(next: string | null): string {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return DEFAULT_NEXT;
   return next.endsWith("/") ? next : `${next}/`;
-}
-
-async function waitForSessionFromHash(
-  maxAttempts = 20,
-  delayMs = 100,
-): Promise<boolean> {
-  const supabase = getSupabaseClient();
-  for (let i = 0; i < maxAttempts; i++) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session) return true;
-    await new Promise((r) => setTimeout(r, delayMs));
-  }
-  return false;
 }
 
 function AuthCallbackContent() {
@@ -43,18 +32,12 @@ function AuthCallbackContent() {
       const code = searchParams.get("code");
 
       try {
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-        } else if (typeof window !== "undefined" && window.location.hash?.includes("access_token")) {
-          setStatus("Carregando sessão…");
-          const ok = await waitForSessionFromHash();
-          if (!ok) {
-            throw new Error(
-              "Não foi possível ativar a sessão a partir do link. Abra o convite no mesmo navegador ou solicite um novo e-mail.",
-            );
-          }
-        } else {
+        const flow =
+          code || (typeof window !== "undefined" && window.location.hash?.includes("access_token"))
+            ? await establishSessionFromUrl(supabase)
+            : "none";
+
+        if (flow === "none") {
           setStatus("Link inválido ou expirado.");
           setTimeout(() => {
             window.location.replace(publicUrlForPath("/backoffice/login/?erro=auth"));
@@ -65,7 +48,11 @@ function AuthCallbackContent() {
         if (cancelled) return;
 
         try {
-          sessionStorage.setItem(MOOVIFLY_POS_CONVITE_KEY, "1");
+          if (flow === "recovery") {
+            sessionStorage.setItem(MOOVIFLY_PASSWORD_RECOVERY_KEY, "1");
+          } else {
+            sessionStorage.setItem(MOOVIFLY_POS_CONVITE_KEY, "1");
+          }
         } catch {
           /* ignore */
         }

@@ -15,7 +15,7 @@ import {
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
 import { getUserProfile, signOut as authSignOut, type UserProfile } from "@/lib/auth";
-import { MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
+import { MOOVIFLY_PASSWORD_RECOVERY_KEY, MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
 
 type AuthContextValue = {
   loading: boolean;
@@ -163,8 +163,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isLoginPage) {
         if (typeof window !== "undefined") {
           try {
-            if (sessionStorage.getItem(MOOVIFLY_POS_CONVITE_KEY) === "1") {
+            if (
+              sessionStorage.getItem(MOOVIFLY_POS_CONVITE_KEY) === "1" ||
+              sessionStorage.getItem(MOOVIFLY_PASSWORD_RECOVERY_KEY) === "1"
+            ) {
               sessionStorage.removeItem(MOOVIFLY_POS_CONVITE_KEY);
+              sessionStorage.removeItem(MOOVIFLY_PASSWORD_RECOVERY_KEY);
               goBackoffice("/backoffice/definir-senha/");
               return;
             }

@@ -8,13 +8,26 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
+import {
+  MOOVIFLY_PASSWORD_RECOVERY_KEY,
+  MOOVIFLY_POS_CONVITE_KEY,
+} from "@/lib/auth-invite-flow";
+import { establishSessionFromUrl } from "@/lib/auth-session-from-url";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
 function translatePasswordError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("password") && m.includes("6")) return "A senha deve ter pelo menos 6 caracteres (requisito do sistema).";
+  if (m.includes("reauthentication")) {
+    return (
+      "Não foi possível alterar a senha com esta sessão. Abra o link do e-mail em uma aba anônima " +
+      "(ou saia da conta antes de clicar no link). Se persistir, em Supabase → Authentication → " +
+      "Sign In / Providers → Email, desative «Secure password change»."
+    );
+  }
+  if (m.includes("password") && m.includes("6")) {
+    return "A senha deve ter pelo menos 6 caracteres (requisito do sistema).";
+  }
   if (m.includes("same as")) return "Escolha uma senha diferente da anterior.";
   return message || "Não foi possível atualizar a senha.";
 }
@@ -24,13 +37,81 @@ export function DefinirSenhaForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const [canSetPassword, setCanSetPassword] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
+    let cancelled = false;
+    const supabase = getSupabaseClient();
+
+    async function bootstrap() {
+      try {
+        const flow = await establishSessionFromUrl(supabase);
+        if (cancelled) return;
+        if (flow === "recovery") {
+          try {
+            sessionStorage.setItem(MOOVIFLY_PASSWORD_RECOVERY_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+          setCanSetPassword(true);
+        } else if (flow === "invite") {
+          try {
+            sessionStorage.setItem(MOOVIFLY_POS_CONVITE_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+          setCanSetPassword(true);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error("Link inválido ou expirado", { description: msg });
+        window.location.assign(publicUrlForPath("/backoffice/login/?erro=auth"));
+        return;
+      } finally {
+        if (!cancelled) setBootstrapping(false);
+      }
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        try {
+          sessionStorage.setItem(MOOVIFLY_PASSWORD_RECOVERY_KEY, "1");
+        } catch {
+          /* ignore */
+        }
+        setCanSetPassword(true);
+      }
+    });
+
+    void bootstrap();
+
+    try {
+      if (
+        sessionStorage.getItem(MOOVIFLY_PASSWORD_RECOVERY_KEY) === "1" ||
+        sessionStorage.getItem(MOOVIFLY_POS_CONVITE_KEY) === "1"
+      ) {
+        setCanSetPassword(true);
+      }
+    } catch {
+      /* ignore */
+    }
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || bootstrapping) return;
     if (!userId || !profile) {
       window.location.assign(publicUrlForPath("/backoffice/login/"));
     }
-  }, [authLoading, userId, profile]);
+  }, [authLoading, bootstrapping, userId, profile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -51,6 +132,7 @@ export function DefinirSenhaForm() {
       toast.success("Senha criada! Redirecionando…");
       try {
         sessionStorage.removeItem(MOOVIFLY_POS_CONVITE_KEY);
+        sessionStorage.removeItem(MOOVIFLY_PASSWORD_RECOVERY_KEY);
       } catch {
         /* ignore */
       }
@@ -63,7 +145,7 @@ export function DefinirSenhaForm() {
     }
   }
 
-  if (authLoading || !userId || !profile) {
+  if (authLoading || bootstrapping || !userId || !profile) {
     return (
       <div className="flex justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" aria-hidden />
@@ -81,6 +163,11 @@ export function DefinirSenhaForm() {
         <p className="text-sm text-[var(--text-secondary)]">
           Olá, {profile.nome}. Crie uma senha para acessar o backoffice da MooviFly.
         </p>
+        {!canSetPassword && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Use o link enviado por e-mail nesta página. Se o erro continuar, abra o link em aba anônima.
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
