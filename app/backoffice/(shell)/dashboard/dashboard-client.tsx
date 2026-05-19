@@ -47,7 +47,14 @@ function relName(rel: RecentSale["clientes"]): string | undefined {
 }
 
 type TopSeller = { nome: string; total: number; vendas: number };
-type Stats = { totalClientes: number; totalVendas: number; faturamentoTotal: number };
+type Stats = {
+  totalClientes: number;
+  totalVendas: number;
+  faturamentoTotal: number;
+  trendClientes: number | null;
+  trendVendas: number | null;
+  trendFaturamento: number | null;
+};
 type Financial = {
   contasReceberValor: number;
   contasReceberCount: number;
@@ -66,7 +73,14 @@ type EmbarqueAlert = {
   diffDays: EmbarqueAlertOffsetDays;
 };
 
-const initialStats: Stats = { totalClientes: 0, totalVendas: 0, faturamentoTotal: 0 };
+const initialStats: Stats = {
+  totalClientes: 0,
+  totalVendas: 0,
+  faturamentoTotal: 0,
+  trendClientes: null,
+  trendVendas: null,
+  trendFaturamento: null,
+};
 const initialFinancial: Financial = {
   contasReceberValor: 0,
   contasReceberCount: 0,
@@ -151,38 +165,157 @@ function dismissKey(a: EmbarqueAlert) {
   return `mf:embarque_alert:dismissed:${a.venda_id}:${a.diffDays}`;
 }
 
-async function loadStats(profile: UserProfile): Promise<Stats> {
-  const supabase = getSupabaseClient();
-  let clientesQ = supabase
-    .from("clientes")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "ativo");
-  if (!["administrador", "gerente"].includes(profile.tipo)) {
-    clientesQ = clientesQ.eq("vendedor_id", profile.id);
-  }
-  const { count: totalClientes } = await clientesQ;
+type Period = "hoje" | "semana" | "mes" | "mes_passado" | "3meses" | "6meses" | "ano";
 
-  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-  let vendasQ = supabase
-    .from("vendas")
-    .select("id, valor_total", { count: "exact" })
-    .gte("created_at", firstDayOfMonth)
-    .in("status", ["confirmada", "concluida"]);
-  if (!["administrador", "gerente"].includes(profile.tipo)) {
-    vendasQ = vendasQ.eq("vendedor_id", profile.id);
-  }
-  const { data: vendas, count: totalVendas } = await vendasQ;
-  const faturamentoTotal =
-    vendas?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
+type DateRange = {
+  start: string;
+  end: string;
+  prevStart: string;
+  prevEnd: string;
+  trendLabel: string;
+  groupBy: "hour" | "day" | "month";
+};
 
-  return { totalClientes: totalClientes ?? 0, totalVendas: totalVendas ?? 0, faturamentoTotal };
+const PERIODS: { value: Period; label: string }[] = [
+  { value: "hoje", label: "Hoje" },
+  { value: "semana", label: "Esta semana" },
+  { value: "mes", label: "Este mês" },
+  { value: "mes_passado", label: "Último mês" },
+  { value: "3meses", label: "Últ. 3 meses" },
+  { value: "6meses", label: "Últ. 6 meses" },
+  { value: "ano", label: "Este ano" },
+];
+
+function getDateRange(period: Period): DateRange {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let start: Date;
+  let end: Date = now;
+  let prevStart: Date;
+  let prevEnd: Date;
+  let trendLabel: string;
+  let groupBy: "hour" | "day" | "month" = "day";
+
+  switch (period) {
+    case "hoje":
+      start = today;
+      prevEnd = today;
+      prevStart = new Date(today); prevStart.setDate(prevStart.getDate() - 1);
+      trendLabel = "vs ontem";
+      groupBy = "hour";
+      break;
+    case "semana": {
+      const dow = today.getDay();
+      const daysBack = dow === 0 ? 6 : dow - 1;
+      start = new Date(today); start.setDate(start.getDate() - daysBack);
+      prevEnd = new Date(start);
+      prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 7);
+      trendLabel = "vs semana anterior";
+      break;
+    }
+    case "mes":
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      trendLabel = "vs mês anterior";
+      break;
+    case "mes_passado":
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      trendLabel = "vs mês anterior";
+      break;
+    case "3meses":
+      start = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+      trendLabel = "vs 3 meses anteriores";
+      groupBy = "month";
+      break;
+    case "6meses":
+      start = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+      trendLabel = "vs 6 meses anteriores";
+      groupBy = "month";
+      break;
+    case "ano":
+      start = new Date(now.getFullYear(), 0, 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear() - 1, 0, 1);
+      trendLabel = "vs ano anterior";
+      groupBy = "month";
+      break;
+    default:
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      prevEnd = new Date(start);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      trendLabel = "vs mês anterior";
+  }
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+    prevStart: prevStart!.toISOString(),
+    prevEnd: prevEnd!.toISOString(),
+    trendLabel,
+    groupBy,
+  };
 }
 
-async function loadRecentSales(profile: UserProfile): Promise<RecentSale[]> {
+function calcTrend(current: number, previous: number): number | null {
+  if (previous === 0) return null;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats> {
+  const supabase = getSupabaseClient();
+  const isAdmin = ["administrador", "gerente"].includes(profile.tipo);
+
+  let totalClientesQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo");
+  if (!isAdmin) totalClientesQ = totalClientesQ.eq("vendedor_id", profile.id);
+
+  let clientesThisQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo").gte("created_at", range.start).lte("created_at", range.end);
+  if (!isAdmin) clientesThisQ = clientesThisQ.eq("vendedor_id", profile.id);
+
+  let clientesPrevQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo").gte("created_at", range.prevStart).lt("created_at", range.prevEnd);
+  if (!isAdmin) clientesPrevQ = clientesPrevQ.eq("vendedor_id", profile.id);
+
+  let vendasThisQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("created_at", range.start).lte("created_at", range.end).in("status", ["confirmada", "concluida"]);
+  if (!isAdmin) vendasThisQ = vendasThisQ.eq("vendedor_id", profile.id);
+
+  let vendasPrevQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("created_at", range.prevStart).lt("created_at", range.prevEnd).in("status", ["confirmada", "concluida"]);
+  if (!isAdmin) vendasPrevQ = vendasPrevQ.eq("vendedor_id", profile.id);
+
+  const [
+    { count: totalClientes },
+    { count: clientesThis },
+    { count: clientesPrev },
+    { data: vendas, count: totalVendas },
+    { data: vendasPrev, count: totalVendasPrev },
+  ] = await Promise.all([totalClientesQ, clientesThisQ, clientesPrevQ, vendasThisQ, vendasPrevQ]);
+
+  const faturamentoTotal = vendas?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
+  const faturamentoPrev = vendasPrev?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
+
+  return {
+    totalClientes: totalClientes ?? 0,
+    totalVendas: totalVendas ?? 0,
+    faturamentoTotal,
+    trendClientes: calcTrend(clientesThis ?? 0, clientesPrev ?? 0),
+    trendVendas: calcTrend(totalVendas ?? 0, totalVendasPrev ?? 0),
+    trendFaturamento: calcTrend(faturamentoTotal, faturamentoPrev),
+  };
+}
+
+async function loadRecentSales(profile: UserProfile, range: DateRange): Promise<RecentSale[]> {
   const supabase = getSupabaseClient();
   let q = supabase
     .from("vendas")
     .select("id, numero_venda, destino, valor_total, status, clientes (nome)")
+    .gte("created_at", range.start)
+    .lte("created_at", range.end)
     .order("created_at", { ascending: false })
     .limit(5);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
@@ -193,14 +326,14 @@ async function loadRecentSales(profile: UserProfile): Promise<RecentSale[]> {
   return (data ?? []) as unknown as RecentSale[];
 }
 
-async function loadTopSellers(profile: UserProfile): Promise<TopSeller[]> {
+async function loadTopSellers(profile: UserProfile, range: DateRange): Promise<TopSeller[]> {
   if (!["administrador", "gerente"].includes(profile.tipo)) return [];
   const supabase = getSupabaseClient();
-  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
   const { data: vendas, error } = await supabase
     .from("vendas")
     .select("vendedor_id, valor_total, usuarios (nome)")
-    .gte("created_at", firstDayOfMonth)
+    .gte("created_at", range.start)
+    .lte("created_at", range.end)
     .in("status", ["confirmada", "concluida"]);
   if (error) throw error;
   type RawSale = {
@@ -267,41 +400,82 @@ async function loadFinancial(profile: UserProfile): Promise<Financial> {
   };
 }
 
-async function loadSalesByDay(profile: UserProfile, days = 7) {
+async function loadSalesByDay(profile: UserProfile, range: DateRange) {
   const supabase = getSupabaseClient();
-  const since = new Date();
-  since.setDate(since.getDate() - days);
   let q = supabase
     .from("vendas")
     .select("valor_total, created_at, status")
-    .gte("created_at", since.toISOString())
+    .gte("created_at", range.start)
+    .lte("created_at", range.end)
     .in("status", ["confirmada", "concluida"]);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
     q = q.eq("vendedor_id", profile.id);
   }
   const { data } = await q;
+  const sales = (data ?? []) as Array<{ valor_total: number | string; created_at: string }>;
+
+  if (range.groupBy === "hour") {
+    const buckets = new Map<number, number>();
+    for (let h = 0; h < 24; h++) buckets.set(h, 0);
+    for (const v of sales) {
+      const h = new Date(v.created_at).getHours();
+      buckets.set(h, (buckets.get(h) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+    }
+    return [...buckets.entries()].map(([hour, value]) => ({
+      label: `${String(hour).padStart(2, "0")}h`,
+      valor: value,
+    }));
+  }
+
+  if (range.groupBy === "month") {
+    const rStart = new Date(range.start);
+    const rEnd = new Date(range.end);
+    const buckets = new Map<string, number>();
+    const curr = new Date(rStart.getFullYear(), rStart.getMonth(), 1);
+    while (curr <= rEnd) {
+      buckets.set(`${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, "0")}`, 0);
+      curr.setMonth(curr.getMonth() + 1);
+    }
+    for (const v of sales) {
+      const d = new Date(v.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+    }
+    return [...buckets.entries()].map(([key, value]) => {
+      const [year, month] = key.split("-");
+      const d = new Date(Number(year), Number(month) - 1, 1);
+      return { label: d.toLocaleDateString("pt-BR", { month: "short" }), valor: value };
+    });
+  }
+
+  // Daily grouping
+  const rStart = new Date(range.start);
+  const rEnd = new Date(range.end);
+  const diffDays = Math.min(Math.ceil((rEnd.getTime() - rStart.getTime()) / (24 * 60 * 60 * 1000)) + 1, 31);
   const buckets = new Map<string, number>();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
+  for (let i = 0; i < diffDays; i++) {
+    const d = new Date(rStart); d.setDate(d.getDate() + i);
     buckets.set(d.toISOString().slice(0, 10), 0);
   }
-  for (const v of (data ?? []) as Array<{ valor_total: number | string; created_at: string }>) {
+  for (const v of sales) {
     const key = new Date(v.created_at).toISOString().slice(0, 10);
-    buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+    if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
   }
+  const isShortPeriod = diffDays <= 7;
   return [...buckets.entries()].map(([date, value]) => ({
-    label: new Date(date).toLocaleDateString("pt-BR", { weekday: "short" }),
+    label: new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", isShortPeriod ? { weekday: "short" } : { day: "2-digit", month: "2-digit" }),
     valor: value,
   }));
 }
 
-async function loadRevenueByCategory(profile: UserProfile) {
+async function loadRevenueByCategory(profile: UserProfile, range: DateRange) {
   const supabase = getSupabaseClient();
   /* tipo = categoria comercial; classe = econômica/executiva… fallback para dados antigos sem tipo */
   let q = supabase
     .from("vendas")
     .select("tipo, classe, valor_total, status")
+    .gte("created_at", range.start)
+    .lte("created_at", range.end)
     .in("status", ["confirmada", "concluida"]);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
     q = q.eq("vendedor_id", profile.id);
@@ -336,6 +510,7 @@ function statusBadgeColor(status: string) {
 export function DashboardClient() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<Period>("mes");
   const [stats, setStats] = useState<Stats>(initialStats);
   const [financial, setFinancial] = useState<Financial>(initialFinancial);
   const [recent, setRecent] = useState<RecentSale[]>([]);
@@ -345,16 +520,17 @@ export function DashboardClient() {
   const [embarqueAlerts, setEmbarqueAlerts] = useState<EmbarqueAlert[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  const loadAll = useCallback(async () => {
+  const loadAll = useCallback(async (p: Period) => {
     if (!profile) return;
+    const range = getDateRange(p);
     try {
       const [s, f, r, t, c, d, e] = await Promise.all([
-        loadStats(profile),
+        loadStats(profile, range),
         loadFinancial(profile),
-        loadRecentSales(profile),
-        loadTopSellers(profile),
-        loadSalesByDay(profile),
-        loadRevenueByCategory(profile),
+        loadRecentSales(profile, range),
+        loadTopSellers(profile, range),
+        loadSalesByDay(profile, range),
+        loadRevenueByCategory(profile, range),
         loadEmbarqueAlerts(profile),
       ]);
       setStats(s);
@@ -372,10 +548,11 @@ export function DashboardClient() {
   }, [profile]);
 
   useEffect(() => {
-    loadAll();
-    const id = setInterval(loadAll, 5 * 60 * 1000);
+    setLoading(true);
+    loadAll(period);
+    const id = setInterval(() => loadAll(period), 5 * 60 * 1000);
     return () => clearInterval(id);
-  }, [loadAll]);
+  }, [loadAll, period]);
 
   useEffect(() => {
     // carrega dismisseds do localStorage
@@ -411,6 +588,7 @@ export function DashboardClient() {
     <>
       <Topbar />
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <PeriodFilter value={period} onChange={setPeriod} />
         {!loading && visibleAlerts.length > 0 && (
           <div className="space-y-2">
             {visibleAlerts.map((a) => {
@@ -449,15 +627,15 @@ export function DashboardClient() {
         )}
 
         <section className="grid gap-4 md:grid-cols-3">
-          <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" trend={20} />
-          <StatCard label="Vendas no mês" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={-8} />
-          <StatCard label="Faturamento no mês" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={20} />
+          <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" />
+          <StatCard label="Vendas no período" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+          <StatCard label="Faturamento no período" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
         </section>
 
         <section className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>Relatório de Vendas (últimos 7 dias)</CardTitle>
+              <CardTitle>Relatório de Vendas ({PERIODS.find((p) => p.value === period)?.label ?? ""})</CardTitle>
             </CardHeader>
             <CardContent className="h-72">
               {loading ? (
@@ -590,10 +768,12 @@ export function DashboardClient() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, tone = "green", trend }: {
+function StatCard({ label, value, icon: Icon, tone = "green", trend, trendLabel = "vs período anterior" }: {
   label: string; value: string | null;
   icon: React.ComponentType<{ className?: string }>;
-  tone?: "purple" | "green" | "beige"; trend?: number;
+  tone?: "purple" | "green" | "beige";
+  trend?: number;
+  trendLabel?: string;
 }) {
   const toneClasses = {
     purple: "bg-[var(--purple-glow)] text-[var(--purple-700)]",
@@ -617,11 +797,32 @@ function StatCard({ label, value, icon: Icon, tone = "green", trend }: {
               {trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {Math.abs(trend)}%
             </span>
-            <span className="text-[var(--text-secondary)]">vs último mês</span>
+            <span className="text-[var(--text-secondary)]">{trendLabel}</span>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function PeriodFilter({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {PERIODS.map((p) => (
+        <button
+          key={p.value}
+          type="button"
+          onClick={() => onChange(p.value)}
+          className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            value === p.value
+              ? "bg-(--accent-600) text-white shadow-sm"
+              : "border border-(--border-subtle) bg-secondary text-muted-foreground hover:bg-(--bg-hover) hover:text-foreground"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
