@@ -39,8 +39,9 @@ type Voo = {
   tipo: "ida" | "volta";
   origem: string;
   destino: string;
-  data: string;
+  data_partida: string;
   horario_saida: string;
+  data_chegada: string;
   horario_chegada: string;
   companhia: string;
   numero_voo: string;
@@ -132,8 +133,8 @@ function voosToVendaCampos(voovs: Voo[] | undefined) {
   return {
     origem: firstIda?.origem?.trim() || null,
     destino: lastIda?.destino?.trim() || null,
-    data_ida: firstIda?.data?.trim() || null,
-    data_volta: lastVolta?.data?.trim() || voltas[0]?.data?.trim() || null,
+    data_ida: firstIda?.data_partida?.trim() || null,
+    data_volta: lastVolta?.data_partida?.trim() || voltas[0]?.data_partida?.trim() || null,
     companhia: firstIda?.companhia?.trim() || null,
   };
 }
@@ -148,7 +149,8 @@ function formatVoosParaObservacao(voovs: Voo[] | undefined): string {
       const idx = v.tipo === "ida" ? ++nIda : ++nVolta;
       const parts = [
         `${trecho} #${idx}: ${v.origem?.trim() || "—"} → ${v.destino?.trim() || "—"}`,
-        v.data ? `Data ${v.data}` : null,
+        v.data_partida ? `Partida ${v.data_partida}` : null,
+        v.data_chegada && v.data_chegada !== v.data_partida ? `Chegada ${v.data_chegada}` : null,
         [v.horario_saida, v.horario_chegada].filter(Boolean).length ? `Saída/chegada ${v.horario_saida || "—"} / ${v.horario_chegada || "—"}` : null,
         [v.companhia, v.numero_voo].filter(Boolean).join(" ").trim() || null,
       ].filter(Boolean);
@@ -167,18 +169,38 @@ function clipVarchar(value: string, max: number): string {
 }
 
 /** Normaliza linha do Postgres (tem_bagagem / formas_pagamento) para o modelo do formulário. */
+function migrateVoo(v: Record<string, unknown>): Voo {
+  // backward compat: registros antigos têm 'data', novos têm 'data_partida' + 'data_chegada'
+  const legacyData = (v.data as string | undefined) ?? "";
+  return {
+    tipo: ((v.tipo as string) === "volta" ? "volta" : "ida") as "ida" | "volta",
+    origem: (v.origem as string) ?? "",
+    destino: (v.destino as string) ?? "",
+    data_partida: (v.data_partida as string | undefined) ?? legacyData,
+    horario_saida: (v.horario_saida as string) ?? "",
+    data_chegada: (v.data_chegada as string | undefined) ?? legacyData,
+    horario_chegada: (v.horario_chegada as string) ?? "",
+    companhia: (v.companhia as string) ?? "",
+    numero_voo: (v.numero_voo as string) ?? "",
+  };
+}
+
 function rowToOrcamento(raw: Record<string, unknown>): Orcamento {
   const bagagensRaw = raw.bagagens;
   const bagagens =
     bagagensRaw && typeof bagagensRaw === "object"
       ? (bagagensRaw as { bolsa?: number; mao?: number; grande?: number })
       : null;
+  const voosRaw = Array.isArray(raw.voos)
+    ? (raw.voos as Record<string, unknown>[]).map(migrateVoo)
+    : [];
   return {
     ...(raw as unknown as Orcamento),
     com_bagagem: Boolean(raw.tem_bagagem ?? raw.com_bagagem),
     forma_pagamento: (raw.formas_pagamento ?? raw.forma_pagamento) as string | null,
     tipo_viagem: (raw.tipo_viagem as string | null) ?? "nacional",
     bagagens,
+    voos: voosRaw,
   };
 }
 
@@ -194,7 +216,7 @@ const emptyForm = (): FormState => ({
   bebes: 0,
   com_bagagem: true,
   bagagens: { bolsa: 1, mao: 1, grande: 1 },
-  voos: [{ tipo: "ida", origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }],
+  voos: [{ tipo: "ida", origem: "", destino: "", data_partida: "", horario_saida: "", data_chegada: "", horario_chegada: "", companhia: "", numero_voo: "" }],
   valor_total: 0,
   rav_du: 0,
   forma_pagamento: PAGAMENTO_PADRAO,
@@ -247,7 +269,7 @@ function buildWhatsappUrl(
   const trechos = voosIda.length
     ? voosIda.map((v) => `${v.origem || "—"} → ${v.destino || "—"}`).join(", ")
     : null;
-  const dataVoo = voosIda[0]?.data ? formatDate(voosIda[0].data) : null;
+  const dataVoo = voosIda[0]?.data_partida ? formatDate(voosIda[0].data_partida) : null;
   const valor = formatCurrency(Number(o.valor_total));
   const pax = `${o.adultos}A · ${o.criancas}C · ${o.bebes}B`;
 
@@ -681,7 +703,7 @@ export function OrcamentosClient() {
   }
 
   function addVoo(tipo: "ida" | "volta") {
-    setForm((f) => ({ ...f, voos: [...f.voos, { tipo, origem: "", destino: "", data: "", horario_saida: "", horario_chegada: "", companhia: "", numero_voo: "" }] }));
+    setForm((f) => ({ ...f, voos: [...f.voos, { tipo, origem: "", destino: "", data_partida: "", horario_saida: "", data_chegada: "", horario_chegada: "", companhia: "", numero_voo: "" }] }));
   }
 
   function removeVoo(i: number) { setForm((f) => ({ ...f, voos: f.voos.filter((_, idx) => idx !== i) })); }
@@ -975,13 +997,14 @@ export function OrcamentosClient() {
                           <div><Label>Destino</Label>
                             <Autocomplete value={v.destino} onValueChange={(t) => updateVoo(i, { destino: t })} onSelect={(opt) => updateVoo(i, { destino: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` })} options={searchAeroportos(v.destino, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))} placeholder="Aeroporto de destino" />
                           </div>
-                          <div><Label>Data</Label><Input type="date" value={v.data} onChange={(e) => updateVoo(i, { data: e.target.value })} /></div>
+                          <div><Label>Data de Partida</Label><Input type="date" value={v.data_partida} onChange={(e) => updateVoo(i, { data_partida: e.target.value })} /></div>
+                          <div><Label>Horário de Partida</Label><Input type="time" value={v.horario_saida} onChange={(e) => updateVoo(i, { horario_saida: e.target.value })} /></div>
+                          <div><Label>Data de Chegada</Label><Input type="date" value={v.data_chegada} onChange={(e) => updateVoo(i, { data_chegada: e.target.value })} /></div>
+                          <div><Label>Horário de Chegada</Label><Input type="time" value={v.horario_chegada} onChange={(e) => updateVoo(i, { horario_chegada: e.target.value })} /></div>
                           <div><Label>Companhia</Label>
                             <Autocomplete value={v.companhia} onValueChange={(t) => { updateVoo(i, { companhia: t }); if (!t.trim()) setForm((f) => ({ ...f, forma_pagamento: "" })); }} onSelect={(opt) => handleCompanhiaSelect(i, opt.value as Companhia)} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
                           </div>
-                          <div><Label>Saída</Label><Input type="time" value={v.horario_saida} onChange={(e) => updateVoo(i, { horario_saida: e.target.value })} /></div>
-                          <div><Label>Chegada</Label><Input type="time" value={v.horario_chegada} onChange={(e) => updateVoo(i, { horario_chegada: e.target.value })} /></div>
-                          <div className="sm:col-span-2"><Label>Número do voo</Label><Input value={v.numero_voo} onChange={(e) => updateVoo(i, { numero_voo: e.target.value })} placeholder="LA1234" /></div>
+                          <div><Label>Número do voo</Label><Input value={v.numero_voo} onChange={(e) => updateVoo(i, { numero_voo: e.target.value })} placeholder="LA1234" /></div>
                         </div>
                       </div>
                     ))}

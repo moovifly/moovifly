@@ -59,6 +59,15 @@ function formatDataCurta(iso: string): string {
   return `${dd}/${mm}/${yy}`;
 }
 
+const MESES_ABREV = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+/** Ex.: "28 Set" — formato usado na tabela de voos do PDF */
+function formatDataVoo(iso: string): string {
+  const d = parseLocalDate(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${d.getDate()} ${MESES_ABREV[d.getMonth()]}`;
+}
+
 function formatHorarioComH(horario: string): string {
   const t = horario.trim();
   if (!t) return "—";
@@ -66,7 +75,12 @@ function formatHorarioComH(horario: string): string {
   return short.endsWith("h") ? short : `${short}h`;
 }
 
-function duracaoEntre(horarioSaida: string, horarioChegada: string): string {
+function duracaoEntre(
+  dataSaida: string,
+  horarioSaida: string,
+  dataChegada: string,
+  horarioChegada: string,
+): string {
   const parseMin = (h: string) => {
     const m = h.trim().match(/(\d{1,2}):(\d{2})/);
     if (!m) return null;
@@ -75,7 +89,18 @@ function duracaoEntre(horarioSaida: string, horarioChegada: string): string {
   const a = parseMin(horarioSaida);
   const b = parseMin(horarioChegada);
   if (a === null || b === null) return "—";
-  let diff = b - a;
+
+  let extraMinutes = 0;
+  if (dataSaida && dataChegada) {
+    const dS = parseLocalDate(dataSaida);
+    const dC = parseLocalDate(dataChegada);
+    if (!Number.isNaN(dS.getTime()) && !Number.isNaN(dC.getTime())) {
+      const diffDays = Math.round((dC.getTime() - dS.getTime()) / (1000 * 60 * 60 * 24));
+      extraMinutes = diffDays * 24 * 60;
+    }
+  }
+
+  let diff = b - a + extraMinutes;
   if (diff < 0) diff += 24 * 60;
   const hh = Math.floor(diff / 60);
   const mm = diff % 60;
@@ -168,15 +193,15 @@ function vooPdfParaOrcamento(v: VooPdf): VooOrcamento {
   return {
     cia: (v.companhia ?? "").trim() || "—",
     numero: String(v.numero_voo ?? "").trim() || "—",
-    dataSaida: formatDataCurta(v.data),
+    dataSaida: formatDataVoo(v.data_partida),
     horaSaida: formatHorarioComH(v.horario_saida),
-    dataChegada: formatDataCurta(v.data),
+    dataChegada: formatDataVoo(v.data_chegada),
     horaChegada: formatHorarioComH(v.horario_chegada),
     origemCodigo: orig.codigo,
     origemCidade: orig.cidade,
     destinoCodigo: dst.codigo,
     destinoCidade: dst.cidade,
-    duracao: duracaoEntre(v.horario_saida, v.horario_chegada),
+    duracao: duracaoEntre(v.data_partida, v.horario_saida, v.data_chegada, v.horario_chegada),
   };
 }
 

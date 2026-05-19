@@ -4,8 +4,9 @@ export type VooPdf = {
   tipo: "ida" | "volta";
   origem: string;
   destino: string;
-  data: string;
+  data_partida: string;
   horario_saida: string;
+  data_chegada: string;
   horario_chegada: string;
   companhia: string;
   numero_voo: string;

@@ -17,7 +17,8 @@ const CINZA_BORDA = "#DDDDDD";
 const BRANCO = "#FFFFFF";
 const CINZA_RODAPE = "#999999";
 
-const COL_WIDTHS = ["20%", "6%", "12%", "12%", "18%", "24%", "8%"] as const;
+// Ordem: Cia | Voo | Origem | Saída | Destino | Chegada | Dur.
+const COL_WIDTHS = ["18%", "9%", "16%", "16%", "16%", "16%", "9%"] as const;
 
 const styles = StyleSheet.create({
   page: {
@@ -154,12 +155,14 @@ const styles = StyleSheet.create({
     marginBottom: "4mm",
     lineHeight: 1.4,
   },
-  sepLine: {
+  rodapeFixo: {
+    position: "absolute",
+    bottom: "10mm",
+    left: "18mm",
+    right: "18mm",
     borderTopWidth: 0.5,
     borderColor: CINZA_BORDA,
-    marginTop: "8mm",
-    marginBottom: "3mm",
-    width: "100%",
+    paddingTop: "3mm",
   },
   rodape: {
     fontSize: 7.5,
@@ -238,7 +241,7 @@ export function OrcamentoPdfDocument({ dados }: { dados: DadosOrcamento }) {
 
         <View style={styles.table}>
           <View style={styles.tableRow} wrap={false}>
-            {(["Cia", "Voo", "Saída", "Chegada", "Origem", "Destino", "Dur."] as const).map(
+            {(["Cia", "Voo", "Origem", "Saída", "Destino", "Chegada", "Dur."] as const).map(
               (label, i) => (
                 <View
                   key={label}
@@ -268,18 +271,18 @@ export function OrcamentoPdfDocument({ dados }: { dados: DadosOrcamento }) {
                 <Text style={styles.cellText}>{v.numero}</Text>
               </View>
               <View style={[styles.cell, { width: cellWidth(2) }]}>
-                <Text style={styles.cellText}>{celulaSaidaChegada(v, "saida")}</Text>
-              </View>
-              <View style={[styles.cell, { width: cellWidth(3) }]}>
-                <Text style={styles.cellText}>{celulaSaidaChegada(v, "chegada")}</Text>
-              </View>
-              <View style={[styles.cell, { width: cellWidth(4) }]}>
                 <Text style={styles.cellText}>{codigoCidade(v.origemCodigo, v.origemCidade)}</Text>
               </View>
-              <View style={[styles.cell, { width: cellWidth(5) }]}>
+              <View style={[styles.cell, { width: cellWidth(3) }]}>
+                <Text style={styles.cellText}>{celulaSaidaChegada(v, "saida")}</Text>
+              </View>
+              <View style={[styles.cell, { width: cellWidth(4) }]}>
                 <Text style={styles.cellText}>
                   {codigoCidade(v.destinoCodigo, v.destinoCidade)}
                 </Text>
+              </View>
+              <View style={[styles.cell, { width: cellWidth(5) }]}>
+                <Text style={styles.cellText}>{celulaSaidaChegada(v, "chegada")}</Text>
               </View>
               <View style={[styles.cell, { width: cellWidth(6) }, styles.cellLast]}>
                 <Text style={styles.cellText}>{v.duracao}</Text>
@@ -305,9 +308,9 @@ export function OrcamentoPdfDocument({ dados }: { dados: DadosOrcamento }) {
           <Text style={styles.obsText}>{dados.observacoes}</Text>
         ) : null}
 
-        <View style={styles.sepLine} />
-
-        <Text style={styles.rodape}>{nota}</Text>
+        <View style={styles.rodapeFixo} fixed>
+          <Text style={styles.rodape}>{nota}</Text>
+        </View>
       </Page>
     </Document>
   );
