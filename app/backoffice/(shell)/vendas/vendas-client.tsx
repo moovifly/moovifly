@@ -32,9 +32,11 @@ type Venda = {
   numero_venda: string;
   cliente_id: string | null;
   vendedor_id: string | null;
+  categoria_venda: "aereo" | "seguro_viagem" | null;
   tipo: string | null;
   origem: string | null;
   destino: string | null;
+  voucher: string | null;
   data_ida: string | null;
   data_volta: string | null;
   data_venda: string;
@@ -65,8 +67,19 @@ const FORNECEDOR_OPTIONS = [
   "BRT", "FRT", "CATIVA", "GTA", "NA TREND", "ORINTER",
 ];
 
+const FORMA_PAGAMENTO_SEGURO = [
+  "À vista",
+  "2x sem juros",
+  "3x sem juros",
+  "4x sem juros",
+  "5x sem juros",
+  "6x sem juros",
+  "7x sem juros",
+];
+
 type FormState = {
   id: string | null;
+  categoria_venda: "aereo" | "seguro_viagem";
   cliente_id: string | null;
   cliente_nome: string;
   tipo: string;
@@ -82,10 +95,12 @@ type FormState = {
   status: string;
   forma_pagamento: string;
   fornecedor: string;
+  voucher: string;
 };
 
 const emptyForm = (): FormState => ({
   id: null,
+  categoria_venda: "aereo",
   cliente_id: null,
   cliente_nome: "",
   tipo: "passagem",
@@ -101,6 +116,7 @@ const emptyForm = (): FormState => ({
   status: "pendente",
   forma_pagamento: "",
   fornecedor: "",
+  voucher: "",
 });
 
 export function VendasClient() {
@@ -113,6 +129,7 @@ export function VendasClient() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"select-type" | "form">("select-type");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
@@ -156,12 +173,18 @@ export function VendasClient() {
     });
   }, [items, search, statusFilter]);
 
-  function openNew() { setForm(emptyForm()); setOpen(true); }
+  function openNew() { setForm(emptyForm()); setStep("select-type"); setOpen(true); }
+
+  function selectCategoria(cat: "aereo" | "seguro_viagem") {
+    setForm((prev) => ({ ...prev, categoria_venda: cat }));
+    setStep("form");
+  }
 
   function openEdit(v: Venda) {
     const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
     setForm({
       id: v.id,
+      categoria_venda: v.categoria_venda ?? "aereo",
       cliente_id: v.cliente_id,
       cliente_nome: cli?.nome ?? "",
       tipo: v.tipo ?? "passagem",
@@ -177,7 +200,9 @@ export function VendasClient() {
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       fornecedor: v.fornecedor ?? "",
+      voucher: (v as unknown as { voucher?: string | null }).voucher ?? "",
     });
+    setStep("form");
     setOpen(true);
   }
 
@@ -187,27 +212,31 @@ export function VendasClient() {
     if (!form.valor_total || form.valor_total <= 0) { toast.error("Informe um valor total válido."); return; }
     setSaving(true);
     try {
-      const descricao =
-        [form.tipo, form.origem && form.destino ? `${form.origem} → ${form.destino}` : form.destino || form.origem]
-          .filter(Boolean)
-          .join(" — ") || "Venda";
+      const isSeguro = form.categoria_venda === "seguro_viagem";
+      const descricao = isSeguro
+        ? ["Seguro Viagem", form.destino].filter(Boolean).join(" — ") || "Seguro Viagem"
+        : [form.tipo, form.origem && form.destino ? `${form.origem} → ${form.destino}` : form.destino || form.origem]
+            .filter(Boolean)
+            .join(" — ") || "Venda";
       const payload = {
+        categoria_venda: form.categoria_venda,
         cliente_id: form.cliente_id,
         vendedor_id: profile?.id ?? null,
-        tipo: form.tipo || null,
+        tipo: isSeguro ? null : form.tipo || null,
         descricao,
-        origem: form.origem || null,
+        origem: isSeguro ? null : form.origem || null,
         destino: form.destino || null,
-        companhia: form.companhia || null,
+        companhia: isSeguro ? null : form.companhia || null,
         data_ida: form.data_ida || null,
         data_volta: form.data_volta || null,
         data_venda: form.data_venda,
         valor_total: form.valor_total,
-        taxa_rav: form.taxa_rav,
-        taxa_du: form.taxa_du,
+        taxa_rav: isSeguro ? 0 : form.taxa_rav,
+        taxa_du: isSeguro ? 0 : form.taxa_du,
         status: form.status,
         forma_pagamento: form.forma_pagamento || null,
-        fornecedor: form.fornecedor || null,
+        fornecedor: isSeguro ? null : form.fornecedor || null,
+        voucher: isSeguro ? form.voucher || null : null,
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
@@ -287,6 +316,7 @@ export function VendasClient() {
                     <TableHead>Número</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Cliente</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Destino</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Status</TableHead>
@@ -297,11 +327,17 @@ export function VendasClient() {
                   {filtered.map((v) => {
                     const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
                     const sb = STATUS_OPTIONS.find((s) => s.value === v.status) ?? STATUS_OPTIONS[0];
+                    const isSeguro = v.categoria_venda === "seguro_viagem";
                     return (
                       <TableRow key={v.id}>
                         <TableCell className="font-mono text-xs">{v.numero_venda}</TableCell>
                         <TableCell>{formatDate(v.data_venda)}</TableCell>
                         <TableCell className="font-medium">{cli?.nome ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={isSeguro ? "secondary" : "outline"}>
+                            {isSeguro ? "Seguro" : "Aéreo"}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-[var(--text-secondary)]">{v.destino ?? "—"}</TableCell>
                         <TableCell className="font-semibold">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
@@ -326,93 +362,185 @@ export function VendasClient() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{form.id ? "Editar venda" : "Nova venda"}</DialogTitle>
-            <DialogDescription>Preencha os dados da venda.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Cliente *</Label>
-                <Autocomplete
-                  value={form.cliente_nome}
-                  onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
-                  onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as Cliente).id }))}
-                  options={clientes.filter((c) => c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase())).map((c) => ({ value: c, label: c.nome }))}
-                  placeholder="Digite o nome do cliente..."
-                />
+          {step === "select-type" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Nova venda</DialogTitle>
+                <DialogDescription>Escolha o tipo de venda para continuar.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 py-4">
+                <button
+                  type="button"
+                  onClick={() => selectCategoria("aereo")}
+                  className="flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 text-center transition-colors hover:border-primary hover:bg-accent"
+                >
+                  <span className="text-4xl">✈️</span>
+                  <span className="text-base font-semibold">Aéreo</span>
+                  <span className="text-xs text-muted-foreground">Passagens, pacotes e hospedagens</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectCategoria("seguro_viagem")}
+                  className="flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 text-center transition-colors hover:border-primary hover:bg-accent"
+                >
+                  <span className="text-4xl">🛡️</span>
+                  <span className="text-base font-semibold">Seguro Viagem</span>
+                  <span className="text-xs text-muted-foreground">Venda Seguro Viagem</span>
+                </button>
               </div>
-              <div className="space-y-1.5">
-                <Label>Tipo</Label>
-                <Select value={form.tipo} onChange={f("tipo")}>
-                  {TIPO_OPTIONS.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Data da venda *</Label>
-                <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Origem</Label>
-                <Input value={form.origem} onChange={f("origem")} placeholder="GRU - Guarulhos" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Destino</Label>
-                <Input value={form.destino} onChange={f("destino")} placeholder="GIG - Rio de Janeiro" />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Companhia aérea</Label>
-                <Autocomplete
-                  value={form.companhia}
-                  onValueChange={(t) => setForm((p) => ({ ...p, companhia: t, ...(!t.trim() ? { forma_pagamento: "" } : {}) }))}
-                  onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
-                  options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
-                  placeholder="LATAM, GOL, Azul..."
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Data de ida</Label>
-                <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Data de volta</Label>
-                <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Valor total (R$) *</Label>
-                <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Taxa RAV (R$)</Label>
-                <CurrencyInput value={form.taxa_rav} onValueChange={(v) => setForm((p) => ({ ...p, taxa_rav: v ?? 0 }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Taxa DU (R$)</Label>
-                <CurrencyInput value={form.taxa_du} onValueChange={(v) => setForm((p) => ({ ...p, taxa_du: v ?? 0 }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Status</Label>
-                <Select value={form.status} onChange={f("status")}>
-                  {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </Select>
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Forma de pagamento</Label>
-                <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Fornecedor</Label>
-                <Select value={form.fornecedor} onChange={f("fornecedor")}>
-                  <option value="">Selecione...</option>
-                  {FORNECEDOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
-              <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Cadastrar"}</Button>
-            </DialogFooter>
-          </form>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {form.id
+                    ? "Editar venda"
+                    : form.categoria_venda === "seguro_viagem"
+                    ? "Nova venda — Seguro Viagem"
+                    : "Nova venda — Aéreo"}
+                </DialogTitle>
+                <DialogDescription>
+                  {form.categoria_venda === "seguro_viagem"
+                    ? "Comissão automática de 40% sobre o valor total ao confirmar."
+                    : "Preencha os dados da venda aérea."}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSave} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Cliente *</Label>
+                    <Autocomplete
+                      value={form.cliente_nome}
+                      onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
+                      onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as Cliente).id }))}
+                      options={clientes.filter((c) => c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase())).map((c) => ({ value: c, label: c.nome }))}
+                      placeholder="Digite o nome do cliente..."
+                    />
+                  </div>
+
+                  {form.categoria_venda === "seguro_viagem" ? (
+                    <>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Destino</Label>
+                        <Input value={form.destino} onChange={f("destino")} placeholder="Ex: Lisboa, Portugal" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Data de ida</Label>
+                        <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Data de volta</Label>
+                        <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Voucher</Label>
+                        <Input value={form.voucher} onChange={f("voucher")} placeholder="Número ou código do voucher" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Valor total (R$) *</Label>
+                        <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Forma de pagamento</Label>
+                        <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
+                          <option value="">Selecione...</option>
+                          {FORMA_PAGAMENTO_SEGURO.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Status</Label>
+                        <Select value={form.status} onChange={f("status")}>
+                          {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Data da venda *</Label>
+                        <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label>Tipo</Label>
+                        <Select value={form.tipo} onChange={f("tipo")}>
+                          {TIPO_OPTIONS.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Data da venda *</Label>
+                        <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Origem</Label>
+                        <Input value={form.origem} onChange={f("origem")} placeholder="GRU - Guarulhos" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Destino</Label>
+                        <Input value={form.destino} onChange={f("destino")} placeholder="GIG - Rio de Janeiro" />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Companhia aérea</Label>
+                        <Autocomplete
+                          value={form.companhia}
+                          onValueChange={(t) => setForm((p) => ({ ...p, companhia: t, ...(!t.trim() ? { forma_pagamento: "" } : {}) }))}
+                          onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
+                          options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
+                          placeholder="LATAM, GOL, Azul..."
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Data de ida</Label>
+                        <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Data de volta</Label>
+                        <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Valor total (R$) *</Label>
+                        <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Taxa RAV (R$)</Label>
+                        <CurrencyInput value={form.taxa_rav} onValueChange={(v) => setForm((p) => ({ ...p, taxa_rav: v ?? 0 }))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Taxa DU (R$)</Label>
+                        <CurrencyInput value={form.taxa_du} onValueChange={(v) => setForm((p) => ({ ...p, taxa_du: v ?? 0 }))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Status</Label>
+                        <Select value={form.status} onChange={f("status")}>
+                          {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Forma de pagamento</Label>
+                        <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label>Fornecedor</Label>
+                        <Select value={form.fornecedor} onChange={f("fornecedor")}>
+                          <option value="">Selecione...</option>
+                          {FORNECEDOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </Select>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <DialogFooter>
+                  {!form.id && (
+                    <Button type="button" variant="ghost" onClick={() => setStep("select-type")} disabled={saving}>Voltar</Button>
+                  )}
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
+                  <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Cadastrar"}</Button>
+                </DialogFooter>
+              </form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>
