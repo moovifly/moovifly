@@ -72,7 +72,7 @@ const TIPO_OPTIONS = ["passagem", "pacote", "hospedagem", "corporativo", "lua-de
 
 const FORNECEDOR_OPTIONS = [
   "RESERVA FACIL", "ESFERA TUR", "MILHAS FACIL", "MAIS FLY",
-  "BRT", "FRT", "CATIVA", "GTA", "NA TREND", "ORINTER",
+  "BRT", "FRT", "REDE", "CATIVA", "GTA", "NA TREND", "ORINTER",
 ];
 
 const FORMA_PAGAMENTO_OPTIONS = [
@@ -81,6 +81,16 @@ const FORMA_PAGAMENTO_OPTIONS = [
   "1x Cartão de Crédito",
   "Pix + Cartão de Crédito",
 ];
+
+const FORMAS_CARTAO = new Set(["1x Cartão de Crédito", "Parcelado Cartão de Crédito", "Pix + Cartão de Crédito"]);
+
+const TAXA_CARTAO_MAP: Record<string, number> = {
+  "BRT": 3.99,
+  "RESERVA FACIL": 3.99,
+  "ESFERA TUR": 4.00,
+  "REDE": 3.53,
+  "MILHAS FACIL": 4.00,
+};
 
 function formaPagamentoSelectOptions(current: string): string[] {
   const v = current.trim();
@@ -355,6 +365,22 @@ export function VendasClient() {
   }
 
   const passageirosPreenchidos = form.passageiros_dados.filter((p) => p.nome.trim()).length;
+
+  const comissaoPreview = useMemo(() => {
+    const base = (form.taxa_rav || 0) + (form.taxa_du || 0);
+    if (base <= 0) return null;
+    const percentualVendedor = Number((profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0);
+    let taxaCartaoVal = 0;
+    let baseComissao = base;
+    const temTaxaCartao = FORMAS_CARTAO.has(form.forma_pagamento) && form.fornecedor in TAXA_CARTAO_MAP;
+    if (temTaxaCartao) {
+      const taxaPct = TAXA_CARTAO_MAP[form.fornecedor];
+      taxaCartaoVal = Math.round(base * taxaPct) / 100;
+      baseComissao = Math.round((base - taxaCartaoVal) * 100) / 100;
+    }
+    const comissaoVendedor = percentualVendedor > 0 ? Math.round(baseComissao * percentualVendedor) / 100 : null;
+    return { base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao };
+  }, [form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, profile]);
 
   return (
     <>
@@ -631,6 +657,31 @@ export function VendasClient() {
                         </div>
                       </div>
                       </fieldset>
+
+                      {comissaoPreview && (
+                        <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">RAV + DU</span>
+                            <span className="font-medium">{formatCurrency(comissaoPreview.base)}</span>
+                          </div>
+                          {comissaoPreview.temTaxaCartao && (
+                            <div className="flex justify-between text-destructive">
+                              <span>TX Cartão ({form.fornecedor})</span>
+                              <span>− {formatCurrency(comissaoPreview.taxaCartaoVal)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between border-t pt-1.5">
+                            <span className="text-muted-foreground">Total Comissão</span>
+                            <span className="font-semibold">{formatCurrency(comissaoPreview.baseComissao)}</span>
+                          </div>
+                          {comissaoPreview.comissaoVendedor !== null && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Sua Comissão ({comissaoPreview.percentualVendedor}%)</span>
+                              <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </TabsContent>
 
                     <TabsContent value="passageiros">
