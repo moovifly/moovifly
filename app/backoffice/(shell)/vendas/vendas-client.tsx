@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -45,7 +44,7 @@ type Venda = {
   comissao_percentual: number | string;
   status: string;
   forma_pagamento: string | null;
-  observacoes: string | null;
+  fornecedor: string | null;
   cliente?: { nome: string } | null;
   vendedor?: { nome: string } | null;
 };
@@ -60,6 +59,11 @@ const STATUS_OPTIONS = [
 ];
 
 const TIPO_OPTIONS = ["passagem", "pacote", "hospedagem", "corporativo", "lua-de-mel", "grupo", "outros"];
+
+const FORNECEDOR_OPTIONS = [
+  "RESERVA FACIL", "ESFERA TUR", "MILHAS FACIL", "MAIS FLY",
+  "BRT", "FRT", "CATIVA", "GTA", "NA TREND", "ORINTER",
+];
 
 type FormState = {
   id: string | null;
@@ -77,7 +81,7 @@ type FormState = {
   taxa_du: number;
   status: string;
   forma_pagamento: string;
-  observacoes: string;
+  fornecedor: string;
 };
 
 const emptyForm = (): FormState => ({
@@ -96,7 +100,7 @@ const emptyForm = (): FormState => ({
   taxa_du: 0,
   status: "pendente",
   forma_pagamento: "",
-  observacoes: "",
+  fornecedor: "",
 });
 
 export function VendasClient() {
@@ -172,7 +176,7 @@ export function VendasClient() {
       taxa_du: Number(v.taxa_du ?? 0),
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
-      observacoes: v.observacoes ?? "",
+      fornecedor: v.fornecedor ?? "",
     });
     setOpen(true);
   }
@@ -203,7 +207,7 @@ export function VendasClient() {
         taxa_du: form.taxa_du,
         status: form.status,
         forma_pagamento: form.forma_pagamento || null,
-        observacoes: form.observacoes || null,
+        fornecedor: form.fornecedor || null,
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
@@ -397,8 +401,11 @@ export function VendasClient() {
                 <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Observações</Label>
-                <Textarea rows={3} value={form.observacoes} onChange={f("observacoes")} />
+                <Label>Fornecedor</Label>
+                <Select value={form.fornecedor} onChange={f("fornecedor")}>
+                  <option value="">Selecione...</option>
+                  {FORNECEDOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                </Select>
               </div>
             </div>
             <DialogFooter>
