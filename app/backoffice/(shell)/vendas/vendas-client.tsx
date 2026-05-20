@@ -334,7 +334,7 @@ export function VendasClient() {
                         <TableCell>{formatDate(v.data_venda)}</TableCell>
                         <TableCell className="font-medium">{cli?.nome ?? "—"}</TableCell>
                         <TableCell>
-                          <Badge variant={isSeguro ? "secondary" : "outline"}>
+                          <Badge variant={isSeguro ? "info" : "default"}>
                             {isSeguro ? "Seguro" : "Aéreo"}
                           </Badge>
                         </TableCell>
