@@ -93,12 +93,114 @@ export function FinanceiroClient() {
 
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
 
+  const PRESETS = [
+    {
+      key: "hoje",
+      label: "Hoje",
+      range: () => { const t = new Date().toISOString().slice(0, 10); return { from: t, to: t }; },
+    },
+    {
+      key: "semana",
+      label: "Esta semana",
+      range: () => {
+        const d = new Date();
+        const mon = new Date(d);
+        mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+        return { from: mon.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "mes",
+      label: "Este mês",
+      range: () => {
+        const d = new Date();
+        return { from: new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "mes_passado",
+      label: "Último mês",
+      range: () => {
+        const d = new Date();
+        return {
+          from: new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().slice(0, 10),
+          to: new Date(d.getFullYear(), d.getMonth(), 0).toISOString().slice(0, 10),
+        };
+      },
+    },
+    {
+      key: "3meses",
+      label: "Últ. 3 meses",
+      range: () => {
+        const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 3);
+        return { from: from.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "6meses",
+      label: "Últ. 6 meses",
+      range: () => {
+        const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 6);
+        return { from: from.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "ano",
+      label: "Este ano",
+      range: () => {
+        const d = new Date();
+        return { from: new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+  ];
+
+  const MAX_DAYS = 90;
+
+  function daysBetween(a: string, b: string) {
+    return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000);
+  }
+
+  function addDays(date: string, days: number) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const [activePreset, setActivePreset] = useState("mes");
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  });
+  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+
+  function handleDateFromChange(value: string) {
+    setActivePreset("");
+    let to = dateTo;
+    if (daysBetween(value, to) > MAX_DAYS) {
+      to = addDays(value, MAX_DAYS);
+      toast.info(`Período limitado a ${MAX_DAYS} dias. Data final ajustada.`);
+    }
+    setDateFrom(value);
+    setDateTo(to);
+  }
+
+  function handleDateToChange(value: string) {
+    setActivePreset("");
+    if (daysBetween(dateFrom, value) > MAX_DAYS) {
+      toast.error(`O período personalizado não pode ultrapassar ${MAX_DAYS} dias.`);
+      setDateTo(addDays(dateFrom, MAX_DAYS));
+      return;
+    }
+    setDateTo(value);
+  }
+
   async function load() {
     setLoading(true);
     try {
+      const toTs = dateTo + "T23:59:59";
       const [{ data: rec }, { data: com }, { data: usr }] = await Promise.all([
-        supabase.from("contas_receber").select("*").order("data_vencimento"),
-        supabase.from("comissoes").select("*, usuarios(nome)").order("created_at", { ascending: false }),
+        supabase.from("contas_receber").select("*").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento"),
+        supabase.from("comissoes").select("*, usuarios(nome)").gte("created_at", dateFrom).lte("created_at", toTs).order("created_at", { ascending: false }),
         isManager ? supabase.from("usuarios").select("id, nome, tipo").order("nome") : Promise.resolve({ data: [] }),
       ]);
       setReceber((rec ?? []) as ContaReceber[]);
@@ -106,7 +208,7 @@ export function FinanceiroClient() {
       setUsuarios((usr ?? []) as Usuario[]);
 
       if (isManager) {
-        const { data: pag } = await supabase.from("contas_pagar").select("*").order("data_vencimento");
+        const { data: pag } = await supabase.from("contas_pagar").select("*").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento");
         setPagar((pag ?? []) as ContaPagar[]);
       }
     } catch (err) {
@@ -119,7 +221,7 @@ export function FinanceiroClient() {
   useEffect(() => {
     if (profile) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile?.id, dateFrom, dateTo]);
 
   async function marcarRecebido(id: string) {
     await supabase.from("contas_receber").update({ status: "recebido", data_recebimento: new Date().toISOString().slice(0, 10) }).eq("id", id);
@@ -338,6 +440,44 @@ export function FinanceiroClient() {
     <>
       <Topbar title="Financeiro" />
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <Card>
+          <CardHeader><CardTitle>Filtros</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    const { from, to } = p.range();
+                    setDateFrom(from);
+                    setDateTo(to);
+                    setActivePreset(p.key);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                    activePreset === p.key
+                      ? "border-(--color-primary) bg-(--color-primary) text-white"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-1.5">
+                <Label>De</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => handleDateFromChange(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Até</Label>
+                <Input type="date" value={dateTo} min={dateFrom} max={addDays(dateFrom, MAX_DAYS)} onChange={(e) => handleDateToChange(e.target.value)} />
+              </div>
+              <p className="pb-1 text-xs text-[var(--text-secondary)]">Máx. {MAX_DAYS} dias no período personalizado</p>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="receber">A Receber</TabsTrigger>

@@ -44,13 +44,87 @@ export function RelatoriosClient() {
   const [items, setItems] = useState<Venda[]>([]);
   const [orcRavDu, setOrcRavDu] = useState<OrcamentoRavDu[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activePreset, setActivePreset] = useState<string>("mes");
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    return d.toISOString().slice(0, 10);
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
   });
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [statusFilter, setStatusFilter] = useState("");
+
+  const PRESETS = [
+    {
+      key: "hoje",
+      label: "Hoje",
+      range: () => {
+        const t = new Date().toISOString().slice(0, 10);
+        return { from: t, to: t };
+      },
+    },
+    {
+      key: "semana",
+      label: "Esta semana",
+      range: () => {
+        const d = new Date();
+        const day = d.getDay();
+        const mon = new Date(d);
+        mon.setDate(d.getDate() - ((day + 6) % 7));
+        return { from: mon.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "mes",
+      label: "Este mês",
+      range: () => {
+        const d = new Date();
+        return {
+          from: new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10),
+          to: d.toISOString().slice(0, 10),
+        };
+      },
+    },
+    {
+      key: "mes_passado",
+      label: "Último mês",
+      range: () => {
+        const d = new Date();
+        const first = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+        const last = new Date(d.getFullYear(), d.getMonth(), 0);
+        return { from: first.toISOString().slice(0, 10), to: last.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "3meses",
+      label: "Últ. 3 meses",
+      range: () => {
+        const d = new Date();
+        const from = new Date(d);
+        from.setMonth(d.getMonth() - 3);
+        return { from: from.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "6meses",
+      label: "Últ. 6 meses",
+      range: () => {
+        const d = new Date();
+        const from = new Date(d);
+        from.setMonth(d.getMonth() - 6);
+        return { from: from.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
+      },
+    },
+    {
+      key: "ano",
+      label: "Este ano",
+      range: () => {
+        const d = new Date();
+        return {
+          from: new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10),
+          to: d.toISOString().slice(0, 10),
+        };
+      },
+    },
+  ];
 
   async function load() {
     setLoading(true);
@@ -123,15 +197,50 @@ export function RelatoriosClient() {
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <Card>
           <CardHeader><CardTitle>Filtros</CardTitle></CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    const { from, to } = p.range();
+                    setDateFrom(from);
+                    setDateTo(to);
+                    setActivePreset(p.key);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                    activePreset === p.key
+                      ? "border-(--color-primary) bg-(--color-primary) text-white"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-4">
               <div className="space-y-1.5">
                 <Label>De</Label>
-                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setActivePreset("");
+                  }}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Até</Label>
-                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setActivePreset("");
+                  }}
+                />
               </div>
               <div className="space-y-1.5 min-w-[160px]">
                 <Label>Status</Label>
