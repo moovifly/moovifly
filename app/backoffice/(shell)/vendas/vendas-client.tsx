@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditCard, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { CreditCard, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -24,8 +25,15 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { normalizeDateOnly } from "@/lib/date-only";
 import { loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
 import { getFormaPagamento } from "@/lib/financiamento";
+
+type Passageiro = {
+  nome: string;
+  documento: string;
+  data_nascimento: string;
+};
 
 type Venda = {
   id: string;
@@ -47,6 +55,7 @@ type Venda = {
   status: string;
   forma_pagamento: string | null;
   fornecedor: string | null;
+  passageiros_dados?: Passageiro[] | null;
   cliente?: { nome: string } | null;
   vendedor?: { nome: string } | null;
 };
@@ -77,6 +86,8 @@ const FORMA_PAGAMENTO_SEGURO = [
   "7x sem juros",
 ];
 
+const emptyPassageiro = (): Passageiro => ({ nome: "", documento: "", data_nascimento: "" });
+
 type FormState = {
   id: string | null;
   categoria_venda: "aereo" | "seguro_viagem";
@@ -96,6 +107,7 @@ type FormState = {
   forma_pagamento: string;
   fornecedor: string;
   voucher: string;
+  passageiros_dados: Passageiro[];
 };
 
 const emptyForm = (): FormState => ({
@@ -117,6 +129,7 @@ const emptyForm = (): FormState => ({
   forma_pagamento: "",
   fornecedor: "",
   voucher: "",
+  passageiros_dados: [emptyPassageiro()],
 });
 
 export function VendasClient() {
@@ -132,6 +145,7 @@ export function VendasClient() {
   const [step, setStep] = useState<"select-type" | "form">("select-type");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [activeTab, setActiveTab] = useState<"dados" | "passageiros">("dados");
 
   async function load() {
     setLoading(true);
@@ -173,10 +187,11 @@ export function VendasClient() {
     });
   }, [items, search, statusFilter]);
 
-  function openNew() { setForm(emptyForm()); setStep("select-type"); setOpen(true); }
+  function openNew() { setForm(emptyForm()); setStep("select-type"); setActiveTab("dados"); setOpen(true); }
 
   function selectCategoria(cat: "aereo" | "seguro_viagem") {
     setForm((prev) => ({ ...prev, categoria_venda: cat }));
+    setActiveTab("dados");
     setStep("form");
   }
 
@@ -201,7 +216,11 @@ export function VendasClient() {
       forma_pagamento: v.forma_pagamento ?? "",
       fornecedor: v.fornecedor ?? "",
       voucher: (v as unknown as { voucher?: string | null }).voucher ?? "",
+      passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
+        ? v.passageiros_dados
+        : [emptyPassageiro()],
     });
+    setActiveTab("dados");
     setStep("form");
     setOpen(true);
   }
@@ -218,6 +237,7 @@ export function VendasClient() {
         : [form.tipo, form.origem && form.destino ? `${form.origem} → ${form.destino}` : form.destino || form.origem]
             .filter(Boolean)
             .join(" — ") || "Venda";
+      const passageirosValidos = form.passageiros_dados.filter((p) => p.nome.trim());
       const payload = {
         categoria_venda: form.categoria_venda,
         cliente_id: form.cliente_id,
@@ -227,8 +247,8 @@ export function VendasClient() {
         origem: isSeguro ? null : form.origem || null,
         destino: form.destino || null,
         companhia: isSeguro ? null : form.companhia || null,
-        data_ida: form.data_ida || null,
-        data_volta: form.data_volta || null,
+        data_ida: normalizeDateOnly(form.data_ida) || null,
+        data_volta: normalizeDateOnly(form.data_volta) || null,
         data_venda: form.data_venda,
         valor_total: form.valor_total,
         taxa_rav: isSeguro ? 0 : form.taxa_rav,
@@ -237,6 +257,8 @@ export function VendasClient() {
         forma_pagamento: form.forma_pagamento || null,
         fornecedor: isSeguro ? null : form.fornecedor || null,
         voucher: isSeguro ? form.voucher || null : null,
+        passageiros_dados: isSeguro ? null : (passageirosValidos.length > 0 ? passageirosValidos : null),
+        passageiros: isSeguro ? 1 : Math.max(passageirosValidos.length, 1),
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
@@ -270,7 +292,7 @@ export function VendasClient() {
   }
 
   const f =
-    (key: Exclude<keyof FormState, "valor_total" | "taxa_rav" | "taxa_du">) =>
+    (key: Exclude<keyof FormState, "valor_total" | "taxa_rav" | "taxa_du" | "passageiros_dados">) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
@@ -281,6 +303,25 @@ export function VendasClient() {
       forma_pagamento: getFormaPagamento(c.codigo) ?? "",
     }));
   }
+
+  function addPassageiro() {
+    setForm((p) => ({ ...p, passageiros_dados: [...p.passageiros_dados, emptyPassageiro()] }));
+  }
+
+  function removePassageiro(index: number) {
+    setForm((p) => ({ ...p, passageiros_dados: p.passageiros_dados.filter((_, i) => i !== index) }));
+  }
+
+  function updatePassageiro(index: number, field: keyof Passageiro, value: string) {
+    setForm((p) => ({
+      ...p,
+      passageiros_dados: p.passageiros_dados.map((pax, i) =>
+        i === index ? { ...pax, [field]: value } : pax
+      ),
+    }));
+  }
+
+  const passageirosPreenchidos = form.passageiros_dados.filter((p) => p.nome.trim()).length;
 
   return (
     <>
@@ -295,8 +336,9 @@ export function VendasClient() {
             <CardTitle>Lista de Vendas</CardTitle>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente, número..." className="pl-10 sm:w-72" />
+
               </div>
               <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
                 <option value="">Todos status</option>
@@ -308,7 +350,7 @@ export function VendasClient() {
             {loading ? (
               <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : filtered.length === 0 ? (
-              <p className="py-12 text-center text-sm text-[var(--text-secondary)]">Nenhuma venda encontrada.</p>
+              <p className="py-12 text-center text-sm text-muted-foreground">Nenhuma venda encontrada.</p>
             ) : (
               <Table>
                 <TableHeader>
@@ -338,7 +380,7 @@ export function VendasClient() {
                             {isSeguro ? "Seguro" : "Aéreo"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-[var(--text-secondary)]">{v.destino ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{v.destino ?? "—"}</TableCell>
                         <TableCell className="font-semibold">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -347,7 +389,7 @@ export function VendasClient() {
                               <Button variant="ghost" size="icon" title="Checkout"><CreditCard className="h-4 w-4" /></Button>
                             </BackofficeLink>
                             <Button variant="ghost" size="icon" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(v)} className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(v)} className="text-destructive hover:bg-(--danger-bg)"><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -409,128 +451,189 @@ export function VendasClient() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSave} className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Cliente *</Label>
-                    <Autocomplete
-                      value={form.cliente_nome}
-                      onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
-                      onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as Cliente).id }))}
-                      options={clientes.filter((c) => c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase())).map((c) => ({ value: c, label: c.nome }))}
-                      placeholder="Digite o nome do cliente..."
-                    />
-                  </div>
-
-                  {form.categoria_venda === "seguro_viagem" ? (
-                    <>
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Destino</Label>
-                        <Input value={form.destino} onChange={f("destino")} placeholder="Ex: Lisboa, Portugal" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Data de ida</Label>
-                        <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Data de volta</Label>
-                        <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Voucher</Label>
-                        <Input value={form.voucher} onChange={f("voucher")} placeholder="Número ou código do voucher" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Valor total (R$) *</Label>
-                        <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Forma de pagamento</Label>
-                        <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
-                          <option value="">Selecione...</option>
-                          {FORMA_PAGAMENTO_SEGURO.map((o) => <option key={o} value={o}>{o}</option>)}
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Status</Label>
-                        <Select value={form.status} onChange={f("status")}>
-                          {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Data da venda *</Label>
-                        <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-1.5">
-                        <Label>Tipo</Label>
-                        <Select value={form.tipo} onChange={f("tipo")}>
-                          {TIPO_OPTIONS.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Data da venda *</Label>
-                        <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Origem</Label>
-                        <Input value={form.origem} onChange={f("origem")} placeholder="GRU - Guarulhos" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Destino</Label>
-                        <Input value={form.destino} onChange={f("destino")} placeholder="GIG - Rio de Janeiro" />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Companhia aérea</Label>
-                        <Autocomplete
-                          value={form.companhia}
-                          onValueChange={(t) => setForm((p) => ({ ...p, companhia: t, ...(!t.trim() ? { forma_pagamento: "" } : {}) }))}
-                          onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
-                          options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
-                          placeholder="LATAM, GOL, Azul..."
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Data de ida</Label>
-                        <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Data de volta</Label>
-                        <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Valor total (R$) *</Label>
-                        <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Taxa RAV (R$)</Label>
-                        <CurrencyInput value={form.taxa_rav} onValueChange={(v) => setForm((p) => ({ ...p, taxa_rav: v ?? 0 }))} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Taxa DU (R$)</Label>
-                        <CurrencyInput value={form.taxa_du} onValueChange={(v) => setForm((p) => ({ ...p, taxa_du: v ?? 0 }))} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Status</Label>
-                        <Select value={form.status} onChange={f("status")}>
-                          {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Forma de pagamento</Label>
-                        <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label>Fornecedor</Label>
-                        <Select value={form.fornecedor} onChange={f("fornecedor")}>
-                          <option value="">Selecione...</option>
-                          {FORNECEDOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                        </Select>
-                      </div>
-                    </>
-                  )}
+                <div className="space-y-1.5">
+                  <Label>Cliente *</Label>
+                  <Autocomplete
+                    value={form.cliente_nome}
+                    onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
+                    onSelect={(opt) => setForm((f) => ({ ...f, cliente_nome: opt.label, cliente_id: (opt.value as Cliente).id }))}
+                    options={clientes.filter((c) => c.nome.toLowerCase().includes(form.cliente_nome.toLowerCase())).map((c) => ({ value: c, label: c.nome }))}
+                    placeholder="Digite o nome do cliente..."
+                  />
                 </div>
+
+                {form.categoria_venda === "seguro_viagem" ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label>Destino</Label>
+                      <Input value={form.destino} onChange={f("destino")} placeholder="Ex: Lisboa, Portugal" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data de ida</Label>
+                      <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data de volta</Label>
+                      <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label>Voucher</Label>
+                      <Input value={form.voucher} onChange={f("voucher")} placeholder="Número ou código do voucher" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Valor total (R$) *</Label>
+                      <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Forma de pagamento</Label>
+                      <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
+                        <option value="">Selecione...</option>
+                        {FORMA_PAGAMENTO_SEGURO.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Status</Label>
+                      <Select value={form.status} onChange={f("status")}>
+                        {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data da venda *</Label>
+                      <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                    </div>
+                  </div>
+                ) : (
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "dados" | "passageiros")}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="dados" className="flex-1">Dados da Venda</TabsTrigger>
+                      <TabsTrigger value="passageiros" className="flex-1">
+                        Passageiros{passageirosPreenchidos > 0 ? ` (${passageirosPreenchidos})` : ""}
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="dados">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label>Tipo</Label>
+                          <Select value={form.tipo} onChange={f("tipo")}>
+                            {TIPO_OPTIONS.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data da venda *</Label>
+                          <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Origem</Label>
+                          <Input value={form.origem} onChange={f("origem")} placeholder="GRU - Guarulhos" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Destino</Label>
+                          <Input value={form.destino} onChange={f("destino")} placeholder="GIG - Rio de Janeiro" />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Companhia aérea</Label>
+                          <Autocomplete
+                            value={form.companhia}
+                            onValueChange={(t) => setForm((p) => ({ ...p, companhia: t, ...(!t.trim() ? { forma_pagamento: "" } : {}) }))}
+                            onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
+                            options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
+                            placeholder="LATAM, GOL, Azul..."
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data de ida</Label>
+                          <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data de volta</Label>
+                          <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Valor total (R$) *</Label>
+                          <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Taxa RAV (R$)</Label>
+                          <CurrencyInput value={form.taxa_rav} onValueChange={(v) => setForm((p) => ({ ...p, taxa_rav: v ?? 0 }))} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Taxa DU (R$)</Label>
+                          <CurrencyInput value={form.taxa_du} onValueChange={(v) => setForm((p) => ({ ...p, taxa_du: v ?? 0 }))} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Status</Label>
+                          <Select value={form.status} onChange={f("status")}>
+                            {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Forma de pagamento</Label>
+                          <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Fornecedor</Label>
+                          <Select value={form.fornecedor} onChange={f("fornecedor")}>
+                            <option value="">Selecione...</option>
+                            {FORNECEDOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                          </Select>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="passageiros">
+                      <div className="space-y-3">
+                        {form.passageiros_dados.map((p, i) => (
+                          <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold">Passageiro {i + 1}</span>
+                              {form.passageiros_dados.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removePassageiro(i)}
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-(--danger-bg) hover:text-destructive"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-1.5 sm:col-span-2">
+                                <Label>Nome Completo</Label>
+                                <Input
+                                  value={p.nome}
+                                  onChange={(e) => updatePassageiro(i, "nome", e.target.value)}
+                                  placeholder="Nome completo do passageiro"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>CPF / Passaporte</Label>
+                                <Input
+                                  value={p.documento}
+                                  onChange={(e) => updatePassageiro(i, "documento", e.target.value)}
+                                  placeholder="000.000.000-00"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Data de Nascimento</Label>
+                                <Input
+                                  type="date"
+                                  value={p.data_nascimento}
+                                  onChange={(e) => updatePassageiro(i, "data_nascimento", e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" onClick={addPassageiro} className="w-full gap-2">
+                          <Plus className="h-4 w-4" />
+                          Adicionar Passageiro
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                )}
+
                 <DialogFooter>
                   {!form.id && (
                     <Button type="button" variant="ghost" onClick={() => setStep("select-type")} disabled={saving}>Voltar</Button>

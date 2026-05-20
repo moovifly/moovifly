@@ -1,3 +1,5 @@
+import { extractDateOnly, parseDateOnlyToLocal } from "@/lib/date-only";
+
 export function formatCurrency(value: number | string | null | undefined): string {
   const num = typeof value === "string" ? Number(value) : value ?? 0;
   if (Number.isNaN(num)) return "R$ 0,00";
@@ -9,6 +11,13 @@ export function formatCurrency(value: number | string | null | undefined): strin
 
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "-";
+  if (typeof date === "string") {
+    const dateOnly = extractDateOnly(date);
+    if (dateOnly) {
+      const d = parseDateOnlyToLocal(dateOnly);
+      if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("pt-BR");
+    }
+  }
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("pt-BR");

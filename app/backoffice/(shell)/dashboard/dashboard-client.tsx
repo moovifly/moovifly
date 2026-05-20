@@ -24,10 +24,11 @@ import type { UserProfile } from "@/lib/auth";
 import { SalesBarChart, RevenueDonut } from "./dashboard-charts";
 import {
   EMBARQUE_ALERT_OFFSETS,
-  diffDaysFromToday,
+  calendarDaysFromToday,
   embarqueAlertTitle,
   parseDateOnlyToLocal,
   startOfLocalDay,
+  toLocalDateOnlyString,
   type EmbarqueAlertOffsetDays,
 } from "@/lib/embarques";
 
@@ -108,8 +109,8 @@ async function loadEmbarqueAlerts(profile: UserProfile): Promise<EmbarqueAlert[]
     .select("id, numero_venda, destino, data_ida, clientes(nome), vendedor_id, status")
     .in("status", ["confirmada", "concluida"])
     .not("data_ida", "is", null)
-    .gte("data_ida", today.toISOString().slice(0, 10))
-    .lte("data_ida", end.toISOString().slice(0, 10))
+    .gte("data_ida", toLocalDateOnlyString(today))
+    .lte("data_ida", toLocalDateOnlyString(end))
     .order("data_ida", { ascending: true });
 
   if (!["administrador", "gerente"].includes(profile.tipo)) {
@@ -130,12 +131,8 @@ async function loadEmbarqueAlerts(profile: UserProfile): Promise<EmbarqueAlert[]
   const alerts: EmbarqueAlert[] = [];
   for (const v of list) {
     if (!v.data_ida) continue;
-    const diff = diffDaysFromToday(v.data_ida, now);
+    const diff = calendarDaysFromToday(v.data_ida, now);
     if (!EMBARQUE_ALERT_OFFSETS.includes(diff as EmbarqueAlertOffsetDays)) continue;
-    // sanity: ignora qualquer data com shift estranho
-    const d = startOfLocalDay(parseDateOnlyToLocal(v.data_ida));
-    const diff2 = Math.round((d.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    if (diff2 !== diff) continue;
     alerts.push({
       venda_id: v.id,
       numero_venda: v.numero_venda,

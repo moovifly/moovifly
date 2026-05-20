@@ -150,7 +150,7 @@ export function EmbarquesClient() {
                   {list.map((i) => {
                     const nome = relNome(i.clientes) ?? "—";
                     const vendedor = relVendedor(i.usuarios) ?? "—";
-                    const diff = i.data_ida ? diffDaysFromToday(i.data_ida) : null;
+                    const diff = i.data_ida ? i._diffDays : null;
                     const badge =
                       diff === null
                         ? null

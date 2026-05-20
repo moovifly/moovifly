@@ -2,6 +2,7 @@
 
 import { FilePlus, FileText, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
@@ -31,6 +32,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { normalizeDateOnly, toLocalDateOnlyString } from "@/lib/date-only";
 import { loadAeroportos, loadCompanhias, searchAeroportos, searchCompanhias, type Aeroporto, type Companhia } from "@/lib/datasets";
 import { downloadOrcamentoPdf } from "@/lib/orcamento-pdf";
 import { getFormaPagamento } from "@/lib/financiamento";
@@ -133,8 +135,8 @@ function voosToVendaCampos(voovs: Voo[] | undefined) {
   return {
     origem: firstIda?.origem?.trim() || null,
     destino: lastIda?.destino?.trim() || null,
-    data_ida: firstIda?.data_partida?.trim() || null,
-    data_volta: lastVolta?.data_partida?.trim() || voltas[0]?.data_partida?.trim() || null,
+    data_ida: normalizeDateOnly(firstIda?.data_partida) || null,
+    data_volta: normalizeDateOnly(lastVolta?.data_partida) || normalizeDateOnly(voltas[0]?.data_partida) || null,
     companhia: firstIda?.companhia?.trim() || null,
   };
 }
@@ -291,6 +293,7 @@ function buildWhatsappUrl(
 export function OrcamentosClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile } = useAuth();
+  const router = useRouter();
   const [items, setItems] = useState<Orcamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -625,7 +628,7 @@ export function OrcamentosClient() {
         observacoes = observacoes ? `${observacoes}\n\n${blocosExtras.join("\n\n")}` : blocosExtras.join("\n\n");
       }
       const passageiros = Math.max(1, (o.adultos ?? 0) + (o.criancas ?? 0) + (o.bebes ?? 0));
-      const dataVenda = new Date().toISOString().slice(0, 10);
+      const dataVenda = toLocalDateOnlyString(new Date());
       const descricaoVenda = clipVarchar(
         [
           numOrc ? `Orç. ${numOrc}` : null,
@@ -639,6 +642,7 @@ export function OrcamentosClient() {
         orcamento_id: o.id,
         cliente_id: o.cliente_id,
         vendedor_id: o.vendedor_id ?? profile.id,
+        categoria_venda: "aereo",
         tipo: "passagem",
         descricao: descricaoVenda,
         origem,
@@ -664,7 +668,12 @@ export function OrcamentosClient() {
         .update({ status: "convertido", convertido_venda: true, venda_id: inserted.id })
         .eq("id", o.id);
       if (updErr) throw updErr;
-      toast.success("Venda criada!", { description: inserted?.numero_venda ? `Número: ${inserted.numero_venda}` : undefined });
+      const vendaNumero = inserted?.numero_venda;
+      toast.success("Venda criada!", {
+        description: vendaNumero ? `Número: ${vendaNumero}` : undefined,
+        action: { label: "Ver Venda", onClick: () => router.push("/backoffice/vendas") },
+        duration: 8000,
+      });
       await load();
     } catch (err) {
       toast.error("Não foi possível gerar a venda", { description: formatSupabaseError(err) });
