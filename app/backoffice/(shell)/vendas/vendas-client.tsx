@@ -27,7 +27,6 @@ import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { normalizeDateOnly } from "@/lib/date-only";
 import { loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
-import { getFormaPagamento } from "@/lib/financiamento";
 
 type Passageiro = {
   nome: string;
@@ -76,15 +75,20 @@ const FORNECEDOR_OPTIONS = [
   "BRT", "FRT", "CATIVA", "GTA", "NA TREND", "ORINTER",
 ];
 
-const FORMA_PAGAMENTO_SEGURO = [
+const FORMA_PAGAMENTO_OPTIONS = [
   "À vista",
-  "2x sem juros",
-  "3x sem juros",
-  "4x sem juros",
-  "5x sem juros",
-  "6x sem juros",
-  "7x sem juros",
+  "Parcelado Cartão de Crédito",
+  "1x Cartão de Crédito",
+  "Pix + Cartão de Crédito",
 ];
+
+function formaPagamentoSelectOptions(current: string): string[] {
+  const v = current.trim();
+  if (v && !FORMA_PAGAMENTO_OPTIONS.includes(v)) {
+    return [v, ...FORMA_PAGAMENTO_OPTIONS];
+  }
+  return FORMA_PAGAMENTO_OPTIONS;
+}
 
 const emptyPassageiro = (): Passageiro => ({ nome: "", documento: "", data_nascimento: "" });
 
@@ -330,11 +334,7 @@ export function VendasClient() {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   function handleCompanhiaSelect(c: Companhia) {
-    setForm((prev) => ({
-      ...prev,
-      companhia: c.nome,
-      forma_pagamento: getFormaPagamento(c.codigo) ?? "",
-    }));
+    setForm((prev) => ({ ...prev, companhia: c.nome }));
   }
 
   function addPassageiro() {
@@ -530,7 +530,9 @@ export function VendasClient() {
                       <Label>Forma de pagamento</Label>
                       <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
                         <option value="">Selecione...</option>
-                        {FORMA_PAGAMENTO_SEGURO.map((o) => <option key={o} value={o}>{o}</option>)}
+                        {formaPagamentoSelectOptions(form.forma_pagamento).map((o) => (
+                          <option key={o} value={o}>{o}</option>
+                        ))}
                       </Select>
                     </div>
                     <div className="space-y-1.5">
@@ -579,7 +581,7 @@ export function VendasClient() {
                           <Label>Companhia aérea</Label>
                           <Autocomplete
                             value={form.companhia}
-                            onValueChange={(t) => setForm((p) => ({ ...p, companhia: t, ...(!t.trim() ? { forma_pagamento: "" } : {}) }))}
+                            onValueChange={(t) => setForm((p) => ({ ...p, companhia: t }))}
                             onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
                             options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
                             placeholder="LATAM, GOL, Azul..."
@@ -613,7 +615,12 @@ export function VendasClient() {
                         </div>
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label>Forma de pagamento</Label>
-                          <Input value={form.forma_pagamento} onChange={f("forma_pagamento")} placeholder="Selecione uma companhia aérea para preencher automaticamente." />
+                          <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
+                            <option value="">Selecione...</option>
+                            {formaPagamentoSelectOptions(form.forma_pagamento).map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </Select>
                         </div>
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label>Fornecedor</Label>
