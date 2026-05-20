@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditCard, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { CreditCard, Eye, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -146,6 +146,7 @@ export function VendasClient() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [activeTab, setActiveTab] = useState<"dados" | "passageiros">("dados");
+  const [viewMode, setViewMode] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -187,7 +188,7 @@ export function VendasClient() {
     });
   }, [items, search, statusFilter]);
 
-  function openNew() { setForm(emptyForm()); setStep("select-type"); setActiveTab("dados"); setOpen(true); }
+  function openNew() { setForm(emptyForm()); setStep("select-type"); setActiveTab("dados"); setViewMode(false); setOpen(true); }
 
   function selectCategoria(cat: "aereo" | "seguro_viagem") {
     setForm((prev) => ({ ...prev, categoria_venda: cat }));
@@ -220,6 +221,38 @@ export function VendasClient() {
         ? v.passageiros_dados
         : [emptyPassageiro()],
     });
+    setViewMode(false);
+    setActiveTab("dados");
+    setStep("form");
+    setOpen(true);
+  }
+
+  function openView(v: Venda) {
+    const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
+    setForm({
+      id: v.id,
+      categoria_venda: v.categoria_venda ?? "aereo",
+      cliente_id: v.cliente_id,
+      cliente_nome: cli?.nome ?? "",
+      tipo: v.tipo ?? "passagem",
+      origem: v.origem ?? "",
+      destino: v.destino ?? "",
+      companhia: (v as unknown as { companhia?: string | null }).companhia ?? "",
+      data_ida: v.data_ida ?? "",
+      data_volta: v.data_volta ?? "",
+      data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
+      valor_total: Number(v.valor_total ?? 0),
+      taxa_rav: Number(v.taxa_rav ?? 0),
+      taxa_du: Number(v.taxa_du ?? 0),
+      status: v.status,
+      forma_pagamento: v.forma_pagamento ?? "",
+      fornecedor: v.fornecedor ?? "",
+      voucher: (v as unknown as { voucher?: string | null }).voucher ?? "",
+      passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
+        ? v.passageiros_dados
+        : [emptyPassageiro()],
+    });
+    setViewMode(true);
     setActiveTab("dados");
     setStep("form");
     setOpen(true);
@@ -388,7 +421,8 @@ export function VendasClient() {
                             <BackofficeLink href={`/backoffice/checkout/?id=${v.id}`}>
                               <Button variant="ghost" size="icon" title="Checkout"><CreditCard className="h-4 w-4" /></Button>
                             </BackofficeLink>
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" title="Visualizar" onClick={() => openView(v)}><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={() => handleDelete(v)} className="text-destructive hover:bg-(--danger-bg)"><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
@@ -402,7 +436,7 @@ export function VendasClient() {
         </Card>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setViewMode(false); }}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           {step === "select-type" ? (
             <>
@@ -438,21 +472,26 @@ export function VendasClient() {
             <>
               <DialogHeader>
                 <DialogTitle>
-                  {form.id
+                  {viewMode
+                    ? "Detalhes da Venda"
+                    : form.id
                     ? "Editar venda"
                     : form.categoria_venda === "seguro_viagem"
                     ? "Nova venda — Seguro Viagem"
                     : "Nova venda — Aéreo"}
                 </DialogTitle>
                 <DialogDescription>
-                  {form.categoria_venda === "seguro_viagem"
+                  {viewMode
+                    ? `${form.categoria_venda === "seguro_viagem" ? "Seguro Viagem" : "Aéreo"} · somente leitura`
+                    : form.categoria_venda === "seguro_viagem"
                     ? "Comissão automática de 40% sobre o valor total ao confirmar."
                     : "Preencha os dados da venda aérea."}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSave} className="space-y-4">
+                <fieldset disabled={viewMode} className="space-y-4 disabled:opacity-70">
                 <div className="space-y-1.5">
-                  <Label>Cliente *</Label>
+                  <Label>Cliente {viewMode ? "" : "*"}</Label>
                   <Autocomplete
                     value={form.cliente_nome}
                     onValueChange={(text) => setForm((f) => ({ ...f, cliente_nome: text, cliente_id: null }))}
@@ -462,7 +501,10 @@ export function VendasClient() {
                   />
                 </div>
 
+                </fieldset>
+
                 {form.categoria_venda === "seguro_viagem" ? (
+                  <fieldset disabled={viewMode} className="disabled:opacity-70">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5 sm:col-span-2">
                       <Label>Destino</Label>
@@ -502,6 +544,7 @@ export function VendasClient() {
                       <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
                     </div>
                   </div>
+                  </fieldset>
                 ) : (
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "dados" | "passageiros")}>
                     <TabsList className="w-full">
@@ -512,6 +555,7 @@ export function VendasClient() {
                     </TabsList>
 
                     <TabsContent value="dados">
+                      <fieldset disabled={viewMode} className="disabled:opacity-70">
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <Label>Tipo</Label>
@@ -579,15 +623,17 @@ export function VendasClient() {
                           </Select>
                         </div>
                       </div>
+                      </fieldset>
                     </TabsContent>
 
                     <TabsContent value="passageiros">
                       <div className="space-y-3">
+                        <fieldset disabled={viewMode} className="space-y-3 disabled:opacity-70">
                         {form.passageiros_dados.map((p, i) => (
                           <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-semibold">Passageiro {i + 1}</span>
-                              {form.passageiros_dados.length > 1 && (
+                              {!viewMode && form.passageiros_dados.length > 1 && (
                                 <button
                                   type="button"
                                   onClick={() => removePassageiro(i)}
@@ -625,21 +671,33 @@ export function VendasClient() {
                             </div>
                           </div>
                         ))}
-                        <Button type="button" variant="outline" onClick={addPassageiro} className="w-full gap-2">
-                          <Plus className="h-4 w-4" />
-                          Adicionar Passageiro
-                        </Button>
+                        </fieldset>
+                        {!viewMode && (
+                          <Button type="button" variant="outline" onClick={addPassageiro} className="w-full gap-2">
+                            <Plus className="h-4 w-4" />
+                            Adicionar Passageiro
+                          </Button>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
                 )}
 
                 <DialogFooter>
-                  {!form.id && (
-                    <Button type="button" variant="ghost" onClick={() => setStep("select-type")} disabled={saving}>Voltar</Button>
+                  {viewMode ? (
+                    <>
+                      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Fechar</Button>
+                      <Button type="button" onClick={() => setViewMode(false)}>Editar</Button>
+                    </>
+                  ) : (
+                    <>
+                      {!form.id && (
+                        <Button type="button" variant="ghost" onClick={() => setStep("select-type")} disabled={saving}>Voltar</Button>
+                      )}
+                      <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
+                      <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Cadastrar"}</Button>
+                    </>
                   )}
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
-                  <Button type="submit" disabled={saving}>{saving ? "Salvando..." : form.id ? "Atualizar" : "Cadastrar"}</Button>
                 </DialogFooter>
               </form>
             </>
