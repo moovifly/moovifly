@@ -291,7 +291,14 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
     { count: clientesPrev },
     { data: vendas, count: totalVendas },
     { data: vendasPrev, count: totalVendasPrev },
-  ] = await Promise.all([totalClientesQ, clientesThisQ, clientesPrevQ, vendasThisQ, vendasPrevQ]);
+  ] = await (async () => {
+    const totalClientesR = await totalClientesQ;
+    const clientesThisR = await clientesThisQ;
+    const clientesPrevR = await clientesPrevQ;
+    const vendasThisR = await vendasThisQ;
+    const vendasPrevR = await vendasPrevQ;
+    return [totalClientesR, clientesThisR, clientesPrevR, vendasThisR, vendasPrevR];
+  })();
 
   const faturamentoTotal = vendas?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
   const faturamentoPrev = vendasPrev?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
@@ -365,13 +372,16 @@ async function loadFinancial(profile: UserProfile): Promise<Financial> {
   let totalPagar: number | null = null;
   let countPagar: number | null = null;
   if (["administrador", "gerente"].includes(profile.tipo)) {
-    const { data: contasPagar } = await supabase
-      .from("contas_pagar")
-      .select("valor")
-      .eq("status", "pendente");
-    totalPagar =
+    const [{ data: contasPagar }, { data: comissoesAdmin }] = await Promise.all([
+      supabase.from("contas_pagar").select("valor").eq("status", "pendente"),
+      supabase.from("comissoes").select("valor_comissao").eq("status", "pendente"),
+    ]);
+    const totalContasPagar =
       contasPagar?.reduce((sum: number, c: { valor?: number | string | null }) => sum + Number.parseFloat(String(c.valor ?? 0)), 0) ?? 0;
-    countPagar = contasPagar?.length ?? 0;
+    const totalComissoes =
+      comissoesAdmin?.reduce((sum: number, c: { valor_comissao?: number | string | null }) => sum + Number.parseFloat(String(c.valor_comissao ?? 0)), 0) ?? 0;
+    totalPagar = totalContasPagar + totalComissoes;
+    countPagar = (contasPagar?.length ?? 0) + (comissoesAdmin?.length ?? 0);
   }
 
   let comissaoPendenteValor: number | null = null;
@@ -521,15 +531,13 @@ export function DashboardClient() {
     if (!profile) return;
     const range = getDateRange(p);
     try {
-      const [s, f, r, t, c, d, e] = await Promise.all([
-        loadStats(profile, range),
-        loadFinancial(profile),
-        loadRecentSales(profile, range),
-        loadTopSellers(profile, range),
-        loadSalesByDay(profile, range),
-        loadRevenueByCategory(profile, range),
-        loadEmbarqueAlerts(profile),
-      ]);
+      const s = await loadStats(profile, range);
+      const f = await loadFinancial(profile);
+      const r = await loadRecentSales(profile, range);
+      const t = await loadTopSellers(profile, range);
+      const c = await loadSalesByDay(profile, range);
+      const d = await loadRevenueByCategory(profile, range);
+      const e = await loadEmbarqueAlerts(profile);
       setStats(s);
       setFinancial(f);
       setRecent(r);

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { signIn, getUserProfile } from "@/lib/auth";
+import { signIn, getUserProfile, signOut } from "@/lib/auth";
 import { passwordRecoveryRedirectUrl } from "@/lib/auth-redirect-urls";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
@@ -19,6 +19,9 @@ function translateError(message: string): string {
   if (message.includes("Invalid login credentials")) return "E-mail ou senha incorretos.";
   if (message.includes("Email not confirmed")) {
     return "E-mail não confirmado. Verifique sua caixa de entrada.";
+  }
+  if (message.includes("Failed to fetch") || message.includes("fetch")) {
+    return "Não foi possível conectar ao servidor. Verifique sua internet, recarregue a página e tente de novo.";
   }
   if (message.includes("demorou demais para responder")) {
     return (
@@ -88,11 +91,17 @@ export function LoginForm() {
     }
     setSendingRecovery(true);
     try {
-      const supabase = getSupabaseClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(addr, {
-        redirectTo: passwordRecoveryRedirectUrl(),
+      const res = await fetch("/api/auth/reset-password/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: addr,
+          redirectTo: passwordRecoveryRedirectUrl(),
+        }),
       });
-      if (resetError) throw resetError;
+      const json = (await res.json()) as { error: string | null };
+      if (!res.ok || json.error) throw new Error(json.error ?? "Erro ao enviar e-mail");
       toast.success("E-mail enviado", {
         description: "Abra o link na mensagem para definir uma nova senha (use aba anônima se já estiver logado).",
       });
@@ -137,7 +146,7 @@ export function LoginForm() {
         throw new Error("Perfil não encontrado. Entre em contato com o administrador.");
       }
       if (!userProfile.ativo) {
-        await getSupabaseClient().auth.signOut();
+        await signOut();
         throw new Error("Usuário inativo. Entre em contato com o administrador.");
       }
 

@@ -14,7 +14,7 @@ import {
 
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { publicUrlForPath } from "@/lib/public-site-url";
-import { getUserProfile, signOut as authSignOut, type UserProfile } from "@/lib/auth";
+import { getUserProfile, syncBrowserSessionFromServer, signOutLocal, signOutSafe, type UserProfile } from "@/lib/auth";
 import { MOOVIFLY_PASSWORD_RECOVERY_KEY, MOOVIFLY_POS_CONVITE_KEY } from "@/lib/auth-invite-flow";
 
 type AuthContextValue = {
@@ -54,6 +54,18 @@ async function getUserProfileWithTimeout(userId: string) {
 
 function goBackoffice(path: string) {
   if (typeof window !== "undefined") window.location.assign(publicUrlForPath(path));
+}
+
+function clearLocalAuthState() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("userProfile");
+}
+
+async function resetAuthState(setProfile: (p: UserProfile | null) => void, setUserId: (id: string | null) => void) {
+  setProfile(null);
+  setUserId(null);
+  clearLocalAuthState();
+  await signOutLocal();
 }
 
 function checkPagePermissions(pathname: string, profile: UserProfile): string | null {
@@ -113,9 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!sessionUserId) {
         setProfile(null);
         setUserId(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("userProfile");
-        }
+        clearLocalAuthState();
         if (isBackofficePage && !isLoginPage) {
           goBackoffice("/backoffice/login/");
         }
@@ -133,22 +143,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             "Sua conta autenticou, mas não há cadastro vinculado no backoffice. Peça a um administrador para vincular em Configurações → Novo usuário → opção «Já existe no Auth — vincular só ao backoffice».",
           );
         }
-        await authSignOut();
-        setProfile(null);
-        setUserId(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("userProfile");
-        }
+        await resetAuthState(setProfile, setUserId);
+        void signOutSafe();
         if (isBackofficePage) goBackoffice("/backoffice/login/");
         return;
       }
 
       if (!nextProfile.ativo) {
-        await authSignOut();
-        setProfile(null);
-        setUserId(null);
+        await resetAuthState(setProfile, setUserId);
+        void signOutSafe();
         if (typeof window !== "undefined") {
-          localStorage.removeItem("userProfile");
           alert("Sua conta está inativa. Entre em contato com o administrador.");
         }
         if (isBackofficePage) goBackoffice("/backoffice/login/");
@@ -195,9 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const refreshProfile = useCallback(async () => {
-    const supabase = getSupabaseClient();
-    const { data } = await supabase.auth.getSession();
-    await handleSession(data.session?.user?.id ?? null);
+    const uid = await syncBrowserSessionFromServer();
+    await handleSession(uid);
   }, [handleSession]);
 
   useEffect(() => {
@@ -209,20 +212,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const uid = await syncBrowserSessionFromServer();
         if (!active) return;
-        const uid = data.session?.user?.id ?? null;
         if (uid) setUserId(uid);
         if (active) setLoading(false);
         await handleSession(uid);
       } catch (e) {
         console.error("[auth] Falha ao iniciar sessão:", e);
+        await resetAuthState(setProfile, setUserId);
         if (active) setLoading(false);
+        if (isBackofficePage && !isLoginPage) {
+          goBackoffice("/backoffice/login/");
+        }
       }
     })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (_event: unknown, session: { user?: { id?: string } } | null) => {
+      async (event: string, session: { user?: { id?: string } } | null) => {
+        // Boot já validou sessão via /api/auth/session; evita getSession/refresh duplicado no browser.
+        if (event === "INITIAL_SESSION") return;
         try {
           await handleSession(session?.user?.id ?? null);
         } finally {
@@ -235,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, [handleSession]);
+  }, [handleSession, isBackofficePage, isLoginPage]);
 
   useEffect(() => {
     if (!effectiveProfile) return;
@@ -244,13 +252,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [pathname, effectiveProfile]);
 
   const signOut = useCallback(async () => {
-    await authSignOut();
-    setProfile(null);
-    setUserId(null);
+    await resetAuthState(setProfile, setUserId);
     setViewAsVendedor(false);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("userProfile");
-    }
+    void signOutSafe();
     goBackoffice("/backoffice/login/");
   }, [setViewAsVendedor]);
 

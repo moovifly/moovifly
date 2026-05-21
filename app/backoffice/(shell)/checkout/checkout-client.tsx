@@ -12,7 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient, getSupabasePublicUrl } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 
@@ -70,7 +70,7 @@ export function CheckoutClient() {
     setCriando(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/criar-checkout-abacatepay`, {
+      const res = await fetch(`${getSupabasePublicUrl()}/functions/v1/criar-checkout-abacatepay`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
