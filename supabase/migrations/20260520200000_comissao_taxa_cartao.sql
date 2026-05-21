@@ -1,5 +1,5 @@
 -- Aplica desconto de taxa de cartão de crédito na base de cálculo da comissão.
--- Fornecedoras com taxa: BRT 3,99% | RESERVA FACIL 3,99% | ESFERA TUR 4,00% | REDE 3,53% | MILHAS FACIL 4,00%
+-- Fornecedoras com taxa: BRT 3,99% | MaisFly 3,99% | GTA sem taxa
 -- Formas de pagamento elegíveis: 1x Cartão de Crédito | Parcelado Cartão de Crédito | Pix + Cartão de Crédito
 
 CREATE OR REPLACE FUNCTION public.criar_comissao_on_venda()
@@ -33,11 +33,8 @@ BEGIN
         -- e a fornecedora possui taxa definida
         IF NEW.forma_pagamento IN ('1x Cartão de Crédito', 'Parcelado Cartão de Crédito', 'Pix + Cartão de Crédito') THEN
           v_taxa_cartao_pct := CASE NEW.fornecedor
-            WHEN 'BRT'          THEN 0.0399
-            WHEN 'RESERVA FACIL' THEN 0.0399
-            WHEN 'ESFERA TUR'   THEN 0.0400
-            WHEN 'REDE'         THEN 0.0353
-            WHEN 'MILHAS FACIL' THEN 0.0400
+            WHEN 'BRT'     THEN 0.0399
+            WHEN 'MaisFly' THEN 0.0399
             ELSE NULL
           END;
           IF v_taxa_cartao_pct IS NOT NULL THEN
