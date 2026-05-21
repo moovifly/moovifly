@@ -9,12 +9,12 @@ export function resetSupabaseClient() {
   client = null;
 }
 
+/** No browser, sempre same-origin: evita ERR_CONNECTION_RESET direto em *.supabase.co. */
 function resolveSupabaseUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     return `${window.location.origin}/api/supabase-proxy`;
   }
-  return configured;
+  return process.env.NEXT_PUBLIC_SUPABASE_URL!;
 }
 
 export function getSupabaseClient() {
@@ -34,17 +34,17 @@ export function getSupabaseClient() {
       auth: {
         flowType: "pkce",
         detectSessionInUrl: true,
-        // Em dev local o refresh no browser passa pelo proxy e falha; sessão vem do servidor.
-        autoRefreshToken: process.env.NODE_ENV !== "development",
+        // Refresh via proxy same-origin (servidor Vercel fala com Supabase).
+        autoRefreshToken: true,
       },
     });
   }
   return client;
 }
 
-/** URL base para REST/Auth/Functions — em dev local usa proxy same-origin. */
+/** URL base para REST/Auth/Functions no browser (proxy same-origin). */
 export function getSupabasePublicUrl(): string {
-  if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+  if (typeof window !== "undefined") {
     return `${window.location.origin}/api/supabase-proxy`;
   }
   return process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/$/, "");
