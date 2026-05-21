@@ -1,7 +1,7 @@
 "use client";
 
 import { getSupabaseClient, resetSupabaseClient } from "@/lib/supabase/client";
-import { applyBrowserAuthSession, clearBrowserAuthSession } from "@/lib/supabase/browser-session";
+import { clearBrowserAuthSession } from "@/lib/supabase/browser-session";
 
 export type UserProfile = {
   id: string;
@@ -51,8 +51,16 @@ export async function signIn(email: string, password: string) {
         : null;
 
     if (session) {
-      applyBrowserAuthSession(session);
-      resetSupabaseClient();
+      // Injeta sessão diretamente no cliente browser (grava em document.cookie via @supabase/ssr).
+      // applyBrowserAuthSession (localStorage) não funciona com createBrowserClient que usa cookies.
+      try {
+        await getSupabaseClient().auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+      } catch {
+        /* sessão nos cookies do servidor será lida pelo cliente na próxima requisição */
+      }
     }
 
     return {
@@ -163,20 +171,18 @@ export async function fetchSessionFromServer(): Promise<{
   }
 }
 
-/** Sincroniza JWT no browser a partir dos cookies do servidor — sem /auth/v1/user. */
+/** Sincroniza JWT no browser a partir dos cookies do servidor. */
 export async function syncBrowserSessionFromServer(): Promise<string | null> {
-  const { userId, accessToken, refreshToken, user, expiresIn, expiresAt, tokenType } =
-    await fetchSessionFromServer();
-  if (accessToken && refreshToken && user) {
-    applyBrowserAuthSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_in: expiresIn,
-      expires_at: expiresAt,
-      token_type: tokenType,
-      user,
-    });
-    resetSupabaseClient();
+  const { userId, accessToken, refreshToken } = await fetchSessionFromServer();
+  if (accessToken && refreshToken) {
+    try {
+      await getSupabaseClient().auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+    } catch {
+      /* cookies do servidor ainda estão disponíveis para o cliente */
+    }
   }
   return userId;
 }

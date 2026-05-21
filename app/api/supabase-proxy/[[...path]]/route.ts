@@ -26,7 +26,8 @@ async function proxy(request: NextRequest, pathSegments: string[] | undefined) {
     });
   }
 
-  const subPath = pathSegments?.join("/") ?? "";
+  // Remove trailing slash — GoTrue /auth/v1/token/ retorna 404; PostgREST também não precisa.
+  const subPath = (pathSegments?.join("/") ?? "").replace(/\/+$/, "");
   const target = `${base}/${subPath}${request.nextUrl.search}`;
 
   const headers = new Headers();

@@ -310,6 +310,28 @@ export function VendasClient() {
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
         if (error) throw error;
+
+        // Recalculate commission using same logic as comissaoPreview
+        if (!isSeguro) {
+          const base = (payload.taxa_rav ?? 0) + (payload.taxa_du ?? 0);
+          if (base > 0) {
+            const percentualVendedor = Number((profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0);
+            let baseComissao = base;
+            const temTaxaCartao = FORMAS_CARTAO.has(payload.forma_pagamento ?? "") && (payload.fornecedor ?? "") in TAXA_CARTAO_MAP;
+            if (temTaxaCartao) {
+              const taxaPct = TAXA_CARTAO_MAP[payload.fornecedor!];
+              const taxaCartaoVal = Math.round(base * taxaPct) / 100;
+              baseComissao = Math.round((base - taxaCartaoVal) * 100) / 100;
+            }
+            const novaComissao = percentualVendedor > 0 ? Math.round(baseComissao * percentualVendedor) / 100 : 0;
+            await supabase
+              .from("comissoes")
+              .update({ base_calculo: baseComissao, percentual_comissao: percentualVendedor, valor_comissao: novaComissao })
+              .eq("venda_id", form.id)
+              .eq("status", "pendente");
+          }
+        }
+
         toast.success("Venda atualizada!");
       } else {
         const { error } = await supabase.from("vendas").insert([payload]);

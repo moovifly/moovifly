@@ -48,6 +48,7 @@ type Comissao = {
   status: string;
   data_pagamento: string | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
+  vendas?: { numero_venda: string | null; descricao: string | null } | null;
 };
 
 type Usuario = { id: string; nome: string; tipo: string };
@@ -55,6 +56,13 @@ type Usuario = { id: string; nome: string; tipo: string };
 function vendorName(c: Comissao): string {
   const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
   return usr?.nome ?? "—";
+}
+
+function saleLabel(c: Comissao): string {
+  const v = c.vendas;
+  if (!v) return "—";
+  const parts = [v.numero_venda ? `#${v.numero_venda}` : null, v.descricao].filter(Boolean);
+  return parts.join(" · ") || "—";
 }
 
 export function FinanceiroClient() {
@@ -200,7 +208,7 @@ export function FinanceiroClient() {
       const toTs = dateTo + "T23:59:59";
       const [{ data: rec }, { data: com }, { data: usr }] = await Promise.all([
         supabase.from("contas_receber").select("*").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento"),
-        supabase.from("comissoes").select("*, usuarios(nome)").gte("created_at", dateFrom).lte("created_at", toTs).order("created_at", { ascending: false }),
+        supabase.from("comissoes").select("*, usuarios(nome), vendas(numero_venda, descricao)").gte("created_at", dateFrom).lte("created_at", toTs).order("created_at", { ascending: false }),
         isManager ? supabase.from("usuarios").select("id, nome, tipo").order("nome") : Promise.resolve({ data: [] }),
       ]);
       setReceber((rec ?? []) as ContaReceber[]);
@@ -208,8 +216,13 @@ export function FinanceiroClient() {
       setUsuarios((usr ?? []) as Usuario[]);
 
       if (isManager) {
-        const { data: pag } = await supabase.from("contas_pagar").select("*").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento");
-        setPagar((pag ?? []) as ContaPagar[]);
+        // Pending bills: no date filter (always show all outstanding obligations)
+        // Paid bills: filter by due date within the selected period
+        const [{ data: pagPendentes }, { data: pagPagas }] = await Promise.all([
+          supabase.from("contas_pagar").select("*").eq("status", "pendente").order("data_vencimento"),
+          supabase.from("contas_pagar").select("*").neq("status", "pendente").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento"),
+        ]);
+        setPagar([...(pagPendentes ?? []), ...(pagPagas ?? [])] as ContaPagar[]);
       }
     } catch (err) {
       toast.error("Erro ao carregar financeiro", { description: formatSupabaseError(err) });
@@ -626,6 +639,7 @@ export function FinanceiroClient() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Vendedor</TableHead>
+                            <TableHead>Venda</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>%</TableHead>
                             <TableHead>Status</TableHead>
@@ -636,6 +650,7 @@ export function FinanceiroClient() {
                           {comissoesPendentes.map((c) => (
                             <TableRow key={c.id}>
                               <TableCell>{vendorName(c)}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
                               <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                               <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                               <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
@@ -733,6 +748,7 @@ export function FinanceiroClient() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Vendedor</TableHead>
+                            <TableHead>Venda</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>%</TableHead>
                             <TableHead>Data de Pagamento</TableHead>
@@ -744,6 +760,7 @@ export function FinanceiroClient() {
                           {comissoesPagas.map((c) => (
                             <TableRow key={c.id}>
                               <TableCell>{vendorName(c)}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
                               <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                               <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                               <TableCell>{formatDate(c.data_pagamento)}</TableCell>
@@ -791,6 +808,7 @@ export function FinanceiroClient() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Vendedor</TableHead>
+                        <TableHead>Venda</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>%</TableHead>
                         <TableHead>Status</TableHead>
@@ -802,6 +820,7 @@ export function FinanceiroClient() {
                       {comissoes.map((c) => (
                         <TableRow key={c.id}>
                           <TableCell>{vendorName(c)}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
                           <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                           <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                           <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
