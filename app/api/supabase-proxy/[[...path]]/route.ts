@@ -15,6 +15,10 @@ const HOP_BY_HOP = new Set([
   "upgrade",
   "host",
   "content-length",
+  // Evita ERR_CONTENT_DECODING_FAILED: Node fetch descomprime transparentemente,
+  // mas mantém o header — o browser tentaria descomprimir novamente e falharia.
+  "content-encoding",
+  "accept-encoding",
 ]);
 
 async function proxy(request: NextRequest, pathSegments: string[] | undefined) {
