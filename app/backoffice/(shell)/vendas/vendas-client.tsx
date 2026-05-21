@@ -26,7 +26,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { normalizeDateOnly } from "@/lib/date-only";
-import { loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
+import { loadAeroportos, searchAeroportos, type Aeroporto, loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
 
 type Passageiro = {
   nome: string;
@@ -71,8 +71,7 @@ const STATUS_OPTIONS = [
 const TIPO_OPTIONS = ["passagem", "pacote", "hospedagem", "corporativo", "lua-de-mel", "grupo", "outros"];
 
 const FORNECEDOR_OPTIONS = [
-  "RESERVA FACIL", "ESFERA TUR", "MILHAS FACIL", "MAIS FLY",
-  "BRT", "FRT", "REDE", "CATIVA", "GTA", "NA TREND", "ORINTER",
+  "BRT", "MaisFly", "GTA",
 ];
 
 const FORMA_PAGAMENTO_OPTIONS = [
@@ -86,10 +85,7 @@ const FORMAS_CARTAO = new Set(["1x Cartão de Crédito", "Parcelado Cartão de C
 
 const TAXA_CARTAO_MAP: Record<string, number> = {
   "BRT": 3.99,
-  "RESERVA FACIL": 3.99,
-  "ESFERA TUR": 4.00,
-  "REDE": 3.53,
-  "MILHAS FACIL": 4.00,
+  "MaisFly": 3.99,
 };
 
 function formaPagamentoSelectOptions(current: string): string[] {
@@ -151,6 +147,7 @@ export function VendasClient() {
   const { profile } = useAuth();
   const [items, setItems] = useState<Venda[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
   const [companhias, setCompanhias] = useState<Companhia[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -189,6 +186,7 @@ export function VendasClient() {
   }, [profile?.id]);
 
   useEffect(() => {
+    loadAeroportos().then(setAeroportos).catch(() => undefined);
     loadCompanhias().then(setCompanhias);
   }, []);
 
@@ -619,11 +617,23 @@ export function VendasClient() {
                         </div>
                         <div className="space-y-1.5">
                           <Label>Origem</Label>
-                          <Input value={form.origem} onChange={f("origem")} placeholder="GRU - Guarulhos" />
+                          <Autocomplete
+                            value={form.origem}
+                            onValueChange={(t) => setForm((p) => ({ ...p, origem: t }))}
+                            onSelect={(opt) => setForm((p) => ({ ...p, origem: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` }))}
+                            options={searchAeroportos(form.origem, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))}
+                            placeholder="Aeroporto de origem"
+                          />
                         </div>
                         <div className="space-y-1.5">
                           <Label>Destino</Label>
-                          <Input value={form.destino} onChange={f("destino")} placeholder="GIG - Rio de Janeiro" />
+                          <Autocomplete
+                            value={form.destino}
+                            onValueChange={(t) => setForm((p) => ({ ...p, destino: t }))}
+                            onSelect={(opt) => setForm((p) => ({ ...p, destino: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` }))}
+                            options={searchAeroportos(form.destino, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))}
+                            placeholder="Aeroporto de destino"
+                          />
                         </div>
                         <div className="space-y-1.5 sm:col-span-2">
                           <Label>Companhia aérea</Label>
