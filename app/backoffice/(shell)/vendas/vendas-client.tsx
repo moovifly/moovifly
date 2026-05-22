@@ -44,6 +44,7 @@ type Venda = {
   tipo: string | null;
   origem: string | null;
   destino: string | null;
+  companhia: string | null;
   localizador: string | null;
   voucher: string | null;
   data_ida: string | null;
@@ -103,6 +104,13 @@ function formaPagamentoSelectOptions(current: string): string[] {
     return [v, ...FORMA_PAGAMENTO_OPTIONS];
   }
   return FORMA_PAGAMENTO_OPTIONS;
+}
+
+/** Seguro: fornecedor paga 40% do total; vendedor recebe 50% desse repasse. */
+function calcComissaoSeguro(valorTotal: number) {
+  const repasseFornecedor = Math.round(valorTotal * 40) / 100;
+  const comissaoVendedor = Math.round(repasseFornecedor * 50) / 100;
+  return { repasseFornecedor, comissaoVendedor };
 }
 
 const emptyPassageiro = (): Passageiro => ({ nome: "", documento: "", data_nascimento: "" });
@@ -242,7 +250,7 @@ export function VendasClient() {
       tipo: v.tipo ?? "passagem",
       origem: v.origem ?? "",
       destino: v.destino ?? "",
-      companhia: (v as unknown as { companhia?: string | null }).companhia ?? "",
+      companhia: v.companhia ?? "",
       localizador: v.localizador ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
@@ -253,7 +261,7 @@ export function VendasClient() {
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       fornecedor: v.fornecedor ?? "",
-      voucher: (v as unknown as { voucher?: string | null }).voucher ?? "",
+      voucher: v.voucher ?? "",
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
@@ -275,7 +283,7 @@ export function VendasClient() {
       tipo: v.tipo ?? "passagem",
       origem: v.origem ?? "",
       destino: v.destino ?? "",
-      companhia: (v as unknown as { companhia?: string | null }).companhia ?? "",
+      companhia: v.companhia ?? "",
       localizador: v.localizador ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
@@ -286,7 +294,7 @@ export function VendasClient() {
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       fornecedor: v.fornecedor ?? "",
-      voucher: (v as unknown as { voucher?: string | null }).voucher ?? "",
+      voucher: v.voucher ?? "",
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
@@ -331,15 +339,22 @@ export function VendasClient() {
         forma_pagamento: form.forma_pagamento || null,
         fornecedor: isSeguro ? null : form.fornecedor || null,
         voucher: isSeguro ? form.voucher || null : null,
-        passageiros_dados: isSeguro ? null : (passageirosValidos.length > 0 ? passageirosValidos : null),
-        passageiros: isSeguro ? 1 : Math.max(passageirosValidos.length, 1),
+        passageiros_dados: passageirosValidos.length > 0 ? passageirosValidos : null,
+        passageiros: Math.max(passageirosValidos.length, 1),
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
         if (error) throw error;
 
         // Recalculate commission using same logic as comissaoPreview
-        if (!isSeguro) {
+        if (isSeguro && form.valor_total > 0) {
+          const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total);
+          await supabase
+            .from("comissoes")
+            .update({ base_calculo: repasseFornecedor, percentual_comissao: 50, valor_comissao: comissaoVendedor })
+            .eq("venda_id", form.id)
+            .eq("status", "pendente");
+        } else if (!isSeguro) {
           const base = (payload.taxa_rav ?? 0) + (payload.taxa_du ?? 0);
           if (base > 0) {
             const userAtribuido = isAdminOrGerente && form.atribuido_a
@@ -421,6 +436,16 @@ export function VendasClient() {
   const passageirosPreenchidos = form.passageiros_dados.filter((p) => p.nome.trim()).length;
 
   const comissaoPreview = useMemo(() => {
+    if (form.categoria_venda === "seguro_viagem") {
+      if (!form.valor_total || form.valor_total <= 0) return null;
+      const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total);
+      return {
+        isSeguro: true as const,
+        valorTotal: form.valor_total,
+        repasseFornecedor,
+        comissaoVendedor,
+      };
+    }
     const base = (form.taxa_rav || 0) + (form.taxa_du || 0);
     if (base <= 0) return null;
     const userAtribuido = isAdminOrGerente && form.atribuido_a
@@ -439,8 +464,8 @@ export function VendasClient() {
       baseComissao = Math.round((base - taxaCartaoVal) * 100) / 100;
     }
     const comissaoVendedor = percentualVendedor > 0 ? Math.round(baseComissao * percentualVendedor) / 100 : null;
-    return { base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao, nomeAtribuido };
-  }, [form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, form.atribuido_a, profile, usuarios, isAdminOrGerente]);
+    return { isSeguro: false as const, base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao, nomeAtribuido };
+  }, [form.categoria_venda, form.valor_total, form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, form.atribuido_a, profile, usuarios, isAdminOrGerente]);
 
   return (
     <>
@@ -570,7 +595,7 @@ export function VendasClient() {
                   {viewMode
                     ? `${form.categoria_venda === "seguro_viagem" ? "Seguro Viagem" : "Aéreo"} · somente leitura`
                     : form.categoria_venda === "seguro_viagem"
-                    ? "Comissão automática de 40% sobre o valor total ao confirmar."
+                    ? "Fornecedor paga 40% do valor total; o vendedor recebe 50% desse repasse (20% do total) ao confirmar."
                     : "Preencha os dados da venda aérea."}
                 </DialogDescription>
               </DialogHeader>
@@ -607,60 +632,60 @@ export function VendasClient() {
 
                 </fieldset>
 
-                {form.categoria_venda === "seguro_viagem" ? (
-                  <fieldset disabled={viewMode} className="disabled:opacity-70">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label>Destino</Label>
-                      <Input value={form.destino} onChange={f("destino")} placeholder="Ex: Lisboa, Portugal" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Data de ida</Label>
-                      <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Data de volta</Label>
-                      <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
-                    </div>
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label>Voucher</Label>
-                      <Input value={form.voucher} onChange={f("voucher")} placeholder="Número ou código do voucher" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Valor total (R$) *</Label>
-                      <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Forma de pagamento</Label>
-                      <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
-                        <option value="">Selecione...</option>
-                        {formaPagamentoSelectOptions(form.forma_pagamento).map((o) => (
-                          <option key={o} value={o}>{o}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Status</Label>
-                      <Select value={form.status} onChange={f("status")}>
-                        {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Data da venda *</Label>
-                      <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
-                    </div>
-                  </div>
-                  </fieldset>
-                ) : (
-                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "dados" | "passageiros")}>
-                    <TabsList className="w-full">
-                      <TabsTrigger value="dados" className="flex-1">Dados da Venda</TabsTrigger>
-                      <TabsTrigger value="passageiros" className="flex-1">
-                        Passageiros{passageirosPreenchidos > 0 ? ` (${passageirosPreenchidos})` : ""}
-                      </TabsTrigger>
-                    </TabsList>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "dados" | "passageiros")}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="dados" className="flex-1">Dados da Venda</TabsTrigger>
+                    <TabsTrigger value="passageiros" className="flex-1">
+                      Passageiros{passageirosPreenchidos > 0 ? ` (${passageirosPreenchidos})` : ""}
+                    </TabsTrigger>
+                  </TabsList>
 
-                    <TabsContent value="dados">
+                  <TabsContent value="dados">
+                    {form.categoria_venda === "seguro_viagem" ? (
+                      <fieldset disabled={viewMode} className="disabled:opacity-70">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Destino</Label>
+                          <Input value={form.destino} onChange={f("destino")} placeholder="Ex: Lisboa, Portugal" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data de ida</Label>
+                          <Input type="date" value={form.data_ida} onChange={f("data_ida")} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data de volta</Label>
+                          <Input type="date" value={form.data_volta} onChange={f("data_volta")} />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Voucher</Label>
+                          <Input value={form.voucher} onChange={f("voucher")} placeholder="Número ou código do voucher" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Valor total (R$) *</Label>
+                          <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Forma de pagamento</Label>
+                          <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
+                            <option value="">Selecione...</option>
+                            {formaPagamentoSelectOptions(form.forma_pagamento).map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Status</Label>
+                          <Select value={form.status} onChange={f("status")}>
+                            {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data da venda *</Label>
+                          <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                        </div>
+                      </div>
+                      </fieldset>
+                    ) : (
                       <fieldset disabled={viewMode} className="disabled:opacity-70">
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
@@ -756,38 +781,54 @@ export function VendasClient() {
                         </div>
                       </div>
                       </fieldset>
+                    )}
 
-                      {comissaoPreview && (
-                        <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">RAV + DU</span>
-                            <span className="font-medium">{formatCurrency(comissaoPreview.base)}</span>
-                          </div>
-                          {comissaoPreview.temTaxaCartao && (
-                            <div className="flex justify-between text-destructive">
-                              <span>TX Cartão ({form.fornecedor})</span>
-                              <span>− {formatCurrency(comissaoPreview.taxaCartaoVal)}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between border-t pt-1.5">
-                            <span className="text-muted-foreground">Total Comissão</span>
-                            <span className="font-semibold">{formatCurrency(comissaoPreview.baseComissao)}</span>
-                          </div>
-                          {comissaoPreview.comissaoVendedor !== null && (
+                    {comissaoPreview && (
+                      <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5 text-sm mt-4">
+                        {comissaoPreview.isSeguro ? (
+                          <>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                {comissaoPreview.nomeAtribuido && comissaoPreview.nomeAtribuido !== profile?.nome
-                                  ? `Comissão de ${comissaoPreview.nomeAtribuido} (${comissaoPreview.percentualVendedor}%)`
-                                  : `Sua Comissão (${comissaoPreview.percentualVendedor}%)`}
-                              </span>
+                              <span className="text-muted-foreground">Repasse fornecedor (40%)</span>
+                              <span className="font-medium">{formatCurrency(comissaoPreview.repasseFornecedor)}</span>
+                            </div>
+                            <div className="flex justify-between border-t pt-1.5">
+                              <span className="text-muted-foreground">Comissão vendedor (50% do repasse)</span>
                               <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </TabsContent>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">RAV + DU</span>
+                              <span className="font-medium">{formatCurrency(comissaoPreview.base)}</span>
+                            </div>
+                            {comissaoPreview.temTaxaCartao && (
+                              <div className="flex justify-between text-destructive">
+                                <span>TX Cartão ({form.fornecedor})</span>
+                                <span>− {formatCurrency(comissaoPreview.taxaCartaoVal)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between border-t pt-1.5">
+                              <span className="text-muted-foreground">Total Comissão</span>
+                              <span className="font-semibold">{formatCurrency(comissaoPreview.baseComissao)}</span>
+                            </div>
+                            {comissaoPreview.comissaoVendedor !== null && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  {comissaoPreview.nomeAtribuido && comissaoPreview.nomeAtribuido !== profile?.nome
+                                    ? `Comissão de ${comissaoPreview.nomeAtribuido} (${comissaoPreview.percentualVendedor}%)`
+                                    : `Sua Comissão (${comissaoPreview.percentualVendedor}%)`}
+                                </span>
+                                <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </TabsContent>
 
-                    <TabsContent value="passageiros">
+                  <TabsContent value="passageiros">
                       <div className="space-y-3">
                         <fieldset disabled={viewMode} className="space-y-3 disabled:opacity-70">
                         {form.passageiros_dados.map((p, i) => (
@@ -840,9 +881,8 @@ export function VendasClient() {
                           </Button>
                         )}
                       </div>
-                    </TabsContent>
-                  </Tabs>
-                )}
+                  </TabsContent>
+                </Tabs>
 
                 <DialogFooter>
                   {viewMode ? (
