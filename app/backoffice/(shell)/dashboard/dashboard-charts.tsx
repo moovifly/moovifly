@@ -78,11 +78,12 @@ export function SalesBarChart({ data }: { data: { label: string; valor: number }
 
   const maxValor = data.length ? Math.max(0, ...data.map((d) => d.valor)) : 0;
   const normMax = Math.max(1, reaisParaAlturaBarra(Math.max(100_000, maxValor)));
+  const xInterval = Math.max(0, Math.round(data.length / 6) - 1);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={chartRows} margin={{ top: 8, right: 8, left: 2, bottom: 0 }}>
-        <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} interval={xInterval} />
         <YAxis
           width={44}
           tick={{ fontSize: 10 }}
