@@ -1026,14 +1026,10 @@ export function OrcamentosClient() {
               })}
             </fieldset>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Valor total *</Label>
                 <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>RAV/DU</Label>
-                <CurrencyInput value={form.rav_du} onValueChange={(v) => setForm((p) => ({ ...p, rav_du: v ?? 0 }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>
