@@ -22,6 +22,7 @@ import {
 import { Autocomplete } from "@/components/autocomplete";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
+import { ROLE_LABELS } from "@/lib/auth";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -60,6 +61,13 @@ type Venda = {
 };
 
 type Cliente = { id: string; nome: string };
+
+type UsuarioSimples = {
+  id: string;
+  nome: string;
+  tipo: string;
+  comissao_percentual: number | null;
+};
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente", variant: "warning" as const },
@@ -118,6 +126,7 @@ type FormState = {
   fornecedor: string;
   voucher: string;
   passageiros_dados: Passageiro[];
+  atribuido_a: string | null;
 };
 
 const emptyForm = (): FormState => ({
@@ -140,13 +149,16 @@ const emptyForm = (): FormState => ({
   fornecedor: "",
   voucher: "",
   passageiros_dados: [emptyPassageiro()],
+  atribuido_a: null,
 });
 
 export function VendasClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile } = useAuth();
+  const isAdminOrGerente = profile?.tipo === "administrador" || profile?.tipo === "gerente";
   const [items, setItems] = useState<Venda[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioSimples[]>([]);
   const [aeroportos, setAeroportos] = useState<Aeroporto[]>([]);
   const [companhias, setCompanhias] = useState<Companhia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,6 +185,15 @@ export function VendasClient() {
 
       const { data: cliData } = await supabase.from("clientes").select("id, nome").eq("status", "ativo").order("nome");
       setClientes((cliData ?? []) as Cliente[]);
+
+      if (profile?.tipo === "administrador" || profile?.tipo === "gerente") {
+        const { data: usrData } = await supabase
+          .from("usuarios")
+          .select("id, nome, tipo, comissao_percentual")
+          .eq("ativo", true)
+          .order("nome");
+        setUsuarios((usrData ?? []) as UsuarioSimples[]);
+      }
     } catch (err) {
       toast.error("Erro ao carregar vendas", { description: formatSupabaseError(err) });
     } finally {
@@ -200,7 +221,7 @@ export function VendasClient() {
     });
   }, [items, search, statusFilter]);
 
-  function openNew() { setForm(emptyForm()); setStep("select-type"); setActiveTab("dados"); setViewMode(false); setOpen(true); }
+  function openNew() { setForm({ ...emptyForm(), atribuido_a: profile?.id ?? null }); setStep("select-type"); setActiveTab("dados"); setViewMode(false); setOpen(true); }
 
   function selectCategoria(cat: "aereo" | "seguro_viagem") {
     setForm((prev) => ({ ...prev, categoria_venda: cat }));
@@ -232,6 +253,7 @@ export function VendasClient() {
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
+      atribuido_a: v.vendedor_id ?? null,
     });
     setViewMode(false);
     setActiveTab("dados");
@@ -263,6 +285,7 @@ export function VendasClient() {
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
+      atribuido_a: v.vendedor_id ?? null,
     });
     setViewMode(true);
     setActiveTab("dados");
@@ -286,7 +309,7 @@ export function VendasClient() {
       const payload = {
         categoria_venda: form.categoria_venda,
         cliente_id: form.cliente_id,
-        vendedor_id: profile?.id ?? null,
+        vendedor_id: isAdminOrGerente ? (form.atribuido_a ?? profile?.id ?? null) : (profile?.id ?? null),
         tipo: isSeguro ? null : form.tipo || null,
         descricao,
         origem: isSeguro ? null : form.origem || null,
@@ -313,7 +336,12 @@ export function VendasClient() {
         if (!isSeguro) {
           const base = (payload.taxa_rav ?? 0) + (payload.taxa_du ?? 0);
           if (base > 0) {
-            const percentualVendedor = Number((profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0);
+            const userAtribuido = isAdminOrGerente && form.atribuido_a
+              ? usuarios.find(u => u.id === form.atribuido_a)
+              : null;
+            const percentualVendedor = Number(
+              userAtribuido?.comissao_percentual ?? (profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0
+            );
             let baseComissao = base;
             const temTaxaCartao = FORMAS_CARTAO.has(payload.forma_pagamento ?? "") && (payload.fornecedor ?? "") in TAXA_CARTAO_MAP;
             if (temTaxaCartao) {
@@ -389,7 +417,13 @@ export function VendasClient() {
   const comissaoPreview = useMemo(() => {
     const base = (form.taxa_rav || 0) + (form.taxa_du || 0);
     if (base <= 0) return null;
-    const percentualVendedor = Number((profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0);
+    const userAtribuido = isAdminOrGerente && form.atribuido_a
+      ? usuarios.find(u => u.id === form.atribuido_a)
+      : null;
+    const percentualVendedor = Number(
+      userAtribuido?.comissao_percentual ?? (profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0
+    );
+    const nomeAtribuido = userAtribuido?.nome ?? null;
     let taxaCartaoVal = 0;
     let baseComissao = base;
     const temTaxaCartao = FORMAS_CARTAO.has(form.forma_pagamento) && form.fornecedor in TAXA_CARTAO_MAP;
@@ -399,8 +433,8 @@ export function VendasClient() {
       baseComissao = Math.round((base - taxaCartaoVal) * 100) / 100;
     }
     const comissaoVendedor = percentualVendedor > 0 ? Math.round(baseComissao * percentualVendedor) / 100 : null;
-    return { base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao };
-  }, [form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, profile]);
+    return { base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao, nomeAtribuido };
+  }, [form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, form.atribuido_a, profile, usuarios, isAdminOrGerente]);
 
   return (
     <>
@@ -546,6 +580,24 @@ export function VendasClient() {
                     placeholder="Digite o nome do cliente..."
                   />
                 </div>
+
+                {isAdminOrGerente && usuarios.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label>Atribuir venda a</Label>
+                    <Select
+                      value={form.atribuido_a ?? ""}
+                      onChange={(e) => setForm((prev) => ({ ...prev, atribuido_a: e.target.value || null }))}
+                      disabled={viewMode}
+                    >
+                      <option value="">Sem atribuição</option>
+                      {usuarios.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.nome} ({ROLE_LABELS[u.tipo] ?? u.tipo})
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
 
                 </fieldset>
 
@@ -708,7 +760,11 @@ export function VendasClient() {
                           </div>
                           {comissaoPreview.comissaoVendedor !== null && (
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Sua Comissão ({comissaoPreview.percentualVendedor}%)</span>
+                              <span className="text-muted-foreground">
+                                {comissaoPreview.nomeAtribuido && comissaoPreview.nomeAtribuido !== profile?.nome
+                                  ? `Comissão de ${comissaoPreview.nomeAtribuido} (${comissaoPreview.percentualVendedor}%)`
+                                  : `Sua Comissão (${comissaoPreview.percentualVendedor}%)`}
+                              </span>
                               <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
                             </div>
                           )}
