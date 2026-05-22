@@ -44,6 +44,7 @@ type Venda = {
   tipo: string | null;
   origem: string | null;
   destino: string | null;
+  localizador: string | null;
   voucher: string | null;
   data_ida: string | null;
   data_volta: string | null;
@@ -115,6 +116,7 @@ type FormState = {
   origem: string;
   destino: string;
   companhia: string;
+  localizador: string;
   data_ida: string;
   data_volta: string;
   data_venda: string;
@@ -138,6 +140,7 @@ const emptyForm = (): FormState => ({
   origem: "",
   destino: "",
   companhia: "",
+  localizador: "",
   data_ida: "",
   data_volta: "",
   data_venda: new Date().toISOString().slice(0, 10),
@@ -240,6 +243,7 @@ export function VendasClient() {
       origem: v.origem ?? "",
       destino: v.destino ?? "",
       companhia: (v as unknown as { companhia?: string | null }).companhia ?? "",
+      localizador: v.localizador ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
       data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
@@ -272,6 +276,7 @@ export function VendasClient() {
       origem: v.origem ?? "",
       destino: v.destino ?? "",
       companhia: (v as unknown as { companhia?: string | null }).companhia ?? "",
+      localizador: v.localizador ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
       data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
@@ -315,6 +320,7 @@ export function VendasClient() {
         origem: isSeguro ? null : form.origem || null,
         destino: form.destino || null,
         companhia: isSeguro ? null : form.companhia || null,
+        localizador: isSeguro ? null : form.localizador.trim() || null,
         data_ida: normalizeDateOnly(form.data_ida) || null,
         data_volta: normalizeDateOnly(form.data_volta) || null,
         data_venda: form.data_venda,
@@ -687,7 +693,7 @@ export function VendasClient() {
                             placeholder="Aeroporto de destino"
                           />
                         </div>
-                        <div className="space-y-1.5 sm:col-span-2">
+                        <div className="space-y-1.5">
                           <Label>Companhia aérea</Label>
                           <Autocomplete
                             value={form.companhia}
@@ -695,6 +701,15 @@ export function VendasClient() {
                             onSelect={(opt) => handleCompanhiaSelect(opt.value as Companhia)}
                             options={searchCompanhias(form.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))}
                             placeholder="LATAM, GOL, Azul..."
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Localizador (LOC)</Label>
+                          <Input
+                            value={form.localizador}
+                            onChange={f("localizador")}
+                            placeholder="Número do localizador do voo"
+                            className="uppercase"
                           />
                         </div>
                         <div className="space-y-1.5">
