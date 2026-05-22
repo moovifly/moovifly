@@ -279,10 +279,10 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
   let clientesPrevQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo").gte("created_at", range.prevStart).lt("created_at", range.prevEnd);
   if (!isAdmin) clientesPrevQ = clientesPrevQ.eq("vendedor_id", profile.id);
 
-  let vendasThisQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("created_at", range.start).lte("created_at", range.end).in("status", ["confirmada", "concluida"]);
+  let vendasThisQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("data_venda", range.start.slice(0, 10)).lte("data_venda", range.end.slice(0, 10)).in("status", ["confirmada", "concluida"]);
   if (!isAdmin) vendasThisQ = vendasThisQ.eq("vendedor_id", profile.id);
 
-  let vendasPrevQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("created_at", range.prevStart).lt("created_at", range.prevEnd).in("status", ["confirmada", "concluida"]);
+  let vendasPrevQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("data_venda", range.prevStart.slice(0, 10)).lt("data_venda", range.prevEnd.slice(0, 10)).in("status", ["confirmada", "concluida"]);
   if (!isAdmin) vendasPrevQ = vendasPrevQ.eq("vendedor_id", profile.id);
 
   const [
@@ -318,9 +318,9 @@ async function loadRecentSales(profile: UserProfile, range: DateRange): Promise<
   let q = supabase
     .from("vendas")
     .select("id, numero_venda, destino, valor_total, status, clientes (nome)")
-    .gte("created_at", range.start)
-    .lte("created_at", range.end)
-    .order("created_at", { ascending: false })
+    .gte("data_venda", range.start.slice(0, 10))
+    .lte("data_venda", range.end.slice(0, 10))
+    .order("data_venda", { ascending: false })
     .limit(5);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
     q = q.eq("vendedor_id", profile.id);
@@ -336,8 +336,8 @@ async function loadTopSellers(profile: UserProfile, range: DateRange): Promise<T
   const { data: vendas, error } = await supabase
     .from("vendas")
     .select("vendedor_id, valor_total, usuarios (nome)")
-    .gte("created_at", range.start)
-    .lte("created_at", range.end)
+    .gte("data_venda", range.start.slice(0, 10))
+    .lte("data_venda", range.end.slice(0, 10))
     .in("status", ["confirmada", "concluida"]);
   if (error) throw error;
   type RawSale = {
@@ -411,22 +411,22 @@ async function loadSalesByDay(profile: UserProfile, range: DateRange) {
   const supabase = getSupabaseClient();
   let q = supabase
     .from("vendas")
-    .select("valor_total, created_at, status")
-    .gte("created_at", range.start)
-    .lte("created_at", range.end)
+    .select("valor_total, data_venda, status")
+    .gte("data_venda", range.start.slice(0, 10))
+    .lte("data_venda", range.end.slice(0, 10))
     .in("status", ["confirmada", "concluida"]);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
     q = q.eq("vendedor_id", profile.id);
   }
   const { data } = await q;
-  const sales = (data ?? []) as Array<{ valor_total: number | string; created_at: string }>;
+  const sales = (data ?? []) as Array<{ valor_total: number | string; data_venda: string }>;
 
   if (range.groupBy === "hour") {
+    // data_venda has no time component — put all today's sales in bucket 0
     const buckets = new Map<number, number>();
     for (let h = 0; h < 24; h++) buckets.set(h, 0);
     for (const v of sales) {
-      const h = new Date(v.created_at).getHours();
-      buckets.set(h, (buckets.get(h) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+      buckets.set(0, (buckets.get(0) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
     }
     return [...buckets.entries()].map(([hour, value]) => ({
       label: `${String(hour).padStart(2, "0")}h`,
@@ -444,8 +444,7 @@ async function loadSalesByDay(profile: UserProfile, range: DateRange) {
       curr.setMonth(curr.getMonth() + 1);
     }
     for (const v of sales) {
-      const d = new Date(v.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const key = v.data_venda.slice(0, 7);
       if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
     }
     return [...buckets.entries()].map(([key, value]) => {
@@ -465,7 +464,7 @@ async function loadSalesByDay(profile: UserProfile, range: DateRange) {
     buckets.set(d.toISOString().slice(0, 10), 0);
   }
   for (const v of sales) {
-    const key = new Date(v.created_at).toISOString().slice(0, 10);
+    const key = v.data_venda; // already "YYYY-MM-DD"
     if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
   }
   const isShortPeriod = diffDays <= 7;
@@ -481,8 +480,8 @@ async function loadRevenueByCategory(profile: UserProfile, range: DateRange) {
   let q = supabase
     .from("vendas")
     .select("tipo, classe, valor_total, status")
-    .gte("created_at", range.start)
-    .lte("created_at", range.end)
+    .gte("data_venda", range.start.slice(0, 10))
+    .lte("data_venda", range.end.slice(0, 10))
     .in("status", ["confirmada", "concluida"]);
   if (!["administrador", "gerente"].includes(profile.tipo)) {
     q = q.eq("vendedor_id", profile.id);
