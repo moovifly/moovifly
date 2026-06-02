@@ -50,18 +50,8 @@ export async function signIn(email: string, password: string) {
           }
         : null;
 
-    if (session) {
-      // Injeta sessão diretamente no cliente browser (grava em document.cookie via @supabase/ssr).
-      // applyBrowserAuthSession (localStorage) não funciona com createBrowserClient que usa cookies.
-      try {
-        await getSupabaseClient().auth.setSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-        });
-      } catch {
-        /* sessão nos cookies do servidor será lida pelo cliente na próxima requisição */
-      }
-    }
+    // Cookies vêm no Set-Cookie da resposta do POST /api/auth/sign-in (não chamar setSession aqui:
+    // dispara GoTrue via proxy e pode travar 30s+ em produção, competindo com o AuthProvider).
 
     return {
       data: {
@@ -171,18 +161,32 @@ export async function fetchSessionFromServer(): Promise<{
   }
 }
 
-/** Sincroniza JWT no browser a partir dos cookies do servidor. */
+const BROWSER_SET_SESSION_MS = 4_000;
+
+/** Tenta alinhar o client Supabase aos cookies do servidor, sem bloquear o login. */
+function syncBrowserSessionInBackground(accessToken: string, refreshToken: string) {
+  void (async () => {
+    try {
+      await Promise.race([
+        getSupabaseClient().auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("setSession timeout")), BROWSER_SET_SESSION_MS),
+        ),
+      ]);
+    } catch {
+      /* APIs /api/* usam cookies do servidor; o client browser renova na próxima navegação */
+    }
+  })();
+}
+
+/** Lê sessão no servidor (cookies). Retorna userId; setSession no browser é opcional e em background. */
 export async function syncBrowserSessionFromServer(): Promise<string | null> {
   const { userId, accessToken, refreshToken } = await fetchSessionFromServer();
   if (accessToken && refreshToken) {
-    try {
-      await getSupabaseClient().auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-    } catch {
-      /* cookies do servidor ainda estão disponíveis para o cliente */
-    }
+    syncBrowserSessionInBackground(accessToken, refreshToken);
   }
   return userId;
 }

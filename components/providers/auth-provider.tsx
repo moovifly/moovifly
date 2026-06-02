@@ -226,8 +226,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (event: string) => {
-        // Boot já validou sessão via /api/auth/session; evita getSession/refresh duplicado no browser.
-        if (event === "INITIAL_SESSION") return;
+        // Boot e login usam /api/auth/session + cookies do servidor; evita refresh GoTrue no browser.
+        if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          return;
+        }
         try {
           await handleSession();
         } finally {

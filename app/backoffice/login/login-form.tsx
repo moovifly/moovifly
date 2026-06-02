@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { signIn, getUserProfile, signOut, syncBrowserSessionFromServer } from "@/lib/auth";
+import { signIn, getUserProfile, signOut } from "@/lib/auth";
 import { passwordRecoveryRedirectUrl } from "@/lib/auth-redirect-urls";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
@@ -133,8 +133,6 @@ export function LoginForm() {
         "Login",
       );
       if (signInError) throw new Error(signInError.message);
-
-      await syncBrowserSessionFromServer();
 
       const { data: userProfile, error: profileError } = await withTimeout(
         getUserProfile(),
