@@ -38,17 +38,17 @@ const VIEW_AS_KEY = "moovifly_view_as_vendedor";
 
 const PROFILE_FETCH_MS = 25_000;
 
-async function getUserProfileWithTimeout(userId: string) {
+async function getUserProfileWithTimeout() {
   try {
     return await Promise.race([
-      getUserProfile(userId),
-      new Promise<{ data: null; error: Error }>((_, reject) =>
+      getUserProfile(),
+      new Promise<{ data: null; sessionUserId: null; error: Error }>((_, reject) =>
         setTimeout(() => reject(new Error("profile_fetch_timeout")), PROFILE_FETCH_MS),
       ),
     ]);
   } catch (e) {
     const err = e instanceof Error ? e : new Error(String(e));
-    return { data: null, error: err };
+    return { data: null, sessionUserId: null, error: err };
   }
 }
 
@@ -120,8 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return profile;
   }, [profile, viewAsVendedor]);
 
-  const handleSession = useCallback(
-    async (sessionUserId: string | null) => {
+  const handleSession = useCallback(async () => {
+      const sessionUserId = await syncBrowserSessionFromServer();
+
       if (!sessionUserId) {
         setProfile(null);
         setUserId(null);
@@ -134,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUserId(sessionUserId);
 
-      const { data: nextProfile, error } = await getUserProfileWithTimeout(sessionUserId);
+      const { data: nextProfile, error } = await getUserProfileWithTimeout();
 
       if (error || !nextProfile) {
         console.error("[auth] Falha ao carregar perfil:", error);
@@ -199,8 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const refreshProfile = useCallback(async () => {
-    const uid = await syncBrowserSessionFromServer();
-    await handleSession(uid);
+    await handleSession();
   }, [handleSession]);
 
   useEffect(() => {
@@ -212,11 +212,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const uid = await syncBrowserSessionFromServer();
         if (!active) return;
-        if (uid) setUserId(uid);
         if (active) setLoading(false);
-        await handleSession(uid);
+        await handleSession();
       } catch (e) {
         console.error("[auth] Falha ao iniciar sessão:", e);
         await resetAuthState(setProfile, setUserId);
@@ -227,17 +225,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event: string, session: { user?: { id?: string } } | null) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event: string) => {
         // Boot já validou sessão via /api/auth/session; evita getSession/refresh duplicado no browser.
         if (event === "INITIAL_SESSION") return;
         try {
-          await handleSession(session?.user?.id ?? null);
+          await handleSession();
         } finally {
           if (active) setLoading(false);
         }
-      },
-    );
+      });
 
     return () => {
       active = false;

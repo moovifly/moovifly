@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { signIn, getUserProfile, signOut } from "@/lib/auth";
+import { signIn, getUserProfile, signOut, syncBrowserSessionFromServer } from "@/lib/auth";
 import { passwordRecoveryRedirectUrl } from "@/lib/auth-redirect-urls";
 import { publicUrlForPath } from "@/lib/public-site-url";
 
@@ -28,6 +28,9 @@ function translateError(message: string): string {
       "A conexão com o login estourou o tempo limite. Feche outras abas do site, recarregue a página ou desative VPN/bloqueador. " +
       "Na Vercel, confira se NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY existem na produção."
     );
+  }
+  if (message.includes("session_profile_mismatch")) {
+    return "Sessão desatualizada. Limpe os cookies do site, recarregue a página e tente entrar de novo.";
   }
   return message || "Erro ao fazer login. Tente novamente.";
 }
@@ -131,11 +134,10 @@ export function LoginForm() {
       );
       if (signInError) throw new Error(signInError.message);
 
-      const userId = data.user?.id;
-      if (!userId) throw new Error("Não foi possível autenticar usuário.");
+      await syncBrowserSessionFromServer();
 
       const { data: userProfile, error: profileError } = await withTimeout(
-        getUserProfile(userId),
+        getUserProfile(),
         30000,
         "Carregamento do perfil",
       );

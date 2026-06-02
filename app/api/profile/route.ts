@@ -36,7 +36,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ data, error: null });
+    return NextResponse.json({ data, sessionUserId: user.id, error: null });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ data: null, error: message }, { status: 500 });

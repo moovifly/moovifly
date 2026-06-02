@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createRouteHandlerSupabase } from "@/lib/supabase/route-handler";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createServerSupabaseClient();
+    const { supabase, jsonWithAuthCookies } = await createRouteHandlerSupabase();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ user: null, error: "Não foi possível autenticar usuário." }, { status: 401 });
     }
 
-    return NextResponse.json({
+    return jsonWithAuthCookies({
       user: session.user,
       access_token: session.access_token,
       refresh_token: session.refresh_token,

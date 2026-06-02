@@ -9,12 +9,39 @@ export function resetSupabaseClient() {
   client = null;
 }
 
-/** No browser, sempre same-origin: evita ERR_CONNECTION_RESET direto em *.supabase.co. */
-function resolveSupabaseUrl(): string {
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/api/supabase-proxy`;
+function getSupabaseProjectUrl(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    console.error(
+      "[supabase] NEXT_PUBLIC_SUPABASE_URL ausente no build. Confira Environment Variables na Vercel.",
+    );
+    return "";
   }
-  return process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  return url.replace(/\/$/, "");
+}
+
+/**
+ * Pedidos Auth/REST passam pelo proxy same-origin; o client usa a URL do projeto
+ * para nomes de cookie (`sb-<ref>-auth-token`) iguais aos do servidor (@supabase/ssr).
+ */
+function proxySupabaseFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const projectBase = getSupabaseProjectUrl();
+  if (!projectBase || typeof window === "undefined") {
+    return fetch(input, init);
+  }
+
+  const proxyBase = `${window.location.origin}/api/supabase-proxy`;
+
+  let url: string;
+  if (typeof input === "string") url = input;
+  else if (input instanceof URL) url = input.href;
+  else url = input.url;
+
+  if (url.startsWith(projectBase)) {
+    url = proxyBase + url.slice(projectBase.length);
+  }
+
+  return fetch(url, init);
 }
 
 export function getSupabaseClient() {
@@ -23,7 +50,7 @@ export function getSupabaseClient() {
   }
 
   if (!client) {
-    const url = resolveSupabaseUrl();
+    const url = getSupabaseProjectUrl();
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !anon) {
       console.error(
@@ -31,6 +58,9 @@ export function getSupabaseClient() {
       );
     }
     client = createBrowserClient(url, anon!, {
+      global: {
+        fetch: proxySupabaseFetch,
+      },
       auth: {
         flowType: "pkce",
         detectSessionInUrl: true,
@@ -47,5 +77,5 @@ export function getSupabasePublicUrl(): string {
   if (typeof window !== "undefined") {
     return `${window.location.origin}/api/supabase-proxy`;
   }
-  return process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/$/, "");
+  return getSupabaseProjectUrl();
 }
