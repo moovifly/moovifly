@@ -48,7 +48,7 @@ type Comissao = {
   status: string;
   data_pagamento: string | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
-  vendas?: { numero_venda: string | null; descricao: string | null } | null;
+  vendas?: { numero_venda: string | null; descricao: string | null; data_venda: string | null } | null;
 };
 
 type Usuario = { id: string; nome: string; tipo: string };
@@ -87,6 +87,11 @@ function saleLabel(c: Comissao): string {
   if (!v) return "—";
   const parts = [v.numero_venda ? `#${v.numero_venda}` : null, v.descricao].filter(Boolean);
   return parts.join(" · ") || "—";
+}
+
+function saleDate(c: Comissao): string {
+  const data = c.vendas?.data_venda;
+  return data ? formatDate(data) : "—";
 }
 
 export function FinanceiroClient() {
@@ -240,7 +245,7 @@ export function FinanceiroClient() {
       const toTs = dateTo + "T23:59:59";
       const [{ data: rec }, { data: com }, { data: usr }] = await Promise.all([
         supabase.from("contas_receber").select("*").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento"),
-        supabase.from("comissoes").select("*, usuarios(nome), vendas(numero_venda, descricao)").gte("created_at", dateFrom).lte("created_at", toTs).order("created_at", { ascending: false }),
+        supabase.from("comissoes").select("*, usuarios(nome), vendas(numero_venda, descricao, data_venda)").gte("created_at", dateFrom).lte("created_at", toTs).order("created_at", { ascending: false }),
         isManager ? supabase.from("usuarios").select("id, nome, tipo").order("nome") : Promise.resolve({ data: [] }),
       ]);
       setReceber((rec ?? []) as ContaReceber[]);
@@ -791,6 +796,7 @@ export function FinanceiroClient() {
                           <TableRow>
                             <TableHead>Vendedor</TableHead>
                             <TableHead>Venda</TableHead>
+                            <TableHead>Data da venda</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>%</TableHead>
                             <TableHead>Status</TableHead>
@@ -802,6 +808,7 @@ export function FinanceiroClient() {
                             <TableRow key={c.id}>
                               <TableCell>{vendorName(c)}</TableCell>
                               <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
+                              <TableCell>{saleDate(c)}</TableCell>
                               <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                               <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                               <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
@@ -900,6 +907,7 @@ export function FinanceiroClient() {
                           <TableRow>
                             <TableHead>Vendedor</TableHead>
                             <TableHead>Venda</TableHead>
+                            <TableHead>Data da venda</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>%</TableHead>
                             <TableHead>Data de Pagamento</TableHead>
@@ -912,6 +920,7 @@ export function FinanceiroClient() {
                             <TableRow key={c.id}>
                               <TableCell>{vendorName(c)}</TableCell>
                               <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
+                              <TableCell>{saleDate(c)}</TableCell>
                               <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                               <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                               <TableCell>{formatDate(c.data_pagamento)}</TableCell>
@@ -1148,6 +1157,7 @@ export function FinanceiroClient() {
                       <TableRow>
                         <TableHead>Vendedor</TableHead>
                         <TableHead>Venda</TableHead>
+                        <TableHead>Data da venda</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>%</TableHead>
                         <TableHead>Status</TableHead>
@@ -1160,6 +1170,7 @@ export function FinanceiroClient() {
                         <TableRow key={c.id}>
                           <TableCell>{vendorName(c)}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
+                          <TableCell>{saleDate(c)}</TableCell>
                           <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
                           <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
                           <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>

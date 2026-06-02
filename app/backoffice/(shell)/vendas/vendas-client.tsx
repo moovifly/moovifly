@@ -78,6 +78,19 @@ const STATUS_OPTIONS = [
   { value: "cancelada", label: "Cancelada", variant: "destructive" as const },
 ];
 
+const dateOnly = (d: Date) => d.toISOString().slice(0, 10);
+
+/** Mesmos presets de período usados em Relatórios e Dashboard. */
+const PERIOD_PRESETS: { key: string; label: string; range: () => { from: string; to: string } }[] = [
+  { key: "hoje", label: "Hoje", range: () => { const t = dateOnly(new Date()); return { from: t, to: t }; } },
+  { key: "semana", label: "Esta semana", range: () => { const d = new Date(); const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return { from: dateOnly(mon), to: dateOnly(d) }; } },
+  { key: "mes", label: "Este mês", range: () => { const d = new Date(); return { from: dateOnly(new Date(d.getFullYear(), d.getMonth(), 1)), to: dateOnly(d) }; } },
+  { key: "mes_passado", label: "Último mês", range: () => { const d = new Date(); return { from: dateOnly(new Date(d.getFullYear(), d.getMonth() - 1, 1)), to: dateOnly(new Date(d.getFullYear(), d.getMonth(), 0)) }; } },
+  { key: "3meses", label: "Últ. 3 meses", range: () => { const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 3); return { from: dateOnly(from), to: dateOnly(d) }; } },
+  { key: "6meses", label: "Últ. 6 meses", range: () => { const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 6); return { from: dateOnly(from), to: dateOnly(d) }; } },
+  { key: "ano", label: "Este ano", range: () => { const d = new Date(); return { from: dateOnly(new Date(d.getFullYear(), 0, 1)), to: dateOnly(d) }; } },
+];
+
 const TIPO_OPTIONS = ["passagem", "pacote", "hospedagem", "corporativo", "lua-de-mel", "grupo", "outros"];
 
 const FORNECEDOR_OPTIONS = [
@@ -175,6 +188,9 @@ export function VendasClient() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [activePreset, setActivePreset] = useState<string>("mes");
+  const [dateFrom, setDateFrom] = useState(() => PERIOD_PRESETS.find((p) => p.key === "mes")!.range().from);
+  const [dateTo, setDateTo] = useState(() => PERIOD_PRESETS.find((p) => p.key === "mes")!.range().to);
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"select-type" | "form">("select-type");
   const [saving, setSaving] = useState(false);
@@ -228,9 +244,10 @@ export function VendasClient() {
       const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
       const matchesTerm = !term || (cli?.nome ?? "").toLowerCase().includes(term) || (v.numero_venda ?? "").toLowerCase().includes(term) || (v.destino ?? "").toLowerCase().includes(term);
       const matchesStatus = !statusFilter || v.status === statusFilter;
-      return matchesTerm && matchesStatus;
+      const matchesDate = (!dateFrom || v.data_venda >= dateFrom) && (!dateTo || v.data_venda <= dateTo);
+      return matchesTerm && matchesStatus && matchesDate;
     });
-  }, [items, search, statusFilter]);
+  }, [items, search, statusFilter, dateFrom, dateTo]);
 
   function openNew() { setForm({ ...emptyForm(), atribuido_a: profile?.id ?? null }); setStep("select-type"); setActiveTab("dados"); setViewMode(false); setOpen(true); }
 
@@ -476,18 +493,58 @@ export function VendasClient() {
       />
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <Card>
-          <CardHeader className="flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Lista de Vendas</CardTitle>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente, número..." className="pl-10 sm:w-72" />
-
+          <CardHeader className="flex-col gap-3 space-y-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Lista de Vendas</CardTitle>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente, número..." className="pl-10 sm:w-72" />
+                </div>
+                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
+                  <option value="">Todos status</option>
+                  {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </Select>
               </div>
-              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
-                <option value="">Todos status</option>
-                {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </Select>
+            </div>
+            <div className="flex flex-wrap items-end gap-2">
+              {PERIOD_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    const { from, to } = p.range();
+                    setDateFrom(from);
+                    setDateTo(to);
+                    setActivePreset(p.key);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                    activePreset === p.key
+                      ? "border-(--color-primary) bg-(--color-primary) text-white"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+              <div className="space-y-1.5">
+                <Label className="text-xs">De</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => { setDateFrom(e.target.value); setActivePreset(""); }}
+                  className="w-40"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Até</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => { setDateTo(e.target.value); setActivePreset(""); }}
+                  className="w-40"
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>

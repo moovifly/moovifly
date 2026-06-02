@@ -20,6 +20,11 @@ type TokenResponse = {
   expires_in?: number;
 };
 
+type ContaAuthContext = {
+  gatewayClientId: string | null;
+  includeAccessTokenHeader: boolean;
+};
+
 function safeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let out = 0;
@@ -133,6 +138,38 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
+function getOptionalEnv(name: string): string | null {
+  const value = Deno.env.get(name)?.trim();
+  return value ? value : null;
+}
+
+function compactErrorBody(body: string, max = 500): string {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  return normalized.length > max ? `${normalized.slice(0, max)}...` : normalized;
+}
+
+function buildContaAuthHeaders(
+  token: string,
+  { gatewayClientId, includeAccessTokenHeader }: ContaAuthContext,
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (gatewayClientId) {
+    // Sensedia gateways can require an explicit client id header.
+    headers.client_id = gatewayClientId;
+  }
+
+  if (includeAccessTokenHeader) {
+    // Some deployments validate access token in a dedicated header.
+    headers.access_token = token;
+  }
+
+  return headers;
+}
+
 async function upsertCategories(
   supabase: ReturnType<typeof createClient>,
   items: Record<string, unknown>[],
@@ -196,6 +233,7 @@ async function fetchAllPages(
   startDate: string,
   endDate: string,
   limit: number,
+  authContext: ContaAuthContext,
 ): Promise<Record<string, unknown>[]> {
   const allItems: Record<string, unknown>[] = [];
   let nextPageStartKey: string | undefined;
@@ -212,10 +250,7 @@ async function fetchAllPages(
       `${baseUrl.replace(/\/$/, "")}/${endpointPath}?${params.toString()}`,
       {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: buildContaAuthHeaders(token, authContext),
       },
     );
 
@@ -224,7 +259,8 @@ async function fetchAllPages(
     }
 
     if (response.status === 401) {
-      throw new Error("Token inválido/expirado durante paginação");
+      const authBody = compactErrorBody(await response.text());
+      throw new Error(`Token inválido/expirado durante paginação: ${authBody}`);
     }
 
     if (!response.ok) {
@@ -302,11 +338,16 @@ Deno.serve(async (req: Request) => {
     const endDate = normalizeDate(payload.endDate, now);
     const limit = Math.max(5, Math.min(payload.limit ?? 100, 100));
 
-    const clientId = getRequiredEnv("CONTA_SIMPLES_CLIENT_ID");
-    const clientSecret = getRequiredEnv("CONTA_SIMPLES_CLIENT_SECRET");
     const baseUrl = getRequiredEnv("CONTA_SIMPLES_BASE_URL");
-    const tokenUrl = getRequiredEnv("CONTA_SIMPLES_TOKEN_URL");
-    const scope = Deno.env.get("CONTA_SIMPLES_SCOPE");
+    const apiKey = getOptionalEnv("CONTA_SIMPLES_API_KEY") ?? getOptionalEnv("OPENAPI_API_KEY");
+    const clientId = getOptionalEnv("CONTA_SIMPLES_CLIENT_ID");
+    const clientSecret = getOptionalEnv("CONTA_SIMPLES_CLIENT_SECRET");
+    const tokenUrl = getOptionalEnv("CONTA_SIMPLES_TOKEN_URL");
+    const scope = getOptionalEnv("CONTA_SIMPLES_SCOPE");
+    const gatewayClientId = getOptionalEnv("CONTA_SIMPLES_GATEWAY_CLIENT_ID") ?? apiKey ?? clientId;
+    const includeAccessTokenHeader =
+      (Deno.env.get("CONTA_SIMPLES_INCLUDE_ACCESS_TOKEN_HEADER") ?? "true").trim().toLowerCase() !== "false";
+    const authContext: ContaAuthContext = { gatewayClientId, includeAccessTokenHeader };
     const categoriesPath = Deno.env.get("CONTA_SIMPLES_CATEGORIES_PATH") ?? "categories/v1/categories";
     const costCentersPath = Deno.env.get("CONTA_SIMPLES_COST_CENTERS_PATH") ?? "cost-centers/v1/cost-centers";
     const transactionsPaths = (Deno.env.get("CONTA_SIMPLES_TRANSACTIONS_PATHS") ??
@@ -329,31 +370,80 @@ Deno.serve(async (req: Request) => {
       { onConflict: "provider,event_id" },
     );
 
+    if (!apiKey && (!clientId || !clientSecret || !tokenUrl)) {
+      throw new Error(
+        "Credenciais Conta Simples incompletas. Defina CONTA_SIMPLES_API_KEY (recomendado) ou CONTA_SIMPLES_CLIENT_ID, CONTA_SIMPLES_CLIENT_SECRET e CONTA_SIMPLES_TOKEN_URL.",
+      );
+    }
+
     const getToken = async (): Promise<string> => {
-      const body = new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: clientId,
-        client_secret: clientSecret,
-      });
-      if (scope) body.set("scope", scope);
-
-      const response = await requestWithRetry(tokenUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
-
-      if (!response.ok) {
-        const errBody = await response.text();
-        throw new Error(`Falha ao autenticar Conta Simples: ${response.status} ${errBody}`);
+      if (!clientId || !clientSecret || !tokenUrl) {
+        throw new Error("OAuth incompleto para Conta Simples. Configure CONTA_SIMPLES_CLIENT_ID, CONTA_SIMPLES_CLIENT_SECRET e CONTA_SIMPLES_TOKEN_URL.");
       }
 
-      const tokenPayload = (await response.json()) as TokenResponse;
-      if (!tokenPayload.access_token) throw new Error("Token não retornado pela Conta Simples");
-      return tokenPayload.access_token;
+      const candidateTokenUrls = Array.from(
+        new Set([
+          tokenUrl,
+          tokenUrl.replace(/\/oauth\/token$/i, "/oauth/access-token"),
+          tokenUrl.replace(/\/oauth\/access-token$/i, "/oauth/token"),
+        ]),
+      );
+      const errors: string[] = [];
+
+      for (const candidateUrl of candidateTokenUrls) {
+        // Tentativa 1: client_credentials no body
+        const body = new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        });
+        if (scope) body.set("scope", scope);
+
+        let response = await requestWithRetry(candidateUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            ...(gatewayClientId ? { client_id: gatewayClientId } : {}),
+          },
+          body,
+        });
+
+        if (response.ok) {
+          const tokenPayload = (await response.json()) as TokenResponse;
+          if (!tokenPayload.access_token) throw new Error("Token não retornado pela Conta Simples");
+          return tokenPayload.access_token;
+        }
+        errors.push(`${candidateUrl} [body]: ${response.status} ${compactErrorBody(await response.text())}`);
+
+        // Tentativa 2: client credentials via Basic Auth
+        const basicAuth = btoa(`${clientId}:${clientSecret}`);
+        const basicBody = new URLSearchParams({ grant_type: "client_credentials" });
+        if (scope) basicBody.set("scope", scope);
+
+        response = await requestWithRetry(candidateUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${basicAuth}`,
+            ...(gatewayClientId ? { client_id: gatewayClientId } : {}),
+          },
+          body: basicBody,
+        });
+
+        if (response.ok) {
+          const tokenPayload = (await response.json()) as TokenResponse;
+          if (!tokenPayload.access_token) throw new Error("Token não retornado pela Conta Simples");
+          return tokenPayload.access_token;
+        }
+        errors.push(`${candidateUrl} [basic]: ${response.status} ${compactErrorBody(await response.text())}`);
+      }
+
+      throw new Error(`Falha ao autenticar Conta Simples: ${errors.join(" | ")}`);
     };
 
-    let bearerToken = await getToken();
+    const hasOAuth = Boolean(clientId && clientSecret && tokenUrl);
+    let bearerToken = hasOAuth ? await getToken() : (apiKey ?? await getToken());
+    let usingStaticApiKey = !hasOAuth && Boolean(apiKey);
 
     const requestWithAuthRetry = async (
       endpointPath: string,
@@ -363,20 +453,30 @@ Deno.serve(async (req: Request) => {
       const url = `${baseUrl.replace(/\/$/, "")}/${endpointPath}?${params.toString()}`;
       let response = await requestWithRetry(url, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${bearerToken}`,
-        },
+        headers: buildContaAuthHeaders(bearerToken, authContext),
       });
 
       if (response.status === 401) {
-        bearerToken = await getToken();
+        const firstAuthErrorBody = compactErrorBody(await response.text());
+        if (usingStaticApiKey) {
+          if (!clientId || !clientSecret || !tokenUrl) {
+            throw new Error(`A CONTA_SIMPLES_API_KEY foi rejeitada (401): ${firstAuthErrorBody}.`);
+          }
+          usingStaticApiKey = false;
+          try {
+            bearerToken = await getToken();
+          } catch (oauthError) {
+            const oauthMessage = oauthError instanceof Error ? oauthError.message : String(oauthError);
+            throw new Error(
+              `A CONTA_SIMPLES_API_KEY foi rejeitada (401): ${firstAuthErrorBody}. Fallback OAuth falhou: ${oauthMessage}`,
+            );
+          }
+        } else {
+          bearerToken = await getToken();
+        }
         response = await requestWithRetry(url, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${bearerToken}`,
-          },
+          headers: buildContaAuthHeaders(bearerToken, authContext),
         });
       }
 
@@ -419,11 +519,27 @@ Deno.serve(async (req: Request) => {
       for (const window of windows) {
         let items: Record<string, unknown>[] = [];
         try {
-          items = await fetchAllPages(baseUrl, endpointPath, bearerToken, window.startDate, window.endDate, limit);
+          items = await fetchAllPages(
+            baseUrl,
+            endpointPath,
+            bearerToken,
+            window.startDate,
+            window.endDate,
+            limit,
+            authContext,
+          );
         } catch (error) {
           if (error instanceof Error && error.message.includes("Token inválido/expirado")) {
             bearerToken = await getToken();
-            items = await fetchAllPages(baseUrl, endpointPath, bearerToken, window.startDate, window.endDate, limit);
+            items = await fetchAllPages(
+              baseUrl,
+              endpointPath,
+              bearerToken,
+              window.startDate,
+              window.endDate,
+              limit,
+              authContext,
+            );
           } else {
             throw error;
           }

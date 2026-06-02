@@ -290,19 +290,20 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
   let vendasPrevQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("data_venda", range.prevStart.slice(0, 10)).lt("data_venda", range.prevEnd.slice(0, 10)).in("status", ["confirmada", "concluida"]);
   if (!isAdmin) vendasPrevQ = vendasPrevQ.eq("vendedor_id", profile.id);
 
-  let comissaoThisQ = supabase
+  // Comissão sempre pessoal (admins também são vendedores): filtra pelo próprio id.
+  const comissaoThisQ = supabase
     .from("comissoes")
     .select("valor_comissao")
+    .eq("vendedor_id", profile.id)
     .gte("created_at", range.start)
     .lte("created_at", range.end);
-  if (!isAdmin) comissaoThisQ = comissaoThisQ.eq("vendedor_id", profile.id);
 
-  let comissaoPrevQ = supabase
+  const comissaoPrevQ = supabase
     .from("comissoes")
     .select("valor_comissao")
+    .eq("vendedor_id", profile.id)
     .gte("created_at", range.prevStart)
     .lt("created_at", range.prevEnd);
-  if (!isAdmin) comissaoPrevQ = comissaoPrevQ.eq("vendedor_id", profile.id);
 
   const [
     { count: totalClientes },
@@ -662,12 +663,13 @@ export function DashboardClient() {
           </div>
         )}
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className={`grid gap-4 md:grid-cols-2 ${isManager ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
           {isManager ? (
             <>
               <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" />
               <StatCard label="Vendas no período" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
               <StatCard label="Faturamento no período" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+              <StatCard label="Minha Comissão" value={loading ? null : formatCurrency(stats.totalComissao)} icon={Award} tone="purple" trend={loading ? undefined : (stats.trendComissao ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
             </>
           ) : (
             <>

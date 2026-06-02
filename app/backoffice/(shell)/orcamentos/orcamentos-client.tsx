@@ -120,6 +120,21 @@ const STATUS_OPTIONS = [
 const PAGAMENTO_PADRAO =
   "Em até 4x sem juros, nos cartões Amex, Diners, Elo, Hipercard, Mastercard e Visa, Pix ou transferência bancária.";
 
+const PAGE_SIZE = 30;
+
+const dateOnly = (d: Date) => d.toISOString().slice(0, 10);
+
+/** Mesmos presets de período usados em Vendas, Relatórios e Dashboard. */
+const PERIOD_PRESETS: { key: string; label: string; range: () => { from: string; to: string } }[] = [
+  { key: "hoje", label: "Hoje", range: () => { const t = dateOnly(new Date()); return { from: t, to: t }; } },
+  { key: "semana", label: "Esta semana", range: () => { const d = new Date(); const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return { from: dateOnly(mon), to: dateOnly(d) }; } },
+  { key: "mes", label: "Este mês", range: () => { const d = new Date(); return { from: dateOnly(new Date(d.getFullYear(), d.getMonth(), 1)), to: dateOnly(d) }; } },
+  { key: "mes_passado", label: "Último mês", range: () => { const d = new Date(); return { from: dateOnly(new Date(d.getFullYear(), d.getMonth() - 1, 1)), to: dateOnly(new Date(d.getFullYear(), d.getMonth(), 0)) }; } },
+  { key: "3meses", label: "Últ. 3 meses", range: () => { const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 3); return { from: dateOnly(from), to: dateOnly(d) }; } },
+  { key: "6meses", label: "Últ. 6 meses", range: () => { const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 6); return { from: dateOnly(from), to: dateOnly(d) }; } },
+  { key: "ano", label: "Este ano", range: () => { const d = new Date(); return { from: dateOnly(new Date(d.getFullYear(), 0, 1)), to: dateOnly(d) }; } },
+];
+
 function firstName(fullName: string | null | undefined) {
   const n = (fullName ?? "").trim();
   if (!n) return "—";
@@ -298,6 +313,10 @@ export function OrcamentosClient() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [activePreset, setActivePreset] = useState("mes");
+  const [dateFrom, setDateFrom] = useState(() => PERIOD_PRESETS.find((p) => p.key === "mes")!.range().from);
+  const [dateTo, setDateTo] = useState(() => PERIOD_PRESETS.find((p) => p.key === "mes")!.range().to);
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -373,7 +392,12 @@ export function OrcamentosClient() {
       const { data: cliData } = await qCli;
       setClientes((cliData ?? []) as { id: string; nome: string; telefone: string | null }[]);
 
-      let q = supabase.from("orcamentos").select("*").order("data_orcamento", { ascending: false });
+      let q = supabase
+        .from("orcamentos")
+        .select("*")
+        .gte("data_orcamento", dateFrom)
+        .lte("data_orcamento", dateTo)
+        .order("data_orcamento", { ascending: false });
       if (profile?.tipo === "vendedor") q = q.eq("vendedor_id", profile.id);
 
       const { data: orcs, error } = await q;
@@ -410,7 +434,11 @@ export function OrcamentosClient() {
   useEffect(() => {
     if (profile) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile?.id, dateFrom, dateTo]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, dateFrom, dateTo]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -420,6 +448,14 @@ export function OrcamentosClient() {
       return matchesTerm && matchesStatus;
     });
   }, [items, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  const paginated = useMemo(() => {
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page, totalPages]);
 
   function openNew() { setForm(emptyForm()); setOpen(true); }
 
@@ -738,17 +774,58 @@ export function OrcamentosClient() {
       />
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <Card>
-          <CardHeader className="flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Lista de Orçamentos</CardTitle>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" />
-                <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente ou número..." className="pl-10 sm:w-72" />
+          <CardHeader className="flex-col gap-3 space-y-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Lista de Orçamentos</CardTitle>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" />
+                  <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente ou número..." className="pl-10 sm:w-72" />
+                </div>
+                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
+                  <option value="">Todos status</option>
+                  {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </Select>
               </div>
-              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="sm:w-44">
-                <option value="">Todos status</option>
-                {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </Select>
+            </div>
+            <div className="flex flex-wrap items-end gap-2">
+              {PERIOD_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => {
+                    const { from, to } = p.range();
+                    setDateFrom(from);
+                    setDateTo(to);
+                    setActivePreset(p.key);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                    activePreset === p.key
+                      ? "border-(--color-primary) bg-(--color-primary) text-white"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+              <div className="space-y-1.5">
+                <Label className="text-xs">De</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => { setDateFrom(e.target.value); setActivePreset(""); }}
+                  className="w-40"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Até</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => { setDateTo(e.target.value); setActivePreset(""); }}
+                  className="w-40"
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -771,7 +848,7 @@ export function OrcamentosClient() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((o) => {
+                  {paginated.map((o) => {
                     const sb = STATUS_OPTIONS.find((s) => s.value === o.status) ?? STATUS_OPTIONS[0];
                     return (
                       <TableRow key={o.id}>
@@ -825,6 +902,36 @@ export function OrcamentosClient() {
                   })}
                 </TableBody>
               </Table>
+            )}
+            {!loading && filtered.length > PAGE_SIZE && (
+              <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-4 sm:flex-row">
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Exibindo {(Math.min(page, totalPages) - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} de {filtered.length} orçamento{filtered.length !== 1 ? "s" : ""}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="text-sm text-[var(--text-secondary)]">
+                    Página {Math.min(page, totalPages)} de {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Próxima
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
