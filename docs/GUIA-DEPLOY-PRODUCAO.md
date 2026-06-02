@@ -44,6 +44,16 @@ Variáveis adicionais (apenas no Vercel, não no `.env.local` público):
 | `SUPABASE_SERVICE_ROLE_KEY` | Service Role key (apenas Edge Functions) |
 | `ABACATEPAY_API_KEY` | Chave da API do AbacatePay |
 | `ABACATEPAY_WEBHOOK_SECRET` | Secret para validar webhooks |
+| `CONTA_SIMPLES_CLIENT_ID` | Credencial OAuth 2.0 Client Credentials (Conta Simples) |
+| `CONTA_SIMPLES_CLIENT_SECRET` | Segredo OAuth 2.0 da Conta Simples |
+| `CONTA_SIMPLES_TOKEN_URL` | Endpoint de token OAuth da Conta Simples |
+| `CONTA_SIMPLES_BASE_URL` | `https://api-sandbox.contasimples.com` (sandbox) ou `https://api.contasimples.com` |
+| `CONTA_SIMPLES_SCOPE` | Scope OAuth (quando exigido pela credencial) |
+| `CONTA_SIMPLES_WEBHOOK_SECRET` | Segredo para validar webhooks da Conta Simples |
+| `CONTA_SIMPLES_WEBHOOK_SIGNATURE_HEADER` | Header de assinatura do webhook (ex.: `x-conta-simples-signature`) |
+| `CONTA_SIMPLES_WEBHOOK_SIGNATURE_MODE` | `plain` ou `hmac_sha256` |
+| `CONTA_SIMPLES_CRON_SECRET` | Segredo para execução automática do cron |
+| `CONTA_SIMPLES_CRON_LOOKBACK_DAYS` | Janela padrão (dias) para sync agendado |
 | `NEXT_PUBLIC_APP_URL` | Ex: `https://moovifly.com.br` |
 
 ### 1.3 Configurar Auth
@@ -75,16 +85,29 @@ supabase link --project-ref axrkvvjnubjxgejvrbmf
 # Configurar secrets das Edge Functions
 supabase secrets set ABACATEPAY_API_KEY=sua_chave_aqui
 supabase secrets set ABACATEPAY_WEBHOOK_SECRET=seu_secret_aqui
+supabase secrets set CONTA_SIMPLES_CLIENT_ID=seu_client_id
+supabase secrets set CONTA_SIMPLES_CLIENT_SECRET=seu_client_secret
+supabase secrets set CONTA_SIMPLES_TOKEN_URL=https://seu-endpoint-oauth/token
+supabase secrets set CONTA_SIMPLES_BASE_URL=https://api-sandbox.contasimples.com
+supabase secrets set CONTA_SIMPLES_SCOPE=scope_opcional
+supabase secrets set CONTA_SIMPLES_WEBHOOK_SECRET=seu_secret_webhook
+supabase secrets set CONTA_SIMPLES_WEBHOOK_SIGNATURE_HEADER=x-conta-simples-signature
+supabase secrets set CONTA_SIMPLES_WEBHOOK_SIGNATURE_MODE=hmac_sha256
+supabase secrets set CONTA_SIMPLES_CRON_SECRET=seu_secret_cron
 supabase secrets set NEXT_PUBLIC_APP_URL=https://moovifly.com.br
 
 # Deploy das functions
 supabase functions deploy criar-checkout-abacatepay
 supabase functions deploy webhook-abacatepay
+supabase functions deploy conta-simples-sync
+supabase functions deploy webhook-conta-simples
 ```
 
 URLs das Edge Functions após deploy:
 - `https://axrkvvjnubjxgejvrbmf.supabase.co/functions/v1/criar-checkout-abacatepay`
 - `https://axrkvvjnubjxgejvrbmf.supabase.co/functions/v1/webhook-abacatepay`
+- `https://axrkvvjnubjxgejvrbmf.supabase.co/functions/v1/conta-simples-sync`
+- `https://axrkvvjnubjxgejvrbmf.supabase.co/functions/v1/webhook-conta-simples`
 
 ### 1.5 Configurar webhook no AbacatePay
 
@@ -93,6 +116,17 @@ No painel do AbacatePay, cadastre o webhook URL:
 https://axrkvvjnubjxgejvrbmf.supabase.co/functions/v1/webhook-abacatepay
 ```
 Eventos: `billing.paid`, `billing.completed`, `billing.expired`, `billing.cancelled`
+
+### 1.6 Configurar webhook no Conta Simples
+
+No painel de desenvolvedores da Conta Simples, cadastre:
+```
+https://axrkvvjnubjxgejvrbmf.supabase.co/functions/v1/webhook-conta-simples
+```
+
+Validação de assinatura:
+- Defina o mesmo segredo em `CONTA_SIMPLES_WEBHOOK_SECRET`
+- Ajuste `CONTA_SIMPLES_WEBHOOK_SIGNATURE_HEADER` e `CONTA_SIMPLES_WEBHOOK_SIGNATURE_MODE` conforme o formato entregue pela Conta Simples
 
 ---
 
@@ -131,6 +165,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=<service_role_key_do_supabase>
 ABACATEPAY_API_KEY=<sua_chave_abacatepay>
 ABACATEPAY_WEBHOOK_SECRET=<seu_webhook_secret>
+CONTA_SIMPLES_CLIENT_ID=<client_id_conta_simples>
+CONTA_SIMPLES_CLIENT_SECRET=<client_secret_conta_simples>
+CONTA_SIMPLES_TOKEN_URL=<token_url_conta_simples>
+CONTA_SIMPLES_BASE_URL=https://api-sandbox.contasimples.com
+CONTA_SIMPLES_SCOPE=<scope_opcional>
+CONTA_SIMPLES_WEBHOOK_SECRET=<secret_webhook_conta_simples>
+CONTA_SIMPLES_WEBHOOK_SIGNATURE_HEADER=x-conta-simples-signature
+CONTA_SIMPLES_WEBHOOK_SIGNATURE_MODE=hmac_sha256
+CONTA_SIMPLES_CRON_SECRET=<secret_do_cron>
+CONTA_SIMPLES_CRON_LOOKBACK_DAYS=2
 NEXT_PUBLIC_APP_URL=https://moovifly.com.br
 ```
 
@@ -199,6 +243,12 @@ git push origin feature/nova-funcionalidade
 | Logs Supabase | `supabase.com → Project → Edge Functions → Logs` |
 | Banco de dados | `supabase.com → Project → Table Editor` |
 | Auth | `supabase.com → Project → Authentication → Users` |
+
+### 6.1 Agendamento automático de reconciliação (Conta Simples)
+
+- O arquivo `vercel.json` agenda `GET /api/cron/conta-simples-sync` a cada hora.
+- Configure `CONTA_SIMPLES_CRON_SECRET` no Vercel.
+- A execução automática chama a function `conta-simples-sync` com janela de `CONTA_SIMPLES_CRON_LOOKBACK_DAYS` (padrão 2 dias).
 
 ---
 

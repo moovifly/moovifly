@@ -60,14 +60,24 @@ try {
     $req.headers.PSObject.Properties | ForEach-Object {
       $name = [string]$_.Name
       $value = [string]$_.Value
-      if ($name -ieq "Connection") { return }
-      $http.Headers[$name] = $value
+      # Cabecalhos restritos do HttpWebRequest precisam ser setados via propriedade,
+      # nao pelo indexador $http.Headers[...] (que lanca excecao).
+      switch -Regex ($name) {
+        '^(?i)connection$'     { return }
+        '^(?i)content-length$' { return }  # definido via ContentLength64
+        '^(?i)content-type$'   { $http.ContentType = $value; return }
+        '^(?i)accept$'         { $http.Accept = $value; return }
+        '^(?i)user-agent$'     { $http.UserAgent = $value; return }
+        '^(?i)host$'           { $http.Host = $value; return }
+        '^(?i)referer$'        { $http.Referer = $value; return }
+        default                { $http.Headers[$name] = $value }
+      }
     }
   }
 
   if ($req.body -and $method -notin @("GET", "HEAD")) {
     $bytes = [Text.Encoding]::UTF8.GetBytes([string]$req.body)
-    $http.ContentLength64 = $bytes.Length
+    $http.ContentLength = $bytes.Length
     if ($req.contentType) {
       $http.ContentType = [string]$req.contentType
     }

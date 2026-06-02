@@ -3,6 +3,7 @@
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Award,
   ArrowDownRight,
   ArrowUpRight,
   X,
@@ -52,9 +53,11 @@ type Stats = {
   totalClientes: number;
   totalVendas: number;
   faturamentoTotal: number;
+  totalComissao: number;
   trendClientes: number | null;
   trendVendas: number | null;
   trendFaturamento: number | null;
+  trendComissao: number | null;
 };
 type Financial = {
   contasReceberValor: number;
@@ -78,9 +81,11 @@ const initialStats: Stats = {
   totalClientes: 0,
   totalVendas: 0,
   faturamentoTotal: 0,
+  totalComissao: 0,
   trendClientes: null,
   trendVendas: null,
   trendFaturamento: null,
+  trendComissao: null,
 };
 const initialFinancial: Financial = {
   contasReceberValor: 0,
@@ -285,24 +290,52 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
   let vendasPrevQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("data_venda", range.prevStart.slice(0, 10)).lt("data_venda", range.prevEnd.slice(0, 10)).in("status", ["confirmada", "concluida"]);
   if (!isAdmin) vendasPrevQ = vendasPrevQ.eq("vendedor_id", profile.id);
 
+  let comissaoThisQ = supabase
+    .from("comissoes")
+    .select("valor_comissao")
+    .gte("created_at", range.start)
+    .lte("created_at", range.end);
+  if (!isAdmin) comissaoThisQ = comissaoThisQ.eq("vendedor_id", profile.id);
+
+  let comissaoPrevQ = supabase
+    .from("comissoes")
+    .select("valor_comissao")
+    .gte("created_at", range.prevStart)
+    .lt("created_at", range.prevEnd);
+  if (!isAdmin) comissaoPrevQ = comissaoPrevQ.eq("vendedor_id", profile.id);
+
   const [
     { count: totalClientes },
     { count: clientesThis },
     { count: clientesPrev },
     { data: vendas, count: totalVendas },
     { data: vendasPrev, count: totalVendasPrev },
-  ] = await Promise.all([totalClientesQ, clientesThisQ, clientesPrevQ, vendasThisQ, vendasPrevQ]);
+    { data: comissoesThis },
+    { data: comissoesPrev },
+  ] = await Promise.all([
+    totalClientesQ,
+    clientesThisQ,
+    clientesPrevQ,
+    vendasThisQ,
+    vendasPrevQ,
+    comissaoThisQ,
+    comissaoPrevQ,
+  ]);
 
   const faturamentoTotal = vendas?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
   const faturamentoPrev = vendasPrev?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
+  const totalComissao = comissoesThis?.reduce((sum: number, c: { valor_comissao?: number | string | null }) => sum + Number.parseFloat(String(c.valor_comissao ?? 0)), 0) ?? 0;
+  const comissaoPrev = comissoesPrev?.reduce((sum: number, c: { valor_comissao?: number | string | null }) => sum + Number.parseFloat(String(c.valor_comissao ?? 0)), 0) ?? 0;
 
   return {
     totalClientes: totalClientes ?? 0,
     totalVendas: totalVendas ?? 0,
     faturamentoTotal,
+    totalComissao,
     trendClientes: calcTrend(clientesThis ?? 0, clientesPrev ?? 0),
     trendVendas: calcTrend(totalVendas ?? 0, totalVendasPrev ?? 0),
     trendFaturamento: calcTrend(faturamentoTotal, faturamentoPrev),
+    trendComissao: calcTrend(totalComissao, comissaoPrev),
   };
 }
 
@@ -510,6 +543,7 @@ function statusBadgeColor(status: string) {
 
 export function DashboardClient() {
   const { profile } = useAuth();
+  const isManager = ["administrador", "gerente"].includes(profile?.tipo ?? "");
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("mes");
   const [stats, setStats] = useState<Stats>(initialStats);
@@ -524,12 +558,13 @@ export function DashboardClient() {
   const loadAll = useCallback(async (p: Period) => {
     if (!profile) return;
     const range = getDateRange(p);
+    const managerProfile = ["administrador", "gerente"].includes(profile.tipo);
     try {
       const [s, f, r, t, c, d, e] = await Promise.all([
         loadStats(profile, range),
-        loadFinancial(profile),
+        managerProfile ? loadFinancial(profile) : Promise.resolve(initialFinancial),
         loadRecentSales(profile, range),
-        loadTopSellers(profile, range),
+        managerProfile ? loadTopSellers(profile, range) : Promise.resolve([] as TopSeller[]),
         loadSalesByDay(profile, range),
         loadRevenueByCategory(profile, range),
         loadEmbarqueAlerts(profile),
@@ -628,9 +663,19 @@ export function DashboardClient() {
         )}
 
         <section className="grid gap-4 md:grid-cols-3">
-          <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" />
-          <StatCard label="Vendas no período" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
-          <StatCard label="Faturamento no período" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+          {isManager ? (
+            <>
+              <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" />
+              <StatCard label="Vendas no período" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+              <StatCard label="Faturamento no período" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+            </>
+          ) : (
+            <>
+              <StatCard label="Total Vendas" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+              <StatCard label="Total Faturado" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+              <StatCard label="Total Comissão" value={loading ? null : formatCurrency(stats.totalComissao)} icon={Award} tone="purple" trend={loading ? undefined : (stats.trendComissao ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+            </>
+          )}
         </section>
 
         <section className="grid gap-4 lg:grid-cols-3">
@@ -668,8 +713,8 @@ export function DashboardClient() {
           </Card>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
+        <section className={`grid gap-4 ${isManager ? "lg:grid-cols-3" : "lg:grid-cols-1"}`}>
+          <Card className={isManager ? "lg:col-span-2" : ""}>
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>Últimas Vendas</CardTitle>
               <BackofficeLink href="/backoffice/vendas/" className="text-xs text-[var(--accent-600)] hover:underline">
@@ -706,64 +751,55 @@ export function DashboardClient() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle>Top Vendedores</CardTitle></CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                </div>
-              ) : sellers.length === 0 ? (
-                <p className="py-6 text-center text-sm text-[var(--text-secondary)]">
-                  {profile && ["administrador", "gerente"].includes(profile.tipo)
-                    ? "Nenhuma venda neste mês."
-                    : "Disponível apenas para administradores e gerentes."}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {sellers.map((s, i) => (
-                    <li key={`${s.nome}-${i}`} className="flex items-center gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--accent-glow)] text-xs font-semibold text-[var(--accent-600)]">
-                        {i + 1}º
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{s.nome}</p>
-                        <p className="text-xs text-[var(--text-secondary)]">{s.vendas} venda(s)</p>
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">{formatCurrency(s.total)}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <FinancialCard
-            label="A Receber"
-            value={loading ? null : formatCurrency(financial.contasReceberValor)}
-            count={loading ? null : `${financial.contasReceberCount} conta${financial.contasReceberCount !== 1 ? "s" : ""}`}
-            href="/backoffice/financeiro/?tab=receber"
-            tone="positive"
-          />
-          <FinancialCard
-            label="A Pagar"
-            value={loading ? null : financial.contasPagarValor !== null ? formatCurrency(financial.contasPagarValor) : "—"}
-            count={loading ? null : financial.contasPagarValor !== null ? `${financial.contasPagarCount} conta${(financial.contasPagarCount ?? 0) !== 1 ? "s" : ""}` : "Acesso restrito"}
-            href="/backoffice/financeiro/?tab=pagar"
-            tone="negative"
-          />
-          {profile && !["administrador", "gerente"].includes(profile.tipo) && (
-            <FinancialCard
-              label="Minhas Comissões"
-              value={loading ? null : financial.comissaoPendenteValor !== null ? formatCurrency(financial.comissaoPendenteValor) : "—"}
-              count={loading ? null : financial.comissaoPendenteCount !== null ? `${financial.comissaoPendenteCount} pendente${(financial.comissaoPendenteCount ?? 0) !== 1 ? "s" : ""}` : "—"}
-              href="/backoffice/financeiro/?tab=comissoes"
-              tone="commission"
-            />
+          {isManager && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle>Top Vendedores</CardTitle></CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                  </div>
+                ) : sellers.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Nenhuma venda neste mês.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {sellers.map((s, i) => (
+                      <li key={`${s.nome}-${i}`} className="flex items-center gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--accent-glow)] text-xs font-semibold text-[var(--accent-600)]">
+                          {i + 1}º
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-foreground">{s.nome}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{s.vendas} venda(s)</p>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground">{formatCurrency(s.total)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
           )}
         </section>
+
+        {isManager && (
+          <section className="grid gap-4 sm:grid-cols-2">
+            <FinancialCard
+              label="A Receber"
+              value={loading ? null : formatCurrency(financial.contasReceberValor)}
+              count={loading ? null : `${financial.contasReceberCount} conta${financial.contasReceberCount !== 1 ? "s" : ""}`}
+              href="/backoffice/financeiro/?tab=receber"
+              tone="positive"
+            />
+            <FinancialCard
+              label="A Pagar"
+              value={loading ? null : financial.contasPagarValor !== null ? formatCurrency(financial.contasPagarValor) : "—"}
+              count={loading ? null : financial.contasPagarValor !== null ? `${financial.contasPagarCount} conta${(financial.contasPagarCount ?? 0) !== 1 ? "s" : ""}` : "Acesso restrito"}
+              href="/backoffice/financeiro/?tab=pagar"
+              tone="negative"
+            />
+          </section>
+        )}
       </div>
     </>
   );

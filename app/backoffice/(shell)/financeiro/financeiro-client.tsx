@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle, Plus, Trash2 } from "lucide-react";
+import { CheckCircle, Plus, RefreshCcw, Trash2 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient, getSupabasePublicUrl } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -52,6 +52,30 @@ type Comissao = {
 };
 
 type Usuario = { id: string; nome: string; tipo: string };
+type ContaSimplesTransaction = {
+  id: string;
+  source_path: string;
+  description: string | null;
+  amount_brl: number | string;
+  transaction_date: string;
+  transaction_status: string;
+  category_name: string | null;
+  cost_center_name: string | null;
+};
+type FinanceConciliation = {
+  id: string;
+  conta_simples_transaction_id: string;
+  status: string;
+  reason: string | null;
+  match_score: number | string;
+  matched_at: string | null;
+};
+type IntegrationEvent = {
+  status: string;
+  processed_at: string | null;
+  received_at: string;
+  event_type: string;
+};
 
 function vendorName(c: Comissao): string {
   const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
@@ -73,6 +97,14 @@ export function FinanceiroClient() {
   const [pagar, setPagar] = useState<ContaPagar[]>([]);
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [contaSimplesTx, setContaSimplesTx] = useState<ContaSimplesTransaction[]>([]);
+  const [conciliacoes, setConciliacoes] = useState<FinanceConciliation[]>([]);
+  const [lastIntegrationEvent, setLastIntegrationEvent] = useState<IntegrationEvent | null>(null);
+  const [syncingContaSimples, setSyncingContaSimples] = useState(false);
+  const [reprocessingConciliacao, setReprocessingConciliacao] = useState(false);
+  const [csStatusFilter, setCsStatusFilter] = useState("todos");
+  const [csCategoryFilter, setCsCategoryFilter] = useState("todos");
+  const [csCostCenterFilter, setCsCostCenterFilter] = useState("todos");
   const [loading, setLoading] = useState(true);
 
   // Modal de pagamento de comissão
@@ -218,11 +250,38 @@ export function FinanceiroClient() {
       if (isManager) {
         // Pending bills: no date filter (always show all outstanding obligations)
         // Paid bills: filter by due date within the selected period
-        const [{ data: pagPendentes }, { data: pagPagas }] = await Promise.all([
+        const [{ data: pagPendentes }, { data: pagPagas }, { data: csTx }, { data: csConc }, { data: csEvent }] = await Promise.all([
           supabase.from("contas_pagar").select("*").eq("status", "pendente").order("data_vencimento"),
           supabase.from("contas_pagar").select("*").neq("status", "pendente").gte("data_vencimento", dateFrom).lte("data_vencimento", dateTo).order("data_vencimento"),
+          supabase
+            .from("conta_simples_transactions")
+            .select("id, source_path, description, amount_brl, transaction_date, transaction_status, category_name, cost_center_name")
+            .gte("transaction_date", `${dateFrom}T00:00:00.000Z`)
+            .lte("transaction_date", `${dateTo}T23:59:59.999Z`)
+            .order("transaction_date", { ascending: false })
+            .limit(500),
+          supabase
+            .from("finance_conciliations")
+            .select("id, conta_simples_transaction_id, status, reason, match_score, matched_at")
+            .order("updated_at", { ascending: false })
+            .limit(500),
+          supabase
+            .from("integration_events")
+            .select("status, processed_at, received_at, event_type")
+            .eq("provider", "conta_simples")
+            .order("received_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
         setPagar([...(pagPendentes ?? []), ...(pagPagas ?? [])] as ContaPagar[]);
+        setContaSimplesTx((csTx ?? []) as ContaSimplesTransaction[]);
+        setConciliacoes((csConc ?? []) as FinanceConciliation[]);
+        setLastIntegrationEvent((csEvent ?? null) as IntegrationEvent | null);
+      } else {
+        setPagar([]);
+        setContaSimplesTx([]);
+        setConciliacoes([]);
+        setLastIntegrationEvent(null);
       }
     } catch (err) {
       toast.error("Erro ao carregar financeiro", { description: formatSupabaseError(err) });
@@ -269,6 +328,52 @@ export function FinanceiroClient() {
       toast.error("Erro ao registrar pagamento", { description: formatSupabaseError(err) });
     } finally {
       setPaying(false);
+    }
+  }
+
+  async function sincronizarContaSimples() {
+    setSyncingContaSimples(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${getSupabasePublicUrl()}/functions/v1/conta-simples-sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({
+          startDate: dateFrom,
+          endDate: dateTo,
+          limit: 100,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erro ao sincronizar Conta Simples.");
+
+      toast.success("Sincronização concluída!", {
+        description: `${json.syncedTransactions ?? 0} transações processadas e ${json.reconciledRows ?? 0} conciliações atualizadas.`,
+      });
+      await load();
+      setTab("conta_simples");
+    } catch (err) {
+      toast.error("Falha na sincronização Conta Simples", { description: formatSupabaseError(err) });
+    } finally {
+      setSyncingContaSimples(false);
+    }
+  }
+
+  async function reprocessarConciliacoes() {
+    setReprocessingConciliacao(true);
+    try {
+      const { data, error } = await supabase.rpc("reconcile_conta_simples_pending", { p_limit: 200 });
+      if (error) throw error;
+      toast.success("Reprocessamento concluído.", { description: `${data ?? 0} transações avaliadas.` });
+      await load();
+    } catch (err) {
+      toast.error("Erro ao reprocessar conciliações", { description: formatSupabaseError(err) });
+    } finally {
+      setReprocessingConciliacao(false);
     }
   }
 
@@ -440,6 +545,46 @@ export function FinanceiroClient() {
   const comissoesPagas = useMemo(() => comissoes.filter((c) => c.status === "paga"), [comissoes]);
   const contasPagarPendentes = useMemo(() => pagar.filter((c) => c.status === "pendente"), [pagar]);
   const contasPagarPagas = useMemo(() => pagar.filter((c) => c.status === "pago"), [pagar]);
+  const conciliacaoByTxId = useMemo(
+    () => new Map(conciliacoes.map((item) => [item.conta_simples_transaction_id, item])),
+    [conciliacoes],
+  );
+  const contaSimplesCategories = useMemo(
+    () => Array.from(new Set(contaSimplesTx.map((tx) => tx.category_name).filter(Boolean) as string[])).sort(),
+    [contaSimplesTx],
+  );
+  const contaSimplesCostCenters = useMemo(
+    () => Array.from(new Set(contaSimplesTx.map((tx) => tx.cost_center_name).filter(Boolean) as string[])).sort(),
+    [contaSimplesTx],
+  );
+  const contaSimplesFiltradas = useMemo(
+    () =>
+      contaSimplesTx.filter((tx) => {
+        const conc = conciliacaoByTxId.get(tx.id);
+        const concStatus = conc?.status ?? "pendente";
+        if (csStatusFilter !== "todos" && concStatus !== csStatusFilter) return false;
+        if (csCategoryFilter !== "todos" && (tx.category_name ?? "Sem categoria") !== csCategoryFilter) return false;
+        if (csCostCenterFilter !== "todos" && (tx.cost_center_name ?? "Sem centro de custo") !== csCostCenterFilter) return false;
+        return true;
+      }),
+    [contaSimplesTx, conciliacaoByTxId, csStatusFilter, csCategoryFilter, csCostCenterFilter],
+  );
+  const conciliacoesPendentesOuDivergentes = useMemo(
+    () => conciliacoes.filter((item) => item.status === "pendente" || item.status === "divergente"),
+    [conciliacoes],
+  );
+  const contaSimplesPendentesCount = useMemo(
+    () => contaSimplesTx.filter((tx) => (conciliacaoByTxId.get(tx.id)?.status ?? "pendente") !== "conciliada").length,
+    [contaSimplesTx, conciliacaoByTxId],
+  );
+  const contaSimplesDivergentesCount = useMemo(
+    () => contaSimplesTx.filter((tx) => (conciliacaoByTxId.get(tx.id)?.status ?? "pendente") === "divergente").length,
+    [contaSimplesTx, conciliacaoByTxId],
+  );
+  const contaSimplesTxById = useMemo(
+    () => new Map(contaSimplesTx.map((tx) => [tx.id, tx])),
+    [contaSimplesTx],
+  );
 
   function statusBadge(status: string, map: Record<string, string>) {
     return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${map[status] ?? "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>{status}</span>;
@@ -448,6 +593,11 @@ export function FinanceiroClient() {
   const receberBadge = { recebido: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
   const pagarBadge = { pago: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelado: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
   const comissaoBadge = { paga: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelada: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
+  const conciliacaoBadge = {
+    conciliada: "bg-[var(--success-bg)] text-[var(--success-text)]",
+    divergente: "bg-[var(--danger-bg)] text-[var(--danger-text)]",
+    pendente: "bg-[var(--warning-bg)] text-[var(--warning-text)]",
+  };
 
   return (
     <>
@@ -496,6 +646,7 @@ export function FinanceiroClient() {
             <TabsTrigger value="receber">A Receber</TabsTrigger>
             {isManager && <TabsTrigger value="pagar">A Pagar</TabsTrigger>}
             {isManager && <TabsTrigger value="pagas">Contas Pagas</TabsTrigger>}
+            {isManager && <TabsTrigger value="conta_simples">Conta Simples</TabsTrigger>}
             <TabsTrigger value="comissoes">Comissões</TabsTrigger>
           </TabsList>
 
@@ -778,6 +929,194 @@ export function FinanceiroClient() {
                               </TableCell>
                             </TableRow>
                           ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* CONTA SIMPLES — sync e conciliação */}
+          {isManager && (
+            <TabsContent value="conta_simples">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="flex-row items-center justify-between space-y-0">
+                    <CardTitle>Integração Conta Simples</CardTitle>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={reprocessarConciliacoes} disabled={reprocessingConciliacao || loading}>
+                        <RefreshCcw className={`h-4 w-4 ${reprocessingConciliacao ? "animate-spin" : ""}`} />
+                        {reprocessingConciliacao ? "Reprocessando..." : "Reprocessar conciliações"}
+                      </Button>
+                      <Button onClick={sincronizarContaSimples} disabled={syncingContaSimples || loading}>
+                        <RefreshCcw className={`h-4 w-4 ${syncingContaSimples ? "animate-spin" : ""}`} />
+                        {syncingContaSimples ? "Sincronizando..." : "Sincronizar agora"}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-4">
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs text-[var(--text-secondary)]">Transações no período</p>
+                      <p className="text-xl font-semibold">{contaSimplesTx.length}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs text-[var(--text-secondary)]">Pendentes de conciliação</p>
+                      <p className="text-xl font-semibold">{contaSimplesPendentesCount}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs text-[var(--text-secondary)]">Divergentes</p>
+                      <p className="text-xl font-semibold">{contaSimplesDivergentesCount}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs text-[var(--text-secondary)]">Último processamento</p>
+                      <p className="text-sm font-medium">
+                        {lastIntegrationEvent?.processed_at
+                          ? formatDate(lastIntegrationEvent.processed_at)
+                          : lastIntegrationEvent?.received_at
+                          ? formatDate(lastIntegrationEvent.received_at)
+                          : "Ainda não sincronizado"}
+                      </p>
+                      {lastIntegrationEvent?.status && (
+                        <div className="mt-1">
+                          {statusBadge(
+                            lastIntegrationEvent.status,
+                            {
+                              processed: "bg-[var(--success-bg)] text-[var(--success-text)]",
+                              failed: "bg-[var(--danger-bg)] text-[var(--danger-text)]",
+                              pending: "bg-[var(--warning-bg)] text-[var(--warning-text)]",
+                              ignored: "bg-[var(--warning-bg)] text-[var(--warning-text)]",
+                            },
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Filtros de conciliação</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-3">
+                    <div className="space-y-1.5">
+                      <Label>Status da conciliação</Label>
+                      <Select value={csStatusFilter} onChange={(e) => setCsStatusFilter(e.target.value)}>
+                        <option value="todos">Todos</option>
+                        <option value="pendente">Pendente</option>
+                        <option value="conciliada">Conciliada</option>
+                        <option value="divergente">Divergente</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Categoria</Label>
+                      <Select value={csCategoryFilter} onChange={(e) => setCsCategoryFilter(e.target.value)}>
+                        <option value="todos">Todas</option>
+                        <option value="Sem categoria">Sem categoria</option>
+                        {contaSimplesCategories.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Centro de custo</Label>
+                      <Select value={csCostCenterFilter} onChange={(e) => setCsCostCenterFilter(e.target.value)}>
+                        <option value="todos">Todos</option>
+                        <option value="Sem centro de custo">Sem centro de custo</option>
+                        {contaSimplesCostCenters.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Transações Conta Simples</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                    ) : contaSimplesFiltradas.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Nenhuma transação encontrada para os filtros selecionados.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead>Centro de custo</TableHead>
+                            <TableHead>Origem</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Status integração</TableHead>
+                            <TableHead>Status conciliação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {contaSimplesFiltradas.map((tx) => {
+                            const conc = conciliacaoByTxId.get(tx.id);
+                            const concStatus = conc?.status ?? "pendente";
+                            return (
+                              <TableRow key={tx.id}>
+                                <TableCell>{formatDate(tx.transaction_date)}</TableCell>
+                                <TableCell>{tx.description ?? "—"}</TableCell>
+                                <TableCell>{tx.category_name ?? "Sem categoria"}</TableCell>
+                                <TableCell>{tx.cost_center_name ?? "Sem centro de custo"}</TableCell>
+                                <TableCell className="text-xs text-[var(--text-secondary)]">{tx.source_path}</TableCell>
+                                <TableCell className="font-semibold">{formatCurrency(Number(tx.amount_brl))}</TableCell>
+                                <TableCell>{statusBadge(tx.transaction_status, { concluida: "bg-[var(--success-bg)] text-[var(--success-text)]", pendente: "bg-[var(--warning-bg)] text-[var(--warning-text)]" })}</TableCell>
+                                <TableCell>{statusBadge(concStatus, conciliacaoBadge)}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Conciliações pendentes/divergentes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+                    ) : conciliacoesPendentesOuDivergentes.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Sem pendências de conciliação.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Motivo</TableHead>
+                            <TableHead>Score</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {conciliacoesPendentesOuDivergentes.map((c) => {
+                            const tx = contaSimplesTxById.get(c.conta_simples_transaction_id);
+                            return (
+                              <TableRow key={c.id}>
+                                <TableCell>{tx ? formatDate(tx.transaction_date) : "—"}</TableCell>
+                                <TableCell>{tx?.description ?? "Transação não encontrada"}</TableCell>
+                                <TableCell>{tx ? formatCurrency(Number(tx.amount_brl)) : "—"}</TableCell>
+                                <TableCell>{statusBadge(c.status, conciliacaoBadge)}</TableCell>
+                                <TableCell className="text-xs text-[var(--text-secondary)]">{c.reason ?? "Sem detalhe"}</TableCell>
+                                <TableCell>{Number(c.match_score).toFixed(0)}%</TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     )}

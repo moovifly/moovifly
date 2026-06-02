@@ -1,21 +1,16 @@
-function isLocalDevOrigin(origin: string): boolean {
-  try {
-    const host = new URL(origin).hostname;
-    return host === "localhost" || host === "127.0.0.1" || host.endsWith(".localhost");
-  } catch {
-    return false;
-  }
-}
-
 /**
  * URL absoluta canônica do site em produção, a partir de NEXT_PUBLIC_APP_URL.
  * Evita perder a sessão do Supabase (localStorage é por origem: www vs apex são sites diferentes).
- * Em dev (localhost) mantém caminhos relativos — inclusive quando .env.local repete a URL de produção.
+ *
+ * A decisão dev vs. prod usa process.env.NODE_ENV (que o Next injeta com o MESMO valor
+ * no servidor e no cliente), e não window.location — assim o SSR e a hidratação geram
+ * exatamente a mesma string, sem hydration mismatch. Em dev (`next dev`) mantém caminhos
+ * relativos, funcionando tanto em localhost quanto via IP da LAN.
  */
 export function publicUrlForPath(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;
 
-  if (typeof window !== "undefined" && isLocalDevOrigin(window.location.origin)) {
+  if (process.env.NODE_ENV !== "production") {
     return p;
   }
 
