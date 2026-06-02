@@ -84,10 +84,11 @@ TabsTrigger.displayName = "TabsTrigger";
 interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
   _tabsValue?: string;
+  _onTabsChange?: (v: string) => void;
 }
 
 const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
-  ({ className, value, _tabsValue, children, ...props }, ref) => {
+  ({ className, value, _tabsValue, _onTabsChange: _, children, ...props }, ref) => {
     if (_tabsValue !== value) return null;
     return (
       <div ref={ref} className={cn("mt-4", className)} {...props}>
