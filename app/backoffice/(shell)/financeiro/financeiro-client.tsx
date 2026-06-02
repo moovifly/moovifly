@@ -137,6 +137,10 @@ export function FinanceiroClient() {
   const [saving, setSaving] = useState(false);
 
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
+  const contaSimplesIntegrationEnabled =
+    process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_CONTA_SIMPLES_ENABLED === "true";
+  const contaSimplesBlockedMessage =
+    "Integração aguardando habilitação do provedor (Conta Simples).";
 
   const PRESETS = [
     {
@@ -337,6 +341,13 @@ export function FinanceiroClient() {
   }
 
   async function sincronizarContaSimples() {
+    if (!contaSimplesIntegrationEnabled) {
+      toast.info("Sincronização indisponível no momento.", {
+        description: contaSimplesBlockedMessage,
+      });
+      return;
+    }
+
     setSyncingContaSimples(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -369,6 +380,13 @@ export function FinanceiroClient() {
   }
 
   async function reprocessarConciliacoes() {
+    if (!contaSimplesIntegrationEnabled) {
+      toast.info("Reprocessamento indisponível no momento.", {
+        description: contaSimplesBlockedMessage,
+      });
+      return;
+    }
+
     setReprocessingConciliacao(true);
     try {
       const { data, error } = await supabase.rpc("reconcile_conta_simples_pending", { p_limit: 200 });
@@ -955,17 +973,29 @@ export function FinanceiroClient() {
                   <CardHeader className="flex-row items-center justify-between space-y-0">
                     <CardTitle>Integração Conta Simples</CardTitle>
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={reprocessarConciliacoes} disabled={reprocessingConciliacao || loading}>
+                      <Button
+                        variant="outline"
+                        onClick={reprocessarConciliacoes}
+                        disabled={!contaSimplesIntegrationEnabled || reprocessingConciliacao || loading}
+                      >
                         <RefreshCcw className={`h-4 w-4 ${reprocessingConciliacao ? "animate-spin" : ""}`} />
                         {reprocessingConciliacao ? "Reprocessando..." : "Reprocessar conciliações"}
                       </Button>
-                      <Button onClick={sincronizarContaSimples} disabled={syncingContaSimples || loading}>
+                      <Button
+                        onClick={sincronizarContaSimples}
+                        disabled={!contaSimplesIntegrationEnabled || syncingContaSimples || loading}
+                      >
                         <RefreshCcw className={`h-4 w-4 ${syncingContaSimples ? "animate-spin" : ""}`} />
                         {syncingContaSimples ? "Sincronizando..." : "Sincronizar agora"}
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="grid gap-3 md:grid-cols-4">
+                    {!contaSimplesIntegrationEnabled && (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 md:col-span-4 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                        {contaSimplesBlockedMessage}
+                      </div>
+                    )}
                     <div className="rounded-lg border p-3">
                       <p className="text-xs text-[var(--text-secondary)]">Transações no período</p>
                       <p className="text-xl font-semibold">{contaSimplesTx.length}</p>
