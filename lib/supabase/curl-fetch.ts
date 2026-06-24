@@ -118,6 +118,10 @@ async function winFetchOnce(url: string, init?: RequestInit): Promise<Response> 
       if (value) responseHeaders.set(key, value);
     }
 
+    if (status === 204 || status === 205 || status === 304) {
+      return new Response(null, { status, headers: responseHeaders });
+    }
+
     return new Response(bodyBuf, { status, headers: responseHeaders });
   } finally {
     await rm(dir, { recursive: true, force: true });

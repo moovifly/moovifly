@@ -51,8 +51,13 @@ async function proxy(request: NextRequest, pathSegments: string[] | undefined) {
       if (!HOP_BY_HOP.has(key.toLowerCase())) responseHeaders.set(key, value);
     });
 
+    const status = upstream.status;
+    if (status === 204 || status === 205 || status === 304) {
+      return new Response(null, { status, headers: responseHeaders });
+    }
+
     return new Response(upstream.body, {
-      status: upstream.status,
+      status,
       headers: responseHeaders,
     });
   } catch (e) {

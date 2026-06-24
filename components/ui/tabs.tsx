@@ -3,6 +3,21 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+interface TabsContextValue {
+  value: string;
+  onValueChange: (v: string) => void;
+}
+
+const TabsContext = React.createContext<TabsContextValue | null>(null);
+
+function useTabsContext() {
+  const ctx = React.useContext(TabsContext);
+  if (!ctx) {
+    throw new Error("Tabs components must be used within <Tabs>");
+  }
+  return ctx;
+}
+
 interface TabsProps {
   value: string;
   onValueChange: (v: string) => void;
@@ -11,26 +26,22 @@ interface TabsProps {
 }
 
 function Tabs({ value, onValueChange, children, className }: TabsProps) {
+  const ctx = React.useMemo(
+    () => ({ value, onValueChange }),
+    [value, onValueChange],
+  );
+
   return (
-    <div className={cn("w-full", className)} data-tabs-value={value}>
-      {React.Children.map(children, (child) => {
-        if (!React.isValidElement(child)) return child;
-        return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
-          _tabsValue: value,
-          _onTabsChange: onValueChange,
-        });
-      })}
-    </div>
+    <TabsContext.Provider value={ctx}>
+      <div className={cn("w-full", className)} data-tabs-value={value}>
+        {children}
+      </div>
+    </TabsContext.Provider>
   );
 }
 
-interface TabsListProps extends React.HTMLAttributes<HTMLDivElement> {
-  _tabsValue?: string;
-  _onTabsChange?: (v: string) => void;
-}
-
-const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
-  ({ className, children, _tabsValue, _onTabsChange, ...props }, ref) => (
+const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
@@ -39,13 +50,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
       )}
       {...props}
     >
-      {React.Children.map(children, (child) => {
-        if (!React.isValidElement(child)) return child;
-        return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
-          _tabsValue,
-          _onTabsChange,
-        });
-      })}
+      {children}
     </div>
   ),
 );
@@ -53,18 +58,18 @@ TabsList.displayName = "TabsList";
 
 interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
-  _tabsValue?: string;
-  _onTabsChange?: (v: string) => void;
 }
 
 const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
-  ({ className, value, _tabsValue, _onTabsChange, children, ...props }, ref) => {
-    const isActive = _tabsValue === value;
+  ({ className, value, children, ...props }, ref) => {
+    const { value: tabsValue, onValueChange } = useTabsContext();
+    const isActive = tabsValue === value;
+
     return (
       <button
         ref={ref}
         type="button"
-        onClick={() => _onTabsChange?.(value)}
+        onClick={() => onValueChange(value)}
         className={cn(
           "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all",
           isActive
@@ -83,13 +88,13 @@ TabsTrigger.displayName = "TabsTrigger";
 
 interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
-  _tabsValue?: string;
-  _onTabsChange?: (v: string) => void;
 }
 
 const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
-  ({ className, value, _tabsValue, _onTabsChange: _, children, ...props }, ref) => {
-    if (_tabsValue !== value) return null;
+  ({ className, value, children, ...props }, ref) => {
+    const { value: tabsValue } = useTabsContext();
+    if (tabsValue !== value) return null;
+
     return (
       <div ref={ref} className={cn("mt-4", className)} {...props}>
         {children}

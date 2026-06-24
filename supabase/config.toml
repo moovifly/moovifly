@@ -24,8 +24,3 @@ verify_jwt = true
 [functions.webhook-abacatepay]
 verify_jwt = false
 
-[functions.conta-simples-sync]
-verify_jwt = true
-
-[functions.webhook-conta-simples]
-verify_jwt = false

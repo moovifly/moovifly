@@ -59,13 +59,17 @@ Deno.serve(async (req: Request) => {
             await supabase.from("contas_receber").insert({
               venda_id: pag.venda_id,
               valor: venda.valor_total,
-              status: "pago",
+              status: "recebida",
               data_vencimento: venda.data_venda,
+              data_recebimento: new Date().toISOString().slice(0, 10),
               descricao: `Pagamento venda ${venda.numero_venda}`,
             });
           }
         } else {
-          await supabase.from("contas_receber").update({ status: "pago" }).eq("venda_id", pag.venda_id);
+          await supabase.from("contas_receber").update({
+            status: "recebida",
+            data_recebimento: new Date().toISOString().slice(0, 10),
+          }).eq("venda_id", pag.venda_id);
         }
       }
     }
