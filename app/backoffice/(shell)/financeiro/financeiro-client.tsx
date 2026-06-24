@@ -41,6 +41,7 @@ type ContaPagar = {
 type Comissao = {
   id: string;
   venda_id: string | null;
+  vendedor_id?: string | null;
   valor_venda: number | string;
   base_calculo: number | string | null;
   percentual_comissao: number | string;
@@ -77,6 +78,7 @@ export function FinanceiroClient() {
   const [subReceber, setSubReceber] = useState("pendentes");
   const [subPagar, setSubPagar] = useState("pendentes");
   const [subComissoes, setSubComissoes] = useState("pendentes");
+  const [comissaoVendedorFilter, setComissaoVendedorFilter] = useState("");
 
   const [receber, setReceber] = useState<ContaReceber[]>([]);
   const [pagar, setPagar] = useState<ContaPagar[]>([]);
@@ -503,8 +505,13 @@ export function FinanceiroClient() {
   const recebidas = useMemo(() => receber.filter((c) => c.status !== "pendente"), [receber]);
   const contasPagarPendentes = useMemo(() => pagar.filter((c) => c.status === "pendente"), [pagar]);
   const contasPagarPagas = useMemo(() => pagar.filter((c) => c.status !== "pendente"), [pagar]);
-  const comissoesPendentes = useMemo(() => comissoes.filter((c) => c.status === "pendente"), [comissoes]);
-  const comissoesPagas = useMemo(() => comissoes.filter((c) => c.status === "paga"), [comissoes]);
+  const comissoesFiltradas = useMemo(() => {
+    if (!comissaoVendedorFilter) return comissoes;
+    return comissoes.filter((c) => c.vendedor_id === comissaoVendedorFilter);
+  }, [comissoes, comissaoVendedorFilter]);
+
+  const comissoesPendentes = useMemo(() => comissoesFiltradas.filter((c) => c.status === "pendente"), [comissoesFiltradas]);
+  const comissoesPagas = useMemo(() => comissoesFiltradas.filter((c) => c.status === "paga"), [comissoesFiltradas]);
 
   function statusBadge(status: string, map: Record<string, string>) {
     return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${map[status] ?? "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>{status}</span>;
@@ -799,18 +806,35 @@ export function FinanceiroClient() {
           {/* ── COMISSÕES ── */}
           <TabsContent value="comissoes">
             <Tabs value={subComissoes} onValueChange={setSubComissoes}>
-              <div className="mb-4 flex items-center justify-between">
-                <TabsList>
-                  <TabsTrigger value="pendentes">
-                    A Pagar
-                    {comissoesPendentes.length > 0 && (
-                      <span className="ml-1.5 rounded-full bg-[var(--warning-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning-text)]">
-                        {comissoesPendentes.length}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="pagas">Pagas</TabsTrigger>
-                </TabsList>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <TabsList>
+                    <TabsTrigger value="pendentes">
+                      A Pagar
+                      {comissoesPendentes.length > 0 && (
+                        <span className="ml-1.5 rounded-full bg-[var(--warning-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning-text)]">
+                          {comissoesPendentes.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="pagas">Pagas</TabsTrigger>
+                  </TabsList>
+                  {isManager && (
+                    <div className="space-y-1">
+                      <Label className="sr-only">Vendedor</Label>
+                      <Select
+                        value={comissaoVendedorFilter}
+                        onChange={(e) => setComissaoVendedorFilter(e.target.value)}
+                        className="w-52"
+                      >
+                        <option value="">Todos os vendedores</option>
+                        {usuarios.map((u) => (
+                          <option key={u.id} value={u.id}>{u.nome}</option>
+                        ))}
+                      </Select>
+                    </div>
+                  )}
+                </div>
                 {isManager && (
                   <Button size="sm" onClick={() => setAddComissaoOpen(true)}>
                     <Plus className="h-4 w-4" /> Adicionar
