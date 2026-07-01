@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle, Plus, Trash2 } from "lucide-react";
+import { CheckCircle, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
+import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +22,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { defaultFinancePeriod } from "@/lib/financial/period";
 
 type ContaReceber = {
   id: string;
@@ -27,6 +30,7 @@ type ContaReceber = {
   valor: number | string;
   data_vencimento: string | null;
   data_recebimento?: string | null;
+  conta_bancaria_id?: string | null;
   status: string;
 };
 type ContaPagar = {
@@ -53,6 +57,7 @@ type Comissao = {
 };
 
 type Usuario = { id: string; nome: string; tipo: string };
+type ContaBancaria = { id: string; nome: string; banco: string | null; principal: boolean };
 
 function vendorName(c: Comissao): string {
   const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
@@ -102,6 +107,31 @@ export function FinanceiroClient() {
   const [pagarModalData, setPagarModalData] = useState("");
   const [pagandoConta, setPagandoConta] = useState(false);
 
+  // Modal de recebimento de conta a receber
+  const [receberModal, setReceberModal] = useState<{
+    id: string;
+    descricao: string;
+    valorOriginal: number;
+  } | null>(null);
+  const [receberModalValor, setReceberModalValor] = useState(0);
+  const [receberModalData, setReceberModalData] = useState("");
+  const [receberModalContaId, setReceberModalContaId] = useState("");
+  const [recebendoConta, setRecebendoConta] = useState(false);
+  const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([]);
+
+  // Modal de edição de conta a receber
+  const [editReceberOpen, setEditReceberOpen] = useState(false);
+  const [editRecForm, setEditRecForm] = useState({
+    id: "",
+    descricao: "",
+    valor: 0,
+    data_vencimento: "",
+    status: "pendente" as "pendente" | "recebida",
+    data_recebimento: "",
+    conta_bancaria_id: "",
+  });
+  const [editandoReceber, setEditandoReceber] = useState(false);
+
   // Modais de criação manual
   const [addReceberOpen, setAddReceberOpen] = useState(false);
   const [addPagarOpen, setAddPagarOpen] = useState(false);
@@ -123,106 +153,10 @@ export function FinanceiroClient() {
 
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
 
-  const PRESETS = [
-    {
-      key: "hoje",
-      label: "Hoje",
-      range: () => { const t = new Date().toISOString().slice(0, 10); return { from: t, to: t }; },
-    },
-    {
-      key: "semana",
-      label: "Esta semana",
-      range: () => {
-        const d = new Date();
-        const mon = new Date(d);
-        mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-        return { from: mon.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
-      },
-    },
-    {
-      key: "mes",
-      label: "Este mês",
-      range: () => {
-        const d = new Date();
-        return { from: new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
-      },
-    },
-    {
-      key: "mes_passado",
-      label: "Último mês",
-      range: () => {
-        const d = new Date();
-        return {
-          from: new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().slice(0, 10),
-          to: new Date(d.getFullYear(), d.getMonth(), 0).toISOString().slice(0, 10),
-        };
-      },
-    },
-    {
-      key: "3meses",
-      label: "Últ. 3 meses",
-      range: () => {
-        const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 3);
-        return { from: from.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
-      },
-    },
-    {
-      key: "6meses",
-      label: "Últ. 6 meses",
-      range: () => {
-        const d = new Date(); const from = new Date(d); from.setMonth(d.getMonth() - 6);
-        return { from: from.toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
-      },
-    },
-    {
-      key: "ano",
-      label: "Este ano",
-      range: () => {
-        const d = new Date();
-        return { from: new Date(d.getFullYear(), 0, 1).toISOString().slice(0, 10), to: d.toISOString().slice(0, 10) };
-      },
-    },
-  ];
-
   const MAX_DAYS = 90;
-
-  function daysBetween(a: string, b: string) {
-    return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000);
-  }
-
-  function addDays(date: string, days: number) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + days);
-    return d.toISOString().slice(0, 10);
-  }
-
-  const [activePreset, setActivePreset] = useState("mes");
-  const [dateFrom, setDateFrom] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-  });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
-
-  function handleDateFromChange(value: string) {
-    setActivePreset("");
-    let to = dateTo;
-    if (daysBetween(value, to) > MAX_DAYS) {
-      to = addDays(value, MAX_DAYS);
-      toast.info(`Período limitado a ${MAX_DAYS} dias. Data final ajustada.`);
-    }
-    setDateFrom(value);
-    setDateTo(to);
-  }
-
-  function handleDateToChange(value: string) {
-    setActivePreset("");
-    if (daysBetween(dateFrom, value) > MAX_DAYS) {
-      toast.error(`O período personalizado não pode ultrapassar ${MAX_DAYS} dias.`);
-      setDateTo(addDays(dateFrom, MAX_DAYS));
-      return;
-    }
-    setDateTo(value);
-  }
+  const [period, setPeriod] = useState(defaultFinancePeriod);
+  const dateFrom = period.start;
+  const dateTo = period.end;
 
   async function load() {
     setLoading(true);
@@ -265,13 +199,16 @@ export function FinanceiroClient() {
       setUsuarios((usr ?? []) as Usuario[]);
 
       if (isManager) {
-        const [{ data: pagPendentes }, { data: pagPagas }] = await Promise.all([
+        const [{ data: pagPendentes }, { data: pagPagas }, { data: bancos }] = await Promise.all([
           supabase.from("contas_pagar").select("*").eq("status", "pendente").order("data_vencimento"),
           supabase.from("contas_pagar").select("*").neq("status", "pendente").gte("data_pagamento", dateFrom).lte("data_pagamento", dateTo).order("data_pagamento"),
+          supabase.from("contas_bancarias").select("id, nome, banco, principal").eq("ativa", true).order("nome"),
         ]);
         setPagar([...(pagPendentes ?? []), ...(pagPagas ?? [])] as ContaPagar[]);
+        setContasBancarias((bancos ?? []) as ContaBancaria[]);
       } else {
         setPagar([]);
+        setContasBancarias([]);
       }
     } catch (err) {
       toast.error("Erro ao carregar financeiro", { description: formatSupabaseError(err) });
@@ -285,10 +222,120 @@ export function FinanceiroClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, dateFrom, dateTo]);
 
-  async function marcarRecebido(id: string) {
-    await supabase.from("contas_receber").update({ status: "recebida", data_recebimento: new Date().toISOString().slice(0, 10) }).eq("id", id).select("id");
-    toast.success("Marcado como recebido!");
-    load();
+  function defaultContaBancariaId(contas: ContaBancaria[]): string {
+    return contas.find((c) => c.principal)?.id ?? contas[0]?.id ?? "";
+  }
+
+  function abrirModalRecebimento(c: ContaReceber) {
+    const valor = Number(c.valor);
+    setReceberModal({
+      id: c.id,
+      descricao: c.descricao ?? "—",
+      valorOriginal: valor,
+    });
+    setReceberModalValor(valor);
+    setReceberModalData(new Date().toISOString().slice(0, 10));
+    setReceberModalContaId(defaultContaBancariaId(contasBancarias));
+  }
+
+  async function confirmarRecebimento() {
+    if (!receberModal || !receberModalData) return;
+    if (!Number.isFinite(receberModalValor) || receberModalValor <= 0) {
+      toast.error("Informe um valor recebido válido.");
+      return;
+    }
+    if (contasBancarias.length > 0 && !receberModalContaId) {
+      toast.error("Selecione a conta bancária de recebimento.");
+      return;
+    }
+    setRecebendoConta(true);
+    try {
+      const { error } = await supabase
+        .from("contas_receber")
+        .update({
+          status: "recebida",
+          valor: receberModalValor,
+          data_recebimento: receberModalData,
+          conta_bancaria_id: receberModalContaId || null,
+        })
+        .eq("id", receberModal.id)
+        .select("id");
+      if (error) throw error;
+      toast.success("Marcado como recebido!");
+      setReceberModal(null);
+      load();
+    } catch (err) {
+      toast.error("Erro ao registrar recebimento", { description: formatSupabaseError(err) });
+    } finally {
+      setRecebendoConta(false);
+    }
+  }
+
+  function abrirEditarReceber(c: ContaReceber) {
+    const recebida = c.status === "recebida";
+    setEditRecForm({
+      id: c.id,
+      descricao: c.descricao ?? "",
+      valor: Number(c.valor),
+      data_vencimento: c.data_vencimento ?? "",
+      status: recebida ? "recebida" : "pendente",
+      data_recebimento: c.data_recebimento ?? new Date().toISOString().slice(0, 10),
+      conta_bancaria_id: c.conta_bancaria_id ?? defaultContaBancariaId(contasBancarias),
+    });
+    setEditReceberOpen(true);
+  }
+
+  async function salvarEditarReceber() {
+    if (!editRecForm.id) return;
+    if (!editRecForm.descricao.trim()) {
+      toast.error("Informe a descrição.");
+      return;
+    }
+    if (!editRecForm.data_vencimento) {
+      toast.error("Informe o vencimento.");
+      return;
+    }
+    if (!Number.isFinite(editRecForm.valor) || editRecForm.valor <= 0) {
+      toast.error("Informe um valor válido.");
+      return;
+    }
+    if (editRecForm.status === "recebida") {
+      if (!editRecForm.data_recebimento) {
+        toast.error("Informe a data de recebimento.");
+        return;
+      }
+      if (contasBancarias.length > 0 && !editRecForm.conta_bancaria_id) {
+        toast.error("Selecione a conta bancária.");
+        return;
+      }
+    }
+
+    setEditandoReceber(true);
+    try {
+      const payload: Record<string, unknown> = {
+        descricao: editRecForm.descricao.trim(),
+        valor: editRecForm.valor,
+        data_vencimento: editRecForm.data_vencimento,
+        status: editRecForm.status,
+      };
+      if (editRecForm.status === "recebida") {
+        payload.data_recebimento = editRecForm.data_recebimento;
+        payload.conta_bancaria_id = editRecForm.conta_bancaria_id || null;
+      } else {
+        payload.data_recebimento = null;
+        payload.conta_bancaria_id = null;
+      }
+
+      const { error } = await supabase.from("contas_receber").update(payload).eq("id", editRecForm.id);
+      if (error) throw error;
+      toast.success("Conta a receber atualizada!");
+      setEditReceberOpen(false);
+      load();
+    } catch (err) {
+      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
+    } finally {
+      setEditandoReceber(false);
+    }
   }
 
   function abrirModalPagamentoContaPagar(c: ContaPagar) {
@@ -346,7 +393,7 @@ export function FinanceiroClient() {
         .eq("id", payModal.id)
         .select("id");
       if (error) throw error;
-      toast.success("Comissão marcada como paga!");
+      toast.success("Comissão marcada como paga! Conta a pagar vinculada atualizada automaticamente.");
       setPayModal(null);
       load();
     } catch (err) {
@@ -529,45 +576,8 @@ export function FinanceiroClient() {
     <>
       <Topbar title="Financeiro" />
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-
-        {/* Filtros de período */}
-        <Card>
-          <CardHeader><CardTitle>Filtros</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => {
-                    const { from, to } = p.range();
-                    setDateFrom(from);
-                    setDateTo(to);
-                    setActivePreset(p.key);
-                  }}
-                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
-                    activePreset === p.key
-                      ? "border-(--color-primary) bg-(--color-primary) text-white"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="space-y-1.5">
-                <Label>De</Label>
-                <Input type="date" value={dateFrom} onChange={(e) => handleDateFromChange(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Até</Label>
-                <Input type="date" value={dateTo} min={dateFrom} max={addDays(dateFrom, MAX_DAYS)} onChange={(e) => handleDateToChange(e.target.value)} />
-              </div>
-              <p className="pb-1 text-xs text-[var(--text-secondary)]">Máx. {MAX_DAYS} dias no período personalizado</p>
-            </div>
-          </CardContent>
-        </Card>
+        <FinanceiroNav />
+        <FinancePeriodFilter period={period} onChange={setPeriod} maxCustomDays={MAX_DAYS} />
 
         {/* Navegação principal (submenus) */}
         <Tabs value={section} onValueChange={setSection}>
@@ -625,13 +635,18 @@ export function FinanceiroClient() {
                               <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => marcarRecebido(c.id)}>
+                                  <Button size="sm" variant="outline" onClick={() => abrirModalRecebimento(c)}>
                                     <CheckCircle className="h-4 w-4" /> Recebido
                                   </Button>
                                   {isManager && (
-                                    <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <>
+                                      <Button size="icon" variant="ghost" onClick={() => abrirEditarReceber(c)} title="Editar">
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
                                   )}
                                 </div>
                               </TableCell>
@@ -672,9 +687,14 @@ export function FinanceiroClient() {
                               <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
                               {isManager && (
                                 <TableCell className="text-right">
-                                  <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex justify-end gap-2">
+                                    <Button size="icon" variant="ghost" onClick={() => abrirEditarReceber(c)} title="Editar">
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </TableCell>
                               )}
                             </TableRow>
@@ -941,6 +961,64 @@ export function FinanceiroClient() {
         </Tabs>
       </div>
 
+      {/* Modal de recebimento de conta a receber */}
+      <Dialog open={!!receberModal} onOpenChange={(open) => { if (!open) setReceberModal(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Registrar Recebimento</DialogTitle>
+          </DialogHeader>
+          {receberModal && (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-[var(--text-secondary)]">
+                Descrição: <span className="font-medium text-foreground">{receberModal.descricao}</span>
+              </p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Valor original: <span className="font-semibold text-foreground">{formatCurrency(receberModal.valorOriginal)}</span>
+              </p>
+              <div className="space-y-1.5">
+                <Label>Valor recebido</Label>
+                <CurrencyInput value={receberModalValor} onValueChange={(v) => setReceberModalValor(v ?? 0)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Data de recebimento</Label>
+                <Input type="date" value={receberModalData} onChange={(e) => setReceberModalData(e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Conta bancária</Label>
+                {contasBancarias.length === 0 ? (
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Nenhuma conta cadastrada. Cadastre em Configurações → Contas Bancárias.
+                  </p>
+                ) : (
+                  <Select value={receberModalContaId} onChange={(e) => setReceberModalContaId(e.target.value)}>
+                    <option value="">Selecione...</option>
+                    {contasBancarias.map((cb) => (
+                      <option key={cb.id} value={cb.id}>
+                        {cb.nome}{cb.banco ? ` · ${cb.banco}` : ""}{cb.principal ? " (Principal)" : ""}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReceberModal(null)} disabled={recebendoConta}>Cancelar</Button>
+            <Button
+              onClick={confirmarRecebimento}
+              disabled={
+                recebendoConta
+                || !receberModalData
+                || receberModalValor <= 0
+                || (contasBancarias.length > 0 && !receberModalContaId)
+              }
+            >
+              {recebendoConta ? "Salvando..." : "Confirmar recebimento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de pagamento de conta a pagar */}
       <Dialog open={!!pagarModal} onOpenChange={(open) => { if (!open) setPagarModal(null); }}>
         <DialogContent className="max-w-sm">
@@ -1001,6 +1079,89 @@ export function FinanceiroClient() {
             <Button variant="ghost" onClick={() => setPayModal(null)} disabled={paying}>Cancelar</Button>
             <Button onClick={confirmarPagamentoComissao} disabled={paying || !payDate}>
               {paying ? "Salvando..." : "Confirmar pagamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: editar conta a receber */}
+      <Dialog open={editReceberOpen} onOpenChange={setEditReceberOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar conta a receber</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Descrição</Label>
+              <Input
+                value={editRecForm.descricao}
+                onChange={(e) => setEditRecForm((p) => ({ ...p, descricao: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Valor</Label>
+              <CurrencyInput
+                value={editRecForm.valor}
+                onValueChange={(v) => setEditRecForm((p) => ({ ...p, valor: v ?? 0 }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Vencimento</Label>
+              <Input
+                type="date"
+                value={editRecForm.data_vencimento}
+                onChange={(e) => setEditRecForm((p) => ({ ...p, data_vencimento: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Status</Label>
+              <Select
+                value={editRecForm.status}
+                onChange={(e) => setEditRecForm((p) => ({ ...p, status: e.target.value as "pendente" | "recebida" }))}
+              >
+                <option value="pendente">A receber</option>
+                <option value="recebida">Recebida</option>
+              </Select>
+            </div>
+            {editRecForm.status === "recebida" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Recebido em</Label>
+                  <Input
+                    type="date"
+                    value={editRecForm.data_recebimento}
+                    onChange={(e) => setEditRecForm((p) => ({ ...p, data_recebimento: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Conta bancária</Label>
+                  {contasBancarias.length === 0 ? (
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Cadastre em Configurações → Contas Bancárias.
+                    </p>
+                  ) : (
+                    <Select
+                      value={editRecForm.conta_bancaria_id}
+                      onChange={(e) => setEditRecForm((p) => ({ ...p, conta_bancaria_id: e.target.value }))}
+                    >
+                      <option value="">Selecione...</option>
+                      {contasBancarias.map((cb) => (
+                        <option key={cb.id} value={cb.id}>
+                          {cb.nome}{cb.banco ? ` · ${cb.banco}` : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditReceberOpen(false)} disabled={editandoReceber}>
+              Cancelar
+            </Button>
+            <Button onClick={salvarEditarReceber} disabled={editandoReceber}>
+              {editandoReceber ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>

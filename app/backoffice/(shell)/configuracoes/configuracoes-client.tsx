@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { ROLE_LABELS } from "@/lib/auth";
 import { publicUrlForPath } from "@/lib/public-site-url";
+import { ConfiguracoesContasBancarias } from "./configuracoes-contas-bancarias";
 
 type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: number | null };
 
@@ -39,6 +41,7 @@ export function ConfiguracoesClient() {
   const [saving, setSaving] = useState(false);
   const [novoFluxo, setNovoFluxo] = useState<NovoFluxo>("invite");
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [configTab, setConfigTab] = useState("usuarios");
 
   async function load() {
     setLoading(true);
@@ -144,8 +147,20 @@ export function ConfiguracoesClient() {
 
   return (
     <>
-      <Topbar title="Configurações" subtitle="Gestão de usuários do sistema" actions={<Button onClick={openNew}><Plus className="h-4 w-4" />Novo Usuário</Button>} />
+      <Topbar title="Configurações" subtitle="Usuários, contas bancárias e preferências" />
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <Tabs value={configTab} onValueChange={setConfigTab}>
+          <TabsList>
+            <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+            <TabsTrigger value="contas">Contas Bancárias</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="usuarios" className="mt-4 space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={openNew}>
+                <Plus className="h-4 w-4" />Novo Usuário
+              </Button>
+            </div>
         <Card>
           <CardHeader><CardTitle>Usuários do Sistema</CardTitle></CardHeader>
           <CardContent>
@@ -197,6 +212,12 @@ export function ConfiguracoesClient() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="contas" className="mt-4">
+            <ConfiguracoesContasBancarias />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
