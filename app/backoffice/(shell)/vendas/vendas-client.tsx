@@ -249,6 +249,14 @@ export function VendasClient() {
     });
   }, [items, search, statusFilter, dateFrom, dateTo]);
 
+  const filteredSummary = useMemo(
+    () => ({
+      count: filtered.length,
+      total: filtered.reduce((sum, v) => sum + Number(v.valor_total ?? 0), 0),
+    }),
+    [filtered],
+  );
+
   function openNew() { setForm({ ...emptyForm(), atribuido_a: profile?.id ?? null }); setStep("select-type"); setActiveTab("dados"); setViewMode(false); setOpen(true); }
 
   function selectCategoria(cat: "aereo" | "seguro_viagem") {
@@ -597,6 +605,11 @@ export function VendasClient() {
                       </TableRow>
                     );
                   })}
+                  <TableRow className="border-t-2 bg-muted/30 hover:bg-muted/30">
+                    <TableCell colSpan={8} className="py-3 text-right font-semibold">
+                      {filteredSummary.count} Venda{filteredSummary.count !== 1 ? "s" : ""} - Total {formatCurrency(filteredSummary.total)}
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             )}

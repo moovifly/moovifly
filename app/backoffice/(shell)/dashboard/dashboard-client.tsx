@@ -22,7 +22,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/format";
 import type { UserProfile } from "@/lib/auth";
-import { SalesBarChart, RevenueDonut } from "./dashboard-charts";
+import { SalesBarChart, RevenueDonut, type SalesChartPoint } from "./dashboard-charts";
 import {
   EMBARQUE_ALERT_OFFSETS,
   calendarDaysFromToday,
@@ -275,53 +275,45 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
   const supabase = getSupabaseClient();
   const isAdmin = ["administrador", "gerente"].includes(profile.tipo);
 
-  let totalClientesQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo");
-  if (!isAdmin) totalClientesQ = totalClientesQ.eq("vendedor_id", profile.id);
-
-  let clientesThisQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo").gte("created_at", range.start).lte("created_at", range.end);
-  if (!isAdmin) clientesThisQ = clientesThisQ.eq("vendedor_id", profile.id);
-
-  let clientesPrevQ = supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo").gte("created_at", range.prevStart).lt("created_at", range.prevEnd);
-  if (!isAdmin) clientesPrevQ = clientesPrevQ.eq("vendedor_id", profile.id);
-
-  let vendasThisQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("data_venda", range.start.slice(0, 10)).lte("data_venda", range.end.slice(0, 10)).in("status", ["confirmada", "concluida"]);
+  let vendasThisQ = supabase.from("vendas").select("id, valor_total, cliente_id", { count: "exact" }).gte("data_venda", range.start.slice(0, 10)).lte("data_venda", range.end.slice(0, 10)).in("status", ["confirmada", "concluida"]);
   if (!isAdmin) vendasThisQ = vendasThisQ.eq("vendedor_id", profile.id);
 
-  let vendasPrevQ = supabase.from("vendas").select("id, valor_total", { count: "exact" }).gte("data_venda", range.prevStart.slice(0, 10)).lt("data_venda", range.prevEnd.slice(0, 10)).in("status", ["confirmada", "concluida"]);
+  let vendasPrevQ = supabase.from("vendas").select("id, valor_total, cliente_id", { count: "exact" }).gte("data_venda", range.prevStart.slice(0, 10)).lt("data_venda", range.prevEnd.slice(0, 10)).in("status", ["confirmada", "concluida"]);
   if (!isAdmin) vendasPrevQ = vendasPrevQ.eq("vendedor_id", profile.id);
 
-  // Comissão sempre pessoal (admins também são vendedores): filtra pelo próprio id.
+  // Comissão sempre pessoal (admins também são vendedores): filtra pela data da venda, não pelo created_at.
   const comissaoThisQ = supabase
     .from("comissoes")
-    .select("valor_comissao")
+    .select("valor_comissao, vendas!inner(data_venda)")
     .eq("vendedor_id", profile.id)
-    .gte("created_at", range.start)
-    .lte("created_at", range.end);
+    .gte("vendas.data_venda", range.start.slice(0, 10))
+    .lte("vendas.data_venda", range.end.slice(0, 10));
 
   const comissaoPrevQ = supabase
     .from("comissoes")
-    .select("valor_comissao")
+    .select("valor_comissao, vendas!inner(data_venda)")
     .eq("vendedor_id", profile.id)
-    .gte("created_at", range.prevStart)
-    .lt("created_at", range.prevEnd);
+    .gte("vendas.data_venda", range.prevStart.slice(0, 10))
+    .lt("vendas.data_venda", range.prevEnd.slice(0, 10));
 
   const [
-    { count: totalClientes },
-    { count: clientesThis },
-    { count: clientesPrev },
     { data: vendas, count: totalVendas },
     { data: vendasPrev, count: totalVendasPrev },
     { data: comissoesThis },
     { data: comissoesPrev },
   ] = await Promise.all([
-    totalClientesQ,
-    clientesThisQ,
-    clientesPrevQ,
     vendasThisQ,
     vendasPrevQ,
     comissaoThisQ,
     comissaoPrevQ,
   ]);
+
+  const clientesUnicos = new Set(
+    (vendas ?? []).map((v: { cliente_id?: string | null }) => v.cliente_id).filter(Boolean),
+  ).size;
+  const clientesUnicosPrev = new Set(
+    (vendasPrev ?? []).map((v: { cliente_id?: string | null }) => v.cliente_id).filter(Boolean),
+  ).size;
 
   const faturamentoTotal = vendas?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
   const faturamentoPrev = vendasPrev?.reduce((sum: number, v: { valor_total?: number | string | null }) => sum + Number.parseFloat(String(v.valor_total ?? 0)), 0) ?? 0;
@@ -329,11 +321,11 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
   const comissaoPrev = comissoesPrev?.reduce((sum: number, c: { valor_comissao?: number | string | null }) => sum + Number.parseFloat(String(c.valor_comissao ?? 0)), 0) ?? 0;
 
   return {
-    totalClientes: totalClientes ?? 0,
+    totalClientes: clientesUnicos,
     totalVendas: totalVendas ?? 0,
     faturamentoTotal,
     totalComissao,
-    trendClientes: calcTrend(clientesThis ?? 0, clientesPrev ?? 0),
+    trendClientes: calcTrend(clientesUnicos, clientesUnicosPrev),
     trendVendas: calcTrend(totalVendas ?? 0, totalVendasPrev ?? 0),
     trendFaturamento: calcTrend(faturamentoTotal, faturamentoPrev),
     trendComissao: calcTrend(totalComissao, comissaoPrev),
@@ -436,7 +428,16 @@ async function loadFinancial(profile: UserProfile): Promise<Financial> {
   };
 }
 
-async function loadSalesByDay(profile: UserProfile, range: DateRange) {
+function pontoGraficoVendas(label: string, vendas: number[]): SalesChartPoint {
+  return {
+    label,
+    valor: vendas.reduce((sum, v) => sum + v, 0),
+    qtd: vendas.length,
+    vendas,
+  };
+}
+
+async function loadSalesByDay(profile: UserProfile, range: DateRange): Promise<SalesChartPoint[]> {
   const supabase = getSupabaseClient();
   let q = supabase
     .from("vendas")
@@ -451,35 +452,36 @@ async function loadSalesByDay(profile: UserProfile, range: DateRange) {
   const sales = (data ?? []) as Array<{ valor_total: number | string; data_venda: string }>;
 
   if (range.groupBy === "hour") {
-    // data_venda has no time component — put all today's sales in bucket 0
-    const buckets = new Map<number, number>();
-    for (let h = 0; h < 24; h++) buckets.set(h, 0);
+    const vendasHoje: number[] = [];
     for (const v of sales) {
-      buckets.set(0, (buckets.get(0) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+      vendasHoje.push(Number.parseFloat(String(v.valor_total ?? 0)));
     }
-    return [...buckets.entries()].map(([hour, value]) => ({
-      label: `${String(hour).padStart(2, "0")}h`,
-      valor: value,
+    const buckets = new Map<number, number[]>();
+    for (let h = 0; h < 24; h++) buckets.set(h, h === 0 ? vendasHoje : []);
+    return [...buckets.entries()].map(([hour, vendas]) => ({
+      ...pontoGraficoVendas(`${String(hour).padStart(2, "0")}h`, vendas),
     }));
   }
 
   if (range.groupBy === "month") {
     const rStart = new Date(range.start);
     const rEnd = new Date(range.end);
-    const buckets = new Map<string, number>();
+    const buckets = new Map<string, number[]>();
     const curr = new Date(rStart.getFullYear(), rStart.getMonth(), 1);
     while (curr <= rEnd) {
-      buckets.set(`${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, "0")}`, 0);
+      buckets.set(`${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, "0")}`, []);
       curr.setMonth(curr.getMonth() + 1);
     }
     for (const v of sales) {
       const key = v.data_venda.slice(0, 7);
-      if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+      if (buckets.has(key)) {
+        buckets.get(key)!.push(Number.parseFloat(String(v.valor_total ?? 0)));
+      }
     }
-    return [...buckets.entries()].map(([key, value]) => {
+    return [...buckets.entries()].map(([key, vendas]) => {
       const [year, month] = key.split("-");
       const d = new Date(Number(year), Number(month) - 1, 1);
-      return { label: d.toLocaleDateString("pt-BR", { month: "short" }), valor: value };
+      return pontoGraficoVendas(d.toLocaleDateString("pt-BR", { month: "short" }), vendas);
     });
   }
 
@@ -487,28 +489,31 @@ async function loadSalesByDay(profile: UserProfile, range: DateRange) {
   const rStart = new Date(range.start);
   const rEnd = new Date(range.end);
   const diffDays = Math.min(Math.ceil((rEnd.getTime() - rStart.getTime()) / (24 * 60 * 60 * 1000)) + 1, 31);
-  const buckets = new Map<string, number>();
+  const buckets = new Map<string, number[]>();
   for (let i = 0; i < diffDays; i++) {
     const d = new Date(rStart); d.setDate(d.getDate() + i);
-    buckets.set(d.toISOString().slice(0, 10), 0);
+    buckets.set(d.toISOString().slice(0, 10), []);
   }
   for (const v of sales) {
-    const key = v.data_venda; // already "YYYY-MM-DD"
-    if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
+    const key = v.data_venda;
+    if (buckets.has(key)) {
+      buckets.get(key)!.push(Number.parseFloat(String(v.valor_total ?? 0)));
+    }
   }
   const isShortPeriod = diffDays <= 7;
-  return [...buckets.entries()].map(([date, value]) => ({
-    label: new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", isShortPeriod ? { weekday: "short" } : { day: "2-digit", month: "2-digit" }),
-    valor: value,
-  }));
+  return [...buckets.entries()].map(([date, vendas]) =>
+    pontoGraficoVendas(
+      new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", isShortPeriod ? { weekday: "short" } : { day: "2-digit", month: "2-digit" }),
+      vendas,
+    ),
+  );
 }
 
 async function loadRevenueByCategory(profile: UserProfile, range: DateRange) {
   const supabase = getSupabaseClient();
-  /* tipo = categoria comercial; classe = econômica/executiva… fallback para dados antigos sem tipo */
   let q = supabase
     .from("vendas")
-    .select("tipo, classe, valor_total, status")
+    .select("categoria_venda, tipo, classe, valor_total, status")
     .gte("data_venda", range.start.slice(0, 10))
     .lte("data_venda", range.end.slice(0, 10))
     .in("status", ["confirmada", "concluida"]);
@@ -518,14 +523,26 @@ async function loadRevenueByCategory(profile: UserProfile, range: DateRange) {
   const { data } = await q;
   const grupos = new Map<string, number>();
   for (const v of (data ?? []) as Array<{
+    categoria_venda: string | null;
     tipo: string | null;
     classe: string | null;
     valor_total: number | string | null;
   }>) {
-    const key = v.tipo?.trim() || v.classe?.trim() || "Outros";
+    let key: string;
+    if (v.categoria_venda === "seguro_viagem") {
+      key = "seguro_viagem";
+    } else if (v.tipo?.trim()) {
+      key = v.tipo.trim().toLowerCase();
+    } else if (v.classe?.trim()) {
+      key = v.classe.trim().toLowerCase();
+    } else {
+      key = "outros";
+    }
     grupos.set(key, (grupos.get(key) ?? 0) + Number.parseFloat(String(v.valor_total ?? 0)));
   }
-  return [...grupos.entries()].map(([name, value]) => ({ name, value }));
+  return [...grupos.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 }
 
 function statusBadgeColor(status: string) {
@@ -551,7 +568,7 @@ export function DashboardClient() {
   const [financial, setFinancial] = useState<Financial>(initialFinancial);
   const [recent, setRecent] = useState<RecentSale[]>([]);
   const [sellers, setSellers] = useState<TopSeller[]>([]);
-  const [chartData, setChartData] = useState<{ label: string; valor: number }[]>([]);
+  const [chartData, setChartData] = useState<SalesChartPoint[]>([]);
   const [donutData, setDonutData] = useState<{ name: string; value: number }[]>([]);
   const [embarqueAlerts, setEmbarqueAlerts] = useState<EmbarqueAlert[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());

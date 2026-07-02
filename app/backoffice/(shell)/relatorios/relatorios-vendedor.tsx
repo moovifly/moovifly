@@ -101,9 +101,10 @@ export function RelatoriosVendedor() {
 
       const { data: comissoesData, error: comErr } = await supabase
         .from("comissoes")
-        .select("id, valor_comissao, status, created_at, vendas(numero_venda, destino)")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .select("id, valor_comissao, status, created_at, vendas!inner(numero_venda, destino, data_venda)")
+        .gte("vendas.data_venda", dateFrom)
+        .lte("vendas.data_venda", dateTo)
+        .order("created_at", { ascending: false });
       if (comErr) throw comErr;
       setComissoes((comissoesData ?? []) as unknown as Comissao[]);
 
