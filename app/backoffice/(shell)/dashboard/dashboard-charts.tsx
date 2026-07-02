@@ -101,7 +101,8 @@ function vendasDoPonto(ponto: SalesChartPoint): number[] {
   return ponto.valor > 0 ? [ponto.valor] : [];
 }
 
-function topSegmentIndex(row: ChartRow, maxSegs: number): number {
+function topSegmentIndex(row: ChartRow | undefined, maxSegs: number): number {
+  if (!row) return 0;
   for (let i = maxSegs - 1; i >= 0; i--) {
     if (Number(row[`seg${i}`] ?? 0) > 0) return i;
   }
@@ -122,7 +123,7 @@ function makeStackBarShape(segmentIndex: number, maxSegs: number) {
     const { x = 0, y = 0, width = 0, height = 0, fill, payload } = props;
     if (height <= 0 || width <= 0) return null;
 
-    const roundTop = segmentIndex === topSegmentIndex(payload ?? {}, maxSegs);
+    const roundTop = segmentIndex === topSegmentIndex(payload, maxSegs);
     const r = Math.min(BAR_TOP_RADIUS, width / 2, height / 2);
 
     if (!roundTop || r <= 0) {
