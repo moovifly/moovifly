@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BarChart3 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { ChartEmptyState, SimpleBarChart } from "@/components/backoffice/charts/chart-kit";
+import { DonutChart } from "@/components/backoffice/charts/donut-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,16 +25,11 @@ type Venda = {
   destino: string | null;
   valor_total: number | string;
   taxa_rav: number | string;
+  taxa_du: number | string;
   status: string;
   data_venda: string;
   clientes?: { nome: string } | { nome: string }[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
-};
-
-type OrcamentoRavDu = {
-  rav_du: number | string | null;
-  status: string;
-  data_orcamento: string;
 };
 
 export function RelatoriosClient() {
@@ -42,7 +40,6 @@ export function RelatoriosClient() {
   const isAdmin = effectiveProfile?.tipo === "administrador";
 
   const [items, setItems] = useState<Venda[]>([]);
-  const [orcRavDu, setOrcRavDu] = useState<OrcamentoRavDu[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePreset, setActivePreset] = useState<string>("mes");
   const [dateFrom, setDateFrom] = useState(() => {
@@ -131,27 +128,16 @@ export function RelatoriosClient() {
     try {
       let qVendas = supabase
         .from("vendas")
-        .select("id, numero_venda, destino, valor_total, taxa_rav, status, data_venda, clientes(nome), usuarios(nome)")
+        .select("id, numero_venda, destino, valor_total, taxa_rav, taxa_du, status, data_venda, clientes(nome), usuarios(nome)")
         .gte("data_venda", dateFrom)
         .lte("data_venda", dateTo)
         .order("data_venda", { ascending: false });
       if (statusFilter) qVendas = qVendas.eq("status", statusFilter);
 
-      const [{ data: vendas, error: vendasError }, { data: orcs, error: orcsError }] = await Promise.all([
-        qVendas,
-        isAdmin
-          ? supabase
-              .from("orcamentos")
-              .select("rav_du, status, data_orcamento")
-              .gte("data_orcamento", dateFrom)
-              .lte("data_orcamento", dateTo)
-          : Promise.resolve({ data: [] as unknown as OrcamentoRavDu[], error: null }),
-      ]);
+      const { data: vendas, error: vendasError } = await qVendas;
 
       if (vendasError) throw vendasError;
-      if (orcsError) throw orcsError;
       setItems((vendas ?? []) as unknown as Venda[]);
-      setOrcRavDu((orcs ?? []) as unknown as OrcamentoRavDu[]);
     } catch (err) {
       toast.error("Erro ao carregar relatório", { description: formatSupabaseError(err) });
     } finally {
@@ -174,10 +160,68 @@ export function RelatoriosClient() {
 
   const totalRavDu = useMemo(() => {
     if (!isAdmin) return 0;
-    return orcRavDu
-      .filter((o) => ["aprovado", "convertido"].includes(o.status))
-      .reduce((sum, o) => sum + Number(o.rav_du ?? 0), 0);
-  }, [orcRavDu, isAdmin]);
+    return items.reduce(
+      (sum, v) => sum + Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0),
+      0,
+    );
+  }, [items, isAdmin]);
+
+  const vendasConfirmadas = useMemo(
+    () => items.filter((v) => ["confirmada", "concluida"].includes(v.status)),
+    [items],
+  );
+
+  // Série de faturamento por dia (ou por mês, em períodos longos) a partir das vendas já carregadas.
+  const faturamentoSerie = useMemo(() => {
+    const from = new Date(`${dateFrom}T12:00:00`);
+    const to = new Date(`${dateTo}T12:00:00`);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) return [];
+
+    const diffDays = Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
+    const porMes = diffDays > 45;
+    const buckets = new Map<string, number>();
+
+    if (porMes) {
+      const cursor = new Date(from.getFullYear(), from.getMonth(), 1);
+      while (cursor <= to && buckets.size < 37) {
+        buckets.set(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`, 0);
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    } else {
+      for (let i = 0; i < diffDays; i++) {
+        const d = new Date(from);
+        d.setDate(d.getDate() + i);
+        buckets.set(d.toISOString().slice(0, 10), 0);
+      }
+    }
+
+    for (const v of vendasConfirmadas) {
+      const key = porMes ? v.data_venda.slice(0, 7) : v.data_venda.slice(0, 10);
+      if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number(v.valor_total ?? 0));
+    }
+
+    return [...buckets.entries()].map(([key, value]) => ({
+      label: porMes
+        ? new Date(`${key}-01T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
+        : new Date(`${key}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      value,
+    }));
+  }, [vendasConfirmadas, dateFrom, dateTo]);
+
+  const temFaturamentoSerie = useMemo(() => faturamentoSerie.some((p) => p.value > 0), [faturamentoSerie]);
+
+  // Participação de cada vendedor no faturamento do período (dados já carregados).
+  const porVendedor = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const v of vendasConfirmadas) {
+      const ven = Array.isArray(v.usuarios) ? v.usuarios[0] : v.usuarios;
+      const nome = ven?.nome ?? "Sem vendedor";
+      map.set(nome, (map.get(nome) ?? 0) + Number(v.valor_total ?? 0));
+    }
+    return [...map.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [vendasConfirmadas]);
 
   if (isVendedor) {
     return (
@@ -281,6 +325,45 @@ export function RelatoriosClient() {
             <CardContent className="p-4">
               <p className="text-xs text-[var(--text-secondary)] uppercase">Ticket médio</p>
               <p className="text-2xl font-semibold text-foreground">{formatCurrency(items.length ? totalFaturamento / items.length : 0)}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Faturamento no período</CardTitle>
+              <span className="text-xs text-[var(--text-secondary)]">vendas confirmadas e concluídas</span>
+            </CardHeader>
+            <CardContent className="h-72">
+              {loading ? (
+                <Skeleton className="h-full w-full" />
+              ) : !temFaturamentoSerie ? (
+                <ChartEmptyState
+                  icon={BarChart3}
+                  title="Sem faturamento no período"
+                  description="Ajuste os filtros de data e status para visualizar as vendas."
+                />
+              ) : (
+                <SimpleBarChart data={faturamentoSerie} name="Faturamento" />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Faturamento por vendedor</CardTitle>
+            </CardHeader>
+            <CardContent className="h-72">
+              {loading ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                <DonutChart
+                  data={porVendedor}
+                  emptyTitle="Sem vendas no período"
+                  emptyDescription="A participação por vendedor aparecerá aqui quando houver vendas confirmadas."
+                />
+              )}
             </CardContent>
           </Card>
         </div>

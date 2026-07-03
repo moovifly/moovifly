@@ -1,10 +1,11 @@
 "use client";
 
-import { ExternalLink, Loader2, RefreshCcw } from "lucide-react";
+import { CreditCard, ExternalLink, Loader2, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/backoffice/empty-state";
 import { Topbar } from "@/components/backoffice/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,7 +104,7 @@ export function CheckoutClient() {
   return (
     <>
       <Topbar title="Checkout / Pagamentos" subtitle="Gerencie links de pagamento AbacatePay" />
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader><CardTitle>Gerar novo link de pagamento</CardTitle></CardHeader>
           <CardContent>
@@ -127,7 +128,7 @@ export function CheckoutClient() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle>Histórico de pagamentos</CardTitle>
             <Button variant="ghost" size="icon" onClick={loadPagamentos}><RefreshCcw className="h-4 w-4" /></Button>
           </CardHeader>
@@ -135,14 +136,18 @@ export function CheckoutClient() {
             {loadingPag ? (
               <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : pagamentos.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhum pagamento registrado.</p>
+              <EmptyState
+                icon={CreditCard}
+                title="Nenhum pagamento registrado"
+                description="Gere um link de pagamento para começar."
+              />
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
                     <TableHead>Venda</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Link</TableHead>
                   </TableRow>
@@ -154,11 +159,11 @@ export function CheckoutClient() {
                       <TableRow key={p.id}>
                         <TableCell>{formatDateTime(p.created_at)}</TableCell>
                         <TableCell>{v?.numero_venda ?? "—"}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(Number(p.valor))}</TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(p.valor))}</TableCell>
                         <TableCell>{statusBadge(p.status)}</TableCell>
                         <TableCell>
                           {p.checkout_url ? (
-                            <a href={p.checkout_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-[var(--primary)] hover:underline">
+                            <a href={p.checkout_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-[var(--accent-600)] hover:underline">
                               Abrir <ExternalLink className="h-3 w-3" />
                             </a>
                           ) : "—"}

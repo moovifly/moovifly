@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Autocomplete } from "@/components/autocomplete";
+import { EmptyState } from "@/components/backoffice/empty-state";
 import { showConfirm } from "@/components/confirm-modal";
 import { BolsaMochilaIcon, MalaGrandeIcon, MalaMaoIcon } from "@/components/icons/bagagem";
 import { WhatsAppIcon } from "@/components/icons/whatsapp";
@@ -36,18 +37,14 @@ import { normalizeDateOnly, toLocalDateOnlyString } from "@/lib/date-only";
 import { loadAeroportos, loadCompanhias, searchAeroportos, searchCompanhias, type Aeroporto, type Companhia } from "@/lib/datasets";
 import { downloadOrcamentoPdf } from "@/lib/orcamento-pdf";
 import { getFormaPagamento } from "@/lib/financiamento";
-
-type Voo = {
-  tipo: "ida" | "volta";
-  origem: string;
-  destino: string;
-  data_partida: string;
-  horario_saida: string;
-  data_chegada: string;
-  horario_chegada: string;
-  companhia: string;
-  numero_voo: string;
-};
+import {
+  emptyVoo,
+  formatVoosParaObservacao,
+  migrateVoo,
+  voosToVendaCampos,
+  type Voo,
+} from "@/lib/voos";
+import { VoosFormSection } from "@/components/backoffice/voos-form-section";
 
 type Orcamento = {
   id: string;
@@ -141,41 +138,6 @@ function firstName(fullName: string | null | undefined) {
   return n.split(/\s+/)[0] ?? n;
 }
 
-function voosToVendaCampos(voovs: Voo[] | undefined) {
-  const idas = voovs?.filter((v) => v.tipo === "ida") ?? [];
-  const voltas = voovs?.filter((v) => v.tipo === "volta") ?? [];
-  const firstIda = idas[0];
-  const lastIda = idas.at(-1);
-  const lastVolta = voltas.at(-1);
-  return {
-    origem: firstIda?.origem?.trim() || null,
-    destino: lastIda?.destino?.trim() || null,
-    data_ida: normalizeDateOnly(firstIda?.data_partida) || null,
-    data_volta: normalizeDateOnly(lastVolta?.data_partida) || normalizeDateOnly(voltas[0]?.data_partida) || null,
-    companhia: firstIda?.companhia?.trim() || null,
-  };
-}
-
-function formatVoosParaObservacao(voovs: Voo[] | undefined): string {
-  if (!voovs?.length) return "";
-  let nIda = 0;
-  let nVolta = 0;
-  return voovs
-    .map((v) => {
-      const trecho = v.tipo === "ida" ? "Ida" : "Volta";
-      const idx = v.tipo === "ida" ? ++nIda : ++nVolta;
-      const parts = [
-        `${trecho} #${idx}: ${v.origem?.trim() || "—"} → ${v.destino?.trim() || "—"}`,
-        v.data_partida ? `Partida ${v.data_partida}` : null,
-        v.data_chegada && v.data_chegada !== v.data_partida ? `Chegada ${v.data_chegada}` : null,
-        [v.horario_saida, v.horario_chegada].filter(Boolean).length ? `Saída/chegada ${v.horario_saida || "—"} / ${v.horario_chegada || "—"}` : null,
-        [v.companhia, v.numero_voo].filter(Boolean).join(" ").trim() || null,
-      ].filter(Boolean);
-      return parts.join(" | ");
-    })
-    .join("\n");
-}
-
 const VENDA_FORMA_PAGAMENTO_MAX = 100;
 const VENDA_DESTINO_MAX = 255;
 const VENDA_DESCRICAO_MAX = 500;
@@ -186,22 +148,6 @@ function clipVarchar(value: string, max: number): string {
 }
 
 /** Normaliza linha do Postgres (tem_bagagem / formas_pagamento) para o modelo do formulário. */
-function migrateVoo(v: Record<string, unknown>): Voo {
-  // backward compat: registros antigos têm 'data', novos têm 'data_partida' + 'data_chegada'
-  const legacyData = (v.data as string | undefined) ?? "";
-  return {
-    tipo: ((v.tipo as string) === "volta" ? "volta" : "ida") as "ida" | "volta",
-    origem: (v.origem as string) ?? "",
-    destino: (v.destino as string) ?? "",
-    data_partida: (v.data_partida as string | undefined) ?? legacyData,
-    horario_saida: (v.horario_saida as string) ?? "",
-    data_chegada: (v.data_chegada as string | undefined) ?? legacyData,
-    horario_chegada: (v.horario_chegada as string) ?? "",
-    companhia: (v.companhia as string) ?? "",
-    numero_voo: (v.numero_voo as string) ?? "",
-  };
-}
-
 function rowToOrcamento(raw: Record<string, unknown>): Orcamento {
   const bagagensRaw = raw.bagagens;
   const bagagens =
@@ -233,7 +179,7 @@ const emptyForm = (): FormState => ({
   bebes: 0,
   com_bagagem: true,
   bagagens: { bolsa: 1, mao: 1, grande: 1 },
-  voos: [{ tipo: "ida", origem: "", destino: "", data_partida: "", horario_saida: "", data_chegada: "", horario_chegada: "", companhia: "", numero_voo: "" }],
+  voos: [emptyVoo("ida")],
   valor_total: 0,
   rav_du: 0,
   forma_pagamento: PAGAMENTO_PADRAO,
@@ -688,6 +634,7 @@ export function OrcamentosClient() {
         data_venda: dataVenda,
         passageiros,
         companhia,
+        voos: o.voos ?? [],
         valor_total: Number(o.valor_total),
         taxa_rav: 0,
         taxa_du: 0,
@@ -747,20 +694,10 @@ export function OrcamentosClient() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  function addVoo(tipo: "ida" | "volta") {
-    setForm((f) => ({ ...f, voos: [...f.voos, { tipo, origem: "", destino: "", data_partida: "", horario_saida: "", data_chegada: "", horario_chegada: "", companhia: "", numero_voo: "" }] }));
-  }
-
-  function removeVoo(i: number) { setForm((f) => ({ ...f, voos: f.voos.filter((_, idx) => idx !== i) })); }
-
-  function updateVoo(i: number, patch: Partial<Voo>) {
-    setForm((f) => ({ ...f, voos: f.voos.map((v, idx) => idx === i ? { ...v, ...patch } : v) }));
-  }
-
   function handleCompanhiaSelect(i: number, companhia: Companhia) {
     setForm((f) => ({
       ...f,
-      voos: f.voos.map((v, idx) => idx === i ? { ...v, companhia: companhia.nome } : v),
+      voos: f.voos.map((v, idx) => (idx === i ? { ...v, companhia: companhia.nome } : v)),
       forma_pagamento: getFormaPagamento(companhia.codigo) ?? "",
     }));
   }
@@ -772,7 +709,7 @@ export function OrcamentosClient() {
         subtitle={`${filtered.length} orçamento${filtered.length !== 1 ? "s" : ""}`}
         actions={<Button onClick={openNew}><FilePlus className="h-4 w-4" />Novo Orçamento</Button>}
       />
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader className="flex-col gap-3 space-y-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -799,10 +736,10 @@ export function OrcamentosClient() {
                     setDateTo(to);
                     setActivePreset(p.key);
                   }}
-                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                     activePreset === p.key
-                      ? "border-(--color-primary) bg-(--color-primary) text-white"
-                      : "border-border bg-background text-foreground hover:bg-muted"
+                      ? "border-[var(--accent-600)] bg-[var(--accent-600)] text-white shadow-[var(--shadow-xs)]"
+                      : "border-[var(--border-subtle)] bg-card text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
                   }`}
                 >
                   {p.label}
@@ -832,7 +769,11 @@ export function OrcamentosClient() {
             {loading ? (
               <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : filtered.length === 0 ? (
-              <p className="py-12 text-center text-sm text-[var(--text-secondary)]">Nenhum orçamento encontrado.</p>
+              <EmptyState
+                icon={FileText}
+                title="Nenhum orçamento encontrado"
+                description="Ajuste os filtros ou o período selecionado."
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -841,7 +782,7 @@ export function OrcamentosClient() {
                     <TableHead>Data</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Pax</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Vendedor</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -856,7 +797,7 @@ export function OrcamentosClient() {
                         <TableCell>{formatDate(o.data_orcamento)}</TableCell>
                         <TableCell className="font-medium">{o.cliente?.nome ?? "—"}</TableCell>
                         <TableCell className="text-xs text-[var(--text-secondary)]">{o.adultos}A · {o.criancas}C · {o.bebes}B</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(Number(o.valor_total))}</TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(o.valor_total))}</TableCell>
                         <TableCell className="text-[var(--text-secondary)]">{o.vendedor?.nome ?? "—"}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -1090,48 +1031,13 @@ export function OrcamentosClient() {
               </div>
             </fieldset>
 
-            <fieldset className="space-y-4 rounded-md border border-[var(--border-subtle)] p-4">
-              <legend className="px-2 text-sm font-semibold text-foreground">Voos</legend>
-              {["ida", "volta"].map((tipo) => {
-                const voosDoTipo = form.voos.map((v, i) => ({ v, i })).filter((x) => x.v.tipo === tipo);
-                return (
-                  <div key={tipo} className="space-y-3">
-                    <p className="text-sm font-semibold text-foreground">Voos de {tipo.toUpperCase()}</p>
-                    {voosDoTipo.length === 0 && <p className="text-xs text-[var(--text-secondary)]">Nenhum voo adicionado.</p>}
-                    {voosDoTipo.map(({ v, i }) => (
-                      <div key={i} className="space-y-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-[var(--text-secondary)]">Voo #{i + 1}</span>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => removeVoo(i)} className="text-[var(--danger-text)]">
-                            <X className="h-3 w-3" /> Remover
-                          </Button>
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div><Label>Origem</Label>
-                            <Autocomplete value={v.origem} onValueChange={(t) => updateVoo(i, { origem: t })} onSelect={(opt) => updateVoo(i, { origem: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` })} options={searchAeroportos(v.origem, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))} placeholder="Aeroporto de origem" />
-                          </div>
-                          <div><Label>Destino</Label>
-                            <Autocomplete value={v.destino} onValueChange={(t) => updateVoo(i, { destino: t })} onSelect={(opt) => updateVoo(i, { destino: `${(opt.value as Aeroporto).codigo} - ${(opt.value as Aeroporto).cidade}` })} options={searchAeroportos(v.destino, aeroportos).map((a) => ({ value: a, label: `${a.codigo} - ${a.cidade}`, description: `${a.nome}, ${a.pais}` }))} placeholder="Aeroporto de destino" />
-                          </div>
-                          <div><Label>Data de Partida</Label><Input type="date" value={v.data_partida} onChange={(e) => updateVoo(i, { data_partida: e.target.value })} /></div>
-                          <div><Label>Horário de Partida</Label><Input type="time" value={v.horario_saida} onChange={(e) => updateVoo(i, { horario_saida: e.target.value })} /></div>
-                          <div><Label>Data de Chegada</Label><Input type="date" value={v.data_chegada} onChange={(e) => updateVoo(i, { data_chegada: e.target.value })} /></div>
-                          <div><Label>Horário de Chegada</Label><Input type="time" value={v.horario_chegada} onChange={(e) => updateVoo(i, { horario_chegada: e.target.value })} /></div>
-                          <div><Label>Companhia</Label>
-                            <Autocomplete value={v.companhia} onValueChange={(t) => { updateVoo(i, { companhia: t }); if (!t.trim()) setForm((f) => ({ ...f, forma_pagamento: "" })); }} onSelect={(opt) => handleCompanhiaSelect(i, opt.value as Companhia)} options={searchCompanhias(v.companhia, companhias).map((c) => ({ value: c, label: c.nome, description: `${c.codigo} · ${c.pais}` }))} placeholder="LATAM, GOL, Azul..." />
-                          </div>
-                          <div><Label>Número do voo</Label><Input value={v.numero_voo} onChange={(e) => updateVoo(i, { numero_voo: e.target.value })} placeholder="LA1234" /></div>
-                        </div>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => addVoo(tipo as "ida" | "volta")}>
-                      <Plus className="h-4 w-4" /> Adicionar voo de {tipo.toUpperCase()}
-                    </Button>
-                    {tipo === "ida" && <div className="h-px w-full bg-[var(--border-subtle)]" />}
-                  </div>
-                );
-              })}
-            </fieldset>
+            <VoosFormSection
+              voos={form.voos}
+              onChange={(voos) => setForm((f) => ({ ...f, voos }))}
+              aeroportos={aeroportos}
+              companhias={companhias}
+              onCompanhiaSelect={handleCompanhiaSelect}
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">

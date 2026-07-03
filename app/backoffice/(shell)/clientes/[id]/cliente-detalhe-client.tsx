@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeft, FileText, Pencil, ShoppingCart } from "lucide-react";
+import { ArrowLeft, FileText, Pencil, ShoppingCart, Wallet } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
+import { EmptyState } from "@/components/backoffice/empty-state";
 import { Topbar } from "@/components/backoffice/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -208,7 +209,7 @@ export function ClienteDetalheClient() {
     return (
       <>
         <Topbar title="Carregando..." />
-        <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
           <div className="grid gap-4 sm:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-28" />
@@ -225,7 +226,7 @@ export function ClienteDetalheClient() {
     return (
       <>
         <Topbar title="Cliente não encontrado" />
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
           <p className="text-sm text-[var(--text-secondary)]">O cliente solicitado não foi encontrado.</p>
           <BackofficeLink href="/backoffice/clientes/">
             <Button variant="ghost">
@@ -259,35 +260,36 @@ export function ClienteDetalheClient() {
         }
       />
 
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         {/* Resumo */}
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-[var(--text-secondary)]">Orçamentos</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-[var(--text-secondary)]">Orçamentos</CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end gap-2">
-              <span className="text-3xl font-bold">{orcamentos.length}</span>
-              <FileText className="mb-1 h-5 w-5 text-[var(--text-secondary)]" />
+            <CardContent className="flex items-end justify-between">
+              <span className="text-2xl font-bold tracking-tight">{orcamentos.length}</span>
+              <FileText className="mb-0.5 h-5 w-5 text-[var(--text-muted)]" />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-[var(--text-secondary)]">Vendas</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-[var(--text-secondary)]">Vendas</CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end gap-2">
-              <span className="text-3xl font-bold">{vendasValidas.length}</span>
-              <ShoppingCart className="mb-1 h-5 w-5 text-[var(--text-secondary)]" />
+            <CardContent className="flex items-end justify-between">
+              <span className="text-2xl font-bold tracking-tight">{vendasValidas.length}</span>
+              <ShoppingCart className="mb-0.5 h-5 w-5 text-[var(--text-muted)]" />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-[var(--text-secondary)]">Total gasto</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-[var(--text-secondary)]">Total gasto</CardTitle>
             </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{formatCurrency(totalGasto)}</span>
+            <CardContent className="flex items-end justify-between">
+              <span className="text-2xl font-bold tracking-tight">{formatCurrency(totalGasto)}</span>
+              <Wallet className="mb-0.5 h-5 w-5 text-[var(--text-muted)]" />
             </CardContent>
           </Card>
         </div>
@@ -348,14 +350,14 @@ export function ClienteDetalheClient() {
           </CardHeader>
           <CardContent>
             {orcamentos.length === 0 ? (
-              <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Nenhum orçamento registrado.</p>
+              <EmptyState icon={FileText} title="Nenhum orçamento registrado" className="py-8" />
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -366,7 +368,7 @@ export function ClienteDetalheClient() {
                       <TableRow key={o.id}>
                         <TableCell className="font-mono text-xs">{o.numero_orcamento ?? "—"}</TableCell>
                         <TableCell>{formatDate(o.data_orcamento)}</TableCell>
-                        <TableCell>{formatCurrency(o.valor_total)}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">{formatCurrency(o.valor_total)}</TableCell>
                         <TableCell>
                           <Badge variant={st.variant}>{st.label}</Badge>
                         </TableCell>
@@ -386,7 +388,7 @@ export function ClienteDetalheClient() {
           </CardHeader>
           <CardContent>
             {vendas.length === 0 ? (
-              <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Nenhuma venda registrada.</p>
+              <EmptyState icon={ShoppingCart} title="Nenhuma venda registrada" className="py-8" />
             ) : (
               <Table>
                 <TableHeader>
@@ -394,7 +396,7 @@ export function ClienteDetalheClient() {
                     <TableHead>Número</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Rota</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -408,7 +410,7 @@ export function ClienteDetalheClient() {
                         <TableCell className="text-[var(--text-secondary)]">
                           {v.origem && v.destino ? `${v.origem} → ${v.destino}` : "—"}
                         </TableCell>
-                        <TableCell>{formatCurrency(v.valor_total)}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">{formatCurrency(v.valor_total)}</TableCell>
                         <TableCell>
                           <Badge variant={st.variant}>{st.label}</Badge>
                         </TableCell>

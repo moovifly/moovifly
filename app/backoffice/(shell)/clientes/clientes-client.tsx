@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
+import { EmptyState } from "@/components/backoffice/empty-state";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -205,7 +206,7 @@ export function ClientesClient() {
           </Button>
         }
       />
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader className="flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Lista de Clientes</CardTitle>
@@ -233,7 +234,11 @@ export function ClientesClient() {
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
               </div>
             ) : filtered.length === 0 ? (
-              <p className="py-12 text-center text-sm text-[var(--text-secondary)]">Nenhum cliente encontrado.</p>
+              <EmptyState
+                icon={UserPlus}
+                title="Nenhum cliente encontrado"
+                description="Ajuste a busca ou cadastre um novo cliente."
+              />
             ) : (
               <Table>
                 <TableHeader>

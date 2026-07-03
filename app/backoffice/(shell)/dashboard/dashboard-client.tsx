@@ -22,7 +22,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/format";
 import type { UserProfile } from "@/lib/auth";
-import { SalesBarChart, RevenueDonut, type SalesChartPoint } from "./dashboard-charts";
+import { SalesTrendChart, RevenueDonut, type SalesChartPoint } from "./dashboard-charts";
+import { Sparkline } from "@/components/backoffice/charts/chart-kit";
 import {
   EMBARQUE_ALERT_OFFSETS,
   calendarDaysFromToday,
@@ -622,7 +623,13 @@ export function DashboardClient() {
     setDismissed(next);
   }, [embarqueAlerts]);
 
-  const totalDonut = useMemo(() => donutData.reduce((sum, d) => sum + d.value, 0), [donutData]);
+  // Séries derivadas dos dados já carregados (sem novas queries) para os sparklines dos KPIs.
+  const vendasSpark = useMemo(
+    () => chartData.map((d) => d.qtd ?? (d.vendas?.length ?? 0)),
+    [chartData],
+  );
+  const faturamentoSpark = useMemo(() => chartData.map((d) => d.valor), [chartData]);
+
   const visibleAlerts = useMemo(
     () => embarqueAlerts.filter((a) => !dismissed.has(dismissKey(a))).slice(0, 3),
     [embarqueAlerts, dismissed],
@@ -684,14 +691,14 @@ export function DashboardClient() {
           {isManager ? (
             <>
               <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" />
-              <StatCard label="Vendas no período" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
-              <StatCard label="Faturamento no período" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+              <StatCard label="Vendas no período" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} spark={loading ? undefined : vendasSpark} />
+              <StatCard label="Faturamento no período" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} spark={loading ? undefined : faturamentoSpark} />
               <StatCard label="Minha Comissão" value={loading ? null : formatCurrency(stats.totalComissao)} icon={Award} tone="purple" trend={loading ? undefined : (stats.trendComissao ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
             </>
           ) : (
             <>
-              <StatCard label="Total Vendas" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
-              <StatCard label="Total Faturado" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
+              <StatCard label="Total Vendas" value={loading ? null : String(stats.totalVendas)} icon={ShoppingCart} tone="green" trend={loading ? undefined : (stats.trendVendas ?? undefined)} trendLabel={getDateRange(period).trendLabel} spark={loading ? undefined : vendasSpark} />
+              <StatCard label="Total Faturado" value={loading ? null : formatCurrency(stats.faturamentoTotal)} icon={Wallet} tone="beige" trend={loading ? undefined : (stats.trendFaturamento ?? undefined)} trendLabel={getDateRange(period).trendLabel} spark={loading ? undefined : faturamentoSpark} />
               <StatCard label="Total Comissão" value={loading ? null : formatCurrency(stats.totalComissao)} icon={Award} tone="purple" trend={loading ? undefined : (stats.trendComissao ?? undefined)} trendLabel={getDateRange(period).trendLabel} />
             </>
           )}
@@ -708,7 +715,7 @@ export function DashboardClient() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
                 </div>
               ) : (
-                <SalesBarChart data={chartData} />
+                <SalesTrendChart data={chartData} />
               )}
             </CardContent>
           </Card>
@@ -726,7 +733,7 @@ export function DashboardClient() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
                 </div>
               ) : (
-                <RevenueDonut data={donutData} centerLabel={formatCurrency(totalDonut)} />
+                <RevenueDonut data={donutData} />
               )}
             </CardContent>
           </Card>
@@ -824,12 +831,14 @@ export function DashboardClient() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, tone = "green", trend, trendLabel = "vs período anterior" }: {
+function StatCard({ label, value, icon: Icon, tone = "green", trend, trendLabel = "vs período anterior", spark }: {
   label: string; value: string | null;
   icon: React.ComponentType<{ className?: string }>;
   tone?: "purple" | "green" | "beige";
   trend?: number;
   trendLabel?: string;
+  /** Série já carregada na página (ex.: valores por dia) para o mini sparkline. */
+  spark?: number[];
 }) {
   const toneClasses = {
     purple: "bg-[var(--purple-glow)] text-[var(--purple-700)]",
@@ -847,6 +856,9 @@ function StatCard({ label, value, icon: Icon, tone = "green", trend, trendLabel 
           <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">{label}</span>
         </div>
         {value === null ? <Skeleton className="h-8 w-24" /> : <p className="text-2xl font-semibold text-foreground">{value}</p>}
+        {spark && spark.length > 1 && spark.some((v) => v > 0) && (
+          <Sparkline data={spark} className="h-8 w-full" />
+        )}
         {trend !== undefined && (
           <div className="flex items-center gap-2 text-xs">
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${trend >= 0 ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`}>

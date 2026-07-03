@@ -20,7 +20,7 @@ export function Topbar({ title, subtitle, actions }: TopbarProps) {
   return (
     <>
       {viewAsVendedor && isRealAdmin && (
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--accent-600)]/30 bg-[var(--accent-glow)] px-4 py-1.5 md:px-6">
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--accent-600)]/30 bg-[var(--accent-glow)] px-4 py-1.5 md:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <Eye className="h-3.5 w-3.5 text-[var(--accent-600)]" />
             <span className="text-xs font-medium text-[var(--accent-600)]">
@@ -37,24 +37,28 @@ export function Topbar({ title, subtitle, actions }: TopbarProps) {
           </button>
         </div>
       )}
-      <header className="sticky top-0 z-10 flex h-[var(--topbar-height)] items-center justify-between gap-4 border-b border-[var(--border-subtle)] bg-card px-4 md:px-6">
+      <header className="sticky top-0 z-10 flex h-[var(--topbar-height)] shrink-0 items-center justify-between gap-4 border-b border-[var(--border-subtle)] bg-card px-4 md:px-6 lg:px-8">
         <div className="min-w-0">
           {title && (
-            <h1 className="truncate text-base font-semibold text-foreground">{title}</h1>
+            <h1 className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground">
+              {title}
+            </h1>
           )}
           {subtitle && (
-            <p className="text-xs text-[var(--text-secondary)]">{subtitle}</p>
+            <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{subtitle}</p>
           )}
           {!title && profile && (
             <div>
-              <p className="text-sm font-semibold text-foreground">{profile.nome}</p>
-              <p className="text-xs text-[var(--text-secondary)]">
+              <p className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground">
+                {profile.nome}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
                 {ROLE_LABELS[profile.tipo] ?? profile.tipo}
               </p>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {actions}
           {isRealAdmin && !viewAsVendedor && (
             <button

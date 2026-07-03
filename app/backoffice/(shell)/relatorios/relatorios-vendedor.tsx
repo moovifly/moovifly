@@ -14,7 +14,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { SalesBarChart } from "../dashboard/dashboard-charts";
+import { SalesTrendChart } from "../dashboard/dashboard-charts";
 
 type Venda = {
   id: string;
@@ -200,11 +200,11 @@ export function RelatoriosVendedor() {
         <CardHeader className="pb-2">
           <CardTitle>Meu Desempenho (últimos 14 dias)</CardTitle>
         </CardHeader>
-        <CardContent className="h-64">
+        <CardContent className="h-72">
           {loading ? (
             <Skeleton className="h-full w-full" />
           ) : (
-            <SalesBarChart data={chartData} />
+            <SalesTrendChart data={chartData} />
           )}
         </CardContent>
       </Card>

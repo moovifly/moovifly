@@ -59,7 +59,7 @@ export function BackofficeShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
       </div>
     </div>

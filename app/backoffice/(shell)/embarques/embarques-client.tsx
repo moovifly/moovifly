@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { PlaneTakeoff } from "lucide-react";
 
+import { FlightStatusDialog } from "@/components/backoffice/flight-status-dialog";
+import { EmptyState } from "@/components/backoffice/empty-state";
 import { Topbar } from "@/components/backoffice/topbar";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -13,13 +15,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/format";
 import { diffDaysFromToday, embarqueAlertTitle, parseDateOnlyToLocal, startOfLocalDay } from "@/lib/embarques";
+import { getIdaVoos, parseVoosFromObservacoes, parseVoosJson, type Voo } from "@/lib/voos";
 
 type EmbarqueItem = {
   id: string;
   numero_venda: string;
+  origem: string | null;
   destino: string | null;
+  localizador: string | null;
   status: string;
   data_ida: string | null;
+  observacoes?: string | null;
+  voos?: Voo[] | unknown;
   clientes?: { nome: string } | { nome: string }[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
@@ -36,12 +43,25 @@ function relVendedor(rel: EmbarqueItem["usuarios"]): string | undefined {
   return rel.nome;
 }
 
+function resolveEmbarqueVoos(item: EmbarqueItem): Voo[] {
+  const parsed = parseVoosJson(item.voos);
+  if (parsed.length) return parsed;
+  return parseVoosFromObservacoes(item.observacoes);
+}
+
+function primeiroNumeroVoo(item: EmbarqueItem): string {
+  const idas = getIdaVoos(resolveEmbarqueVoos(item));
+  return idas[0]?.numero_voo?.trim() || "—";
+}
+
 export function EmbarquesClient() {
   const { profile } = useAuth();
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [tab, setTab] = useState<"proximos" | "realizados">("proximos");
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<EmbarqueItem[]>([]);
+  const [selectedVenda, setSelectedVenda] = useState<EmbarqueItem | null>(null);
+  const [statusOpen, setStatusOpen] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -52,7 +72,7 @@ export function EmbarquesClient() {
       try {
         let q = supabase
           .from("vendas")
-          .select("id, numero_venda, destino, status, data_ida, clientes(nome), usuarios(nome)")
+          .select("id, numero_venda, origem, destino, localizador, observacoes, status, data_ida, voos, clientes(nome), usuarios(nome)")
           .in("status", ["confirmada", "concluida"])
           .not("data_ida", "is", null)
           .order("data_ida", { ascending: true });
@@ -93,6 +113,11 @@ export function EmbarquesClient() {
 
   const list = tab === "proximos" ? proximos : realizados;
 
+  function openFlightStatus(item: EmbarqueItem) {
+    setSelectedVenda(item);
+    setStatusOpen(true);
+  }
+
   return (
     <>
       <Topbar
@@ -106,7 +131,7 @@ export function EmbarquesClient() {
         }
       />
 
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader className="flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
@@ -131,16 +156,20 @@ export function EmbarquesClient() {
                 ))}
               </div>
             ) : list.length === 0 ? (
-              <p className="py-12 text-center text-sm text-[var(--text-secondary)]">
-                {tab === "proximos" ? "Nenhum embarque próximo." : "Nenhum embarque realizado."}
-              </p>
+              <EmptyState
+                icon={PlaneTakeoff}
+                title={tab === "proximos" ? "Nenhum embarque próximo" : "Nenhum embarque realizado"}
+                description="Vendas confirmadas com data de ida aparecem aqui. Clique em um embarque para ver o status do voo."
+              />
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>
                     <TableHead>Cliente</TableHead>
+                    <TableHead>Origem</TableHead>
                     <TableHead>Destino</TableHead>
+                    <TableHead>Voo</TableHead>
                     <TableHead>Embarque</TableHead>
                     {profile?.tipo !== "vendedor" && <TableHead>Vendedor</TableHead>}
                     <TableHead className="text-right">Status</TableHead>
@@ -161,10 +190,17 @@ export function EmbarquesClient() {
                             : { text: "Realizado", variant: "default" as const };
 
                     return (
-                      <TableRow key={i.id}>
+                      <TableRow
+                        key={i.id}
+                        className="cursor-pointer hover:bg-[var(--bg-elevated)]"
+                        onClick={() => openFlightStatus(i)}
+                        title="Clique para ver status do voo"
+                      >
                         <TableCell className="font-mono text-xs">{i.numero_venda}</TableCell>
                         <TableCell className="font-medium">{nome}</TableCell>
+                        <TableCell className="text-[var(--text-secondary)]">{i.origem ?? "—"}</TableCell>
                         <TableCell className="text-[var(--text-secondary)]">{i.destino ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs uppercase">{primeiroNumeroVoo(i)}</TableCell>
                         <TableCell>{i.data_ida ? formatDate(i.data_ida) : "—"}</TableCell>
                         {profile?.tipo !== "vendedor" && <TableCell>{vendedor}</TableCell>}
                         <TableCell className="text-right">
@@ -179,7 +215,13 @@ export function EmbarquesClient() {
           </CardContent>
         </Card>
       </div>
+
+      <FlightStatusDialog
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+        vendaId={selectedVenda?.id ?? null}
+        numeroVenda={selectedVenda?.numero_venda}
+      />
     </>
   );
 }
-

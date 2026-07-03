@@ -1,16 +1,19 @@
 "use client";
 
-import { Pencil, Plus, Star } from "lucide-react";
+import { Check, Landmark, Loader2, Pencil, Plus, Star } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { showConfirm } from "@/components/confirm-modal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "@/components/ui/card";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -54,6 +57,8 @@ type FormState = {
   ativa: boolean;
 };
 
+type FormErrors = { nome?: string; data?: string };
+
 const CORES = ["#6B7280", "#2563EB", "#16A34A", "#DC2626", "#9333EA", "#EA580C", "#0891B2"];
 
 const TIPO_LABEL: Record<string, string> = {
@@ -78,6 +83,13 @@ const emptyForm = (): FormState => ({
   ativa: true,
 });
 
+function dadosBancarios(c: ContaBancaria): string | null {
+  const parts: string[] = [];
+  if (c.agencia) parts.push(`Ag. ${c.agencia}`);
+  if (c.numero_conta) parts.push(`Conta ${c.numero_conta}`);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 export function ConfiguracoesContasBancarias() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const [items, setItems] = useState<ContaBancaria[]>([]);
@@ -85,6 +97,7 @@ export function ConfiguracoesContasBancarias() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   async function load() {
     setLoading(true);
@@ -102,8 +115,12 @@ export function ConfiguracoesContasBancarias() {
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const ativas = items.filter((c) => c.ativa);
+  const saldoTotal = ativas.reduce((sum, c) => sum + Number(c.saldo_inicial || 0), 0);
+
   function openNew() {
     setForm(emptyForm());
+    setErrors({});
     setOpen(true);
   }
 
@@ -122,21 +139,28 @@ export function ConfiguracoesContasBancarias() {
       principal: c.principal,
       ativa: c.ativa,
     });
+    setErrors({});
     setOpen(true);
   }
 
   async function clearOtherPrincipal(exceptId?: string) {
     let q = supabase.from("contas_bancarias").update({ principal: false }).eq("principal", true);
     if (exceptId) q = q.neq("id", exceptId);
-    await q;
+    const { error } = await q;
+    if (error) throw error;
+  }
+
+  function validate(): boolean {
+    const next: FormErrors = {};
+    if (form.nome.trim().length < 2) next.nome = "Informe um nome para identificar a conta.";
+    if (!form.data_saldo_inicial) next.data = "Informe a data de referência do saldo inicial.";
+    setErrors(next);
+    return Object.keys(next).length === 0;
   }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    if (!form.nome.trim()) {
-      toast.error("Informe o nome da conta.");
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
     try {
       const payload = {
@@ -177,6 +201,12 @@ export function ConfiguracoesContasBancarias() {
 
   async function togglePrincipal(c: ContaBancaria) {
     if (c.principal) return;
+    const ok = await showConfirm({
+      title: "Definir conta principal",
+      message: `Usar "${c.nome}" como conta padrão do fluxo de caixa? A conta principal atual deixará de ser o padrão.`,
+      confirmText: "Definir principal",
+    });
+    if (!ok) return;
     try {
       await clearOtherPrincipal(c.id);
       const { error } = await supabase.from("contas_bancarias").update({ principal: true }).eq("id", c.id);
@@ -191,8 +221,11 @@ export function ConfiguracoesContasBancarias() {
   async function toggleAtiva(c: ContaBancaria) {
     const ok = await showConfirm({
       title: c.ativa ? "Inativar conta" : "Ativar conta",
-      message: `${c.ativa ? "Inativar" : "Ativar"} a conta "${c.nome}"?`,
+      message: c.ativa
+        ? `Inativar "${c.nome}"? Ela deixa de aparecer nos lançamentos do fluxo de caixa, mas o histórico é preservado.`
+        : `Ativar "${c.nome}"? Ela voltará a ficar disponível nos lançamentos.`,
       confirmText: c.ativa ? "Inativar" : "Ativar",
+      destructive: c.ativa,
     });
     if (!ok) return;
     try {
@@ -201,7 +234,7 @@ export function ConfiguracoesContasBancarias() {
         .update({ ativa: !c.ativa, principal: c.ativa && c.principal ? false : c.principal })
         .eq("id", c.id);
       if (error) throw error;
-      toast.success("Status atualizado.");
+      toast.success(c.ativa ? "Conta inativada." : "Conta ativada.");
       load();
     } catch (err) {
       toast.error("Erro ao atualizar", { description: formatSupabaseError(err) });
@@ -210,34 +243,54 @@ export function ConfiguracoesContasBancarias() {
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4" /> Nova conta
-        </Button>
-      </div>
-
       <Card>
-        <CardHeader>
-          <CardTitle>Contas Bancárias e Caixa</CardTitle>
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1.5">
+            <CardTitle>Contas bancárias e caixa</CardTitle>
+            <CardDescription>
+              {loading
+                ? "Carregando contas..."
+                : items.length === 0
+                  ? "Contas usadas nos lançamentos do fluxo de caixa."
+                  : `${items.length} ${items.length === 1 ? "conta" : "contas"} · saldo inicial das ativas: ${formatCurrency(saldoTotal)}`}
+            </CardDescription>
+          </div>
+          <Button onClick={openNew} className="shrink-0">
+            <Plus className="h-4 w-4" />
+            Nova conta
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={i} className="h-14 w-full" />
               ))}
             </div>
           ) : items.length === 0 ? (
-            <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-              Nenhuma conta cadastrada. Adicione a conta principal da agência para usar no fluxo de caixa.
-            </p>
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bg-overlay)]">
+                <Landmark className="h-6 w-6 text-[var(--text-secondary)]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Nenhuma conta cadastrada</p>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  Adicione a conta principal da agência para usá-la no fluxo de caixa.
+                </p>
+              </div>
+              <Button size="sm" onClick={openNew}>
+                <Plus className="h-4 w-4" />
+                Nova conta
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Conta</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Saldo inicial</TableHead>
+                  <TableHead className="hidden md:table-cell">Dados bancários</TableHead>
+                  <TableHead className="text-right">Saldo inicial</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -247,18 +300,35 @@ export function ConfiguracoesContasBancarias() {
                   <TableRow key={c.id} className={!c.ativa ? "opacity-60" : undefined}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: c.cor }} />
-                        <span className="font-medium">{c.nome}</span>
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full ring-1 ring-inset ring-black/10"
+                          style={{ backgroundColor: c.cor }}
+                          aria-hidden="true"
+                        />
+                        <span className="font-medium text-foreground">{c.nome}</span>
                         {c.principal && (
-                          <span className="rounded-full bg-[var(--accent-glow)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-600)]">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-glow)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-600)]">
+                            <Star className="h-2.5 w-2.5 fill-current" />
                             Principal
                           </span>
                         )}
                       </div>
-                      {c.banco && <p className="text-xs text-[var(--text-secondary)]">{c.banco}</p>}
+                      {c.banco && <p className="mt-0.5 pl-5 text-xs text-[var(--text-secondary)]">{c.banco}</p>}
                     </TableCell>
                     <TableCell>{TIPO_LABEL[c.tipo_conta] ?? c.tipo_conta}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {dadosBancarios(c) ? (
+                        <span className="text-[var(--text-secondary)]">{dadosBancarios(c)}</span>
+                      ) : (
+                        <span className="text-[var(--text-muted)]">—</span>
+                      )}
+                      {c.chave_pix && (
+                        <p className="max-w-[220px] truncate text-xs text-[var(--text-muted)]" title={c.chave_pix}>
+                          PIX: {c.chave_pix}
+                        </p>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
                       {formatCurrency(Number(c.saldo_inicial))}
                       <span className="block text-xs text-[var(--text-secondary)]">
                         ref. {formatDate(c.data_saldo_inicial)}
@@ -268,7 +338,8 @@ export function ConfiguracoesContasBancarias() {
                       <button
                         type="button"
                         onClick={() => toggleAtiva(c)}
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        title={c.ativa ? "Clique para inativar" : "Clique para ativar"}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold transition-opacity hover:opacity-80 ${
                           c.ativa
                             ? "bg-[var(--success-bg)] text-[var(--success-text)]"
                             : "bg-[var(--danger-bg)] text-[var(--danger-text)]"
@@ -279,11 +350,17 @@ export function ConfiguracoesContasBancarias() {
                     </TableCell>
                     <TableCell className="text-right">
                       {!c.principal && c.ativa && (
-                        <Button variant="ghost" size="icon" title="Definir principal" onClick={() => togglePrincipal(c)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Definir como principal"
+                          aria-label={`Definir ${c.nome} como principal`}
+                          onClick={() => togglePrincipal(c)}
+                        >
                           <Star className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(c)}>
+                      <Button variant="ghost" size="icon" title="Editar" aria-label={`Editar ${c.nome}`} onClick={() => openEdit(c)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -295,27 +372,41 @@ export function ConfiguracoesContasBancarias() {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => { if (!saving) setOpen(v); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{form.id ? "Editar conta" : "Nova conta bancária"}</DialogTitle>
+            <DialogDescription>
+              {form.id
+                ? "Atualize os dados da conta usada no fluxo de caixa."
+                : "Cadastre uma conta bancária, caixa físico ou carteira digital da agência."}
+            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSave} className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={handleSave} className="grid gap-4 sm:grid-cols-2" noValidate>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Nome *</Label>
+              <Label htmlFor="conta-nome">Nome *</Label>
               <Input
+                id="conta-nome"
                 value={form.nome}
-                onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, nome: e.target.value })); setErrors((er) => ({ ...er, nome: undefined })); }}
                 placeholder="Ex: Nubank PJ, Caixa Loja"
+                aria-invalid={!!errors.nome}
+                className={errors.nome ? "border-[var(--danger-text)]" : undefined}
+              />
+              {errors.nome && <p className="text-xs text-[var(--danger-text)]">{errors.nome}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="conta-banco">Banco</Label>
+              <Input
+                id="conta-banco"
+                value={form.banco}
+                onChange={(e) => setForm((f) => ({ ...f, banco: e.target.value }))}
+                placeholder="Ex: Nubank, Itaú"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Banco</Label>
-              <Input value={form.banco} onChange={(e) => setForm((f) => ({ ...f, banco: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Tipo</Label>
-              <Select value={form.tipo_conta} onChange={(e) => setForm((f) => ({ ...f, tipo_conta: e.target.value }))}>
+              <Label htmlFor="conta-tipo">Tipo</Label>
+              <Select id="conta-tipo" value={form.tipo_conta} onChange={(e) => setForm((f) => ({ ...f, tipo_conta: e.target.value }))}>
                 {Object.entries(TIPO_LABEL).map(([k, v]) => (
                   <option key={k} value={k}>
                     {v}
@@ -324,76 +415,114 @@ export function ConfiguracoesContasBancarias() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Agência</Label>
-              <Input value={form.agencia} onChange={(e) => setForm((f) => ({ ...f, agencia: e.target.value }))} />
+              <Label htmlFor="conta-agencia">Agência</Label>
+              <Input
+                id="conta-agencia"
+                value={form.agencia}
+                onChange={(e) => setForm((f) => ({ ...f, agencia: e.target.value }))}
+                placeholder="Ex: 0001"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Número</Label>
+              <Label htmlFor="conta-numero">Número da conta</Label>
               <Input
+                id="conta-numero"
                 value={form.numero_conta}
                 onChange={(e) => setForm((f) => ({ ...f, numero_conta: e.target.value }))}
+                placeholder="Ex: 12345-6"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Chave PIX</Label>
-              <Input value={form.chave_pix} onChange={(e) => setForm((f) => ({ ...f, chave_pix: e.target.value }))} />
+              <Label htmlFor="conta-pix">Chave PIX</Label>
+              <Input
+                id="conta-pix"
+                value={form.chave_pix}
+                onChange={(e) => setForm((f) => ({ ...f, chave_pix: e.target.value }))}
+                placeholder="CNPJ, e-mail, telefone ou chave aleatória"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Saldo inicial</Label>
+              <Label htmlFor="conta-saldo">Saldo de referência</Label>
               <CurrencyInput
+                id="conta-saldo"
                 value={form.saldo_inicial}
                 onValueChange={(v) => setForm((f) => ({ ...f, saldo_inicial: v ?? 0 }))}
               />
+              <p className="text-xs text-[var(--text-secondary)]">
+                Saldo real da conta na data abaixo. Lançamentos recebidos/pagos até essa data já devem estar refletidos aqui.
+              </p>
             </div>
             <div className="space-y-1.5">
-              <Label>Data do saldo</Label>
+              <Label htmlFor="conta-data-saldo">Data do saldo *</Label>
               <Input
+                id="conta-data-saldo"
                 type="date"
                 value={form.data_saldo_inicial}
-                onChange={(e) => setForm((f) => ({ ...f, data_saldo_inicial: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, data_saldo_inicial: e.target.value })); setErrors((er) => ({ ...er, data: undefined })); }}
+                aria-invalid={!!errors.data}
+                className={errors.data ? "border-[var(--danger-text)]" : undefined}
               />
+              {errors.data && <p className="text-xs text-[var(--danger-text)]">{errors.data}</p>}
+              <p className="text-xs text-[var(--text-secondary)]">
+                No fluxo de caixa, só entradas e saídas após essa data alteram o saldo da conta.
+              </p>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Cor na interface</Label>
               <div className="flex flex-wrap gap-2">
-                {CORES.map((cor) => (
-                  <button
-                    key={cor}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, cor }))}
-                    className={`h-8 w-8 rounded-full border-2 ${form.cor === cor ? "border-foreground" : "border-transparent"}`}
-                    style={{ backgroundColor: cor }}
-                    title={cor}
-                  />
-                ))}
+                {CORES.map((cor) => {
+                  const selected = form.cor === cor;
+                  return (
+                    <button
+                      key={cor}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, cor }))}
+                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-shadow ${
+                        selected ? "ring-2 ring-[var(--accent-600)] ring-offset-2 ring-offset-[var(--bg-card)]" : "hover:opacity-80"
+                      }`}
+                      style={{ backgroundColor: cor }}
+                      title={cor}
+                      aria-label={`Cor ${cor}`}
+                      aria-pressed={selected}
+                    >
+                      {selected && <Check className="h-4 w-4 text-white" />}
+                    </button>
+                  );
+                })}
               </div>
+              <p className="text-xs text-[var(--text-secondary)]">Usada para identificar a conta nos gráficos e no fluxo de caixa.</p>
             </div>
-            <div className="space-y-1.5">
-              <Label>Principal</Label>
-              <Select
-                value={form.principal ? "true" : "false"}
-                onChange={(e) => setForm((f) => ({ ...f, principal: e.target.value === "true" }))}
-              >
-                <option value="false">Não</option>
-                <option value="true">Sim</option>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Ativa</Label>
-              <Select
-                value={form.ativa ? "true" : "false"}
-                onChange={(e) => setForm((f) => ({ ...f, ativa: e.target.value === "true" }))}
-              >
-                <option value="true">Sim</option>
-                <option value="false">Não</option>
-              </Select>
-            </div>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--border-subtle)] p-3 hover:bg-[var(--bg-hover)]">
+              <input
+                type="checkbox"
+                checked={form.principal}
+                onChange={(e) => setForm((f) => ({ ...f, principal: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 accent-[var(--accent-600)]"
+              />
+              <span>
+                <span className="block text-sm font-medium text-foreground">Conta principal</span>
+                <span className="block text-xs text-[var(--text-secondary)]">Padrão nos lançamentos do fluxo de caixa.</span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--border-subtle)] p-3 hover:bg-[var(--bg-hover)]">
+              <input
+                type="checkbox"
+                checked={form.ativa}
+                onChange={(e) => setForm((f) => ({ ...f, ativa: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 accent-[var(--accent-600)]"
+              />
+              <span>
+                <span className="block text-sm font-medium text-foreground">Conta ativa</span>
+                <span className="block text-xs text-[var(--text-secondary)]">Disponível para novos lançamentos.</span>
+              </span>
+            </label>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? "Salvando..." : form.id ? "Atualizar" : "Criar"}
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {saving ? "Salvando..." : form.id ? "Salvar alterações" : "Criar conta"}
               </Button>
             </DialogFooter>
           </form>

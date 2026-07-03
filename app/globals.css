@@ -97,7 +97,8 @@
   --info-text: #4a7c59;
   --info-border: rgba(74, 124, 89, 0.25);
 
-  --sidebar-width: 80px;
+  --sidebar-width: 248px;
+  --sidebar-width-collapsed: 80px;
   --topbar-height: 66px;
 
   --radius-xs: 4px;

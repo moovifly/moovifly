@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { FinanceComposedChart } from "@/components/backoffice/charts/finance-composed-chart";
+import { DonutChart } from "@/components/backoffice/charts/donut-chart";
 import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
 import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
-import { FinanceDonut, ReceitasDespesasLineChart } from "@/components/financeiro/relatorio-charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -94,10 +95,12 @@ export function RelatorioFinanceiroClient() {
 
   const resultadoColor =
     data.resultadoLiquido > 0
-      ? "text-[#2563EB]"
+      ? "text-[var(--success-text)]"
       : data.resultadoLiquido < 0
-        ? "text-[#DC2626]"
+        ? "text-[var(--danger-text)]"
         : "text-foreground";
+
+  const hasMovimento = data.receitaTotal > 0 || data.despesasTotal > 0;
 
   return (
     <>
@@ -133,7 +136,7 @@ export function RelatorioFinanceiroClient() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-[#16A34A]">{formatCurrency(data.receitaTotal)}</p>
+                  <p className="text-2xl font-bold text-[var(--success-text)]">{formatCurrency(data.receitaTotal)}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -143,7 +146,7 @@ export function RelatorioFinanceiroClient() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-[#DC2626]">{formatCurrency(data.despesasTotal)}</p>
+                  <p className="text-2xl font-bold text-[var(--danger-text)]">{formatCurrency(data.despesasTotal)}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -165,41 +168,59 @@ export function RelatorioFinanceiroClient() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-[#D97706]">{formatPercent(data.margem, 1)}</p>
+                  <p className="text-2xl font-bold text-[var(--warning-text)]">{formatPercent(data.margem, 1)}</p>
                 </CardContent>
               </Card>
             </div>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>Fluxo de Caixa — Receitas vs Despesas</CardTitle>
-              </CardHeader>
-              <CardContent className="h-72">
-                {data.chartMensal.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">
-                    Sem movimentação no período.
-                  </div>
-                ) : (
-                  <ReceitasDespesasLineChart data={data.chartMensal} />
+                {hasMovimento && (
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    clique na legenda para alternar séries
+                  </span>
                 )}
+              </CardHeader>
+              <CardContent className="h-80">
+                <FinanceComposedChart
+                  data={data.mensal.map((m) => ({
+                    label: m.monthLabel,
+                    entradas: m.receita,
+                    saidas: m.despesas,
+                    saldo: m.resultado,
+                  }))}
+                  entradasLabel="Receitas"
+                  saidasLabel="Despesas"
+                  saldoLabel="Resultado"
+                  emptyDescription="As receitas recebidas e despesas pagas do período aparecerão aqui."
+                />
               </CardContent>
             </Card>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle>Receita por forma de pagamento</CardTitle>
                 </CardHeader>
-                <CardContent className="h-56">
-                  <FinanceDonut data={data.porFormaPagamento} />
+                <CardContent className="h-64">
+                  <DonutChart
+                    data={data.porFormaPagamento}
+                    emptyTitle="Sem receitas no período"
+                    emptyDescription="Os recebimentos por forma de pagamento aparecerão aqui."
+                  />
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader>
+                <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle>Despesas por categoria</CardTitle>
                 </CardHeader>
-                <CardContent className="h-56">
-                  <FinanceDonut data={data.porCategoria} />
+                <CardContent className="h-64">
+                  <DonutChart
+                    data={data.porCategoria}
+                    emptyTitle="Sem despesas no período"
+                    emptyDescription="As despesas pagas por categoria aparecerão aqui."
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -226,20 +247,20 @@ export function RelatorioFinanceiroClient() {
                       {data.mensal.map((row) => (
                         <TableRow key={row.monthKey}>
                           <TableCell className="font-medium">{row.monthLabel}</TableCell>
-                          <TableCell className="text-[#16A34A]">{formatCurrency(row.receita)}</TableCell>
-                          <TableCell className="text-[#DC2626]">{formatCurrency(row.despesas)}</TableCell>
+                          <TableCell className="text-[var(--success-text)]">{formatCurrency(row.receita)}</TableCell>
+                          <TableCell className="text-[var(--danger-text)]">{formatCurrency(row.despesas)}</TableCell>
                           <TableCell
                             className={
                               row.resultado > 0
-                                ? "text-[#2563EB] font-semibold"
+                                ? "text-[var(--success-text)] font-semibold"
                                 : row.resultado < 0
-                                  ? "text-[#DC2626] font-semibold"
+                                  ? "text-[var(--danger-text)] font-semibold"
                                   : "font-semibold"
                             }
                           >
                             {formatCurrency(row.resultado)}
                           </TableCell>
-                          <TableCell className="text-[#D97706]">{formatPercent(row.margem, 1)}</TableCell>
+                          <TableCell className="text-[var(--warning-text)]">{formatPercent(row.margem, 1)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

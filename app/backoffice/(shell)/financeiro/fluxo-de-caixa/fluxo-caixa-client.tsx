@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { FinanceComposedChart } from "@/components/backoffice/charts/finance-composed-chart";
 import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
 import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
-import {
-  FluxoEntradasSaidasBarChart,
-  FluxoSaldoLineChart,
-} from "@/components/financeiro/fluxo-caixa-charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,29 +16,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/components/providers/auth-provider";
 import { formatCurrency } from "@/lib/format";
 import {
-  aggregateCashflow,
-  buildFluxoPorConta,
-  toFluxoMovement,
+  daysBetweenInclusive,
   type ContaBancariaResumo,
+  type FluxoCaixaPayload,
   type FluxoCaixaResult,
-  type FluxoMovement,
 } from "@/lib/financial/fluxo-caixa";
 import { defaultFinancePeriod } from "@/lib/financial/period";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { cn } from "@/lib/utils";
 
-type ContaBancaria = {
-  id: string;
-  nome: string;
-  banco: string | null;
-  cor: string;
-  saldo_inicial: number;
-};
+type ContaBancaria = FluxoCaixaPayload["contas"][number];
 
 export function FluxoCaixaClient() {
-  const supabase = useMemo(() => getSupabaseClient(), []);
-  const { profile } = useAuth();
+  const pathname = usePathname();
+  const { profile, loading: authLoading } = useAuth();
   const [period, setPeriod] = useState(defaultFinancePeriod);
   const [loading, setLoading] = useState(true);
   const [consolidado, setConsolidado] = useState<FluxoCaixaResult | null>(null);
@@ -49,66 +37,51 @@ export function FluxoCaixaClient() {
   const [activeTab, setActiveTab] = useState("consolidado");
 
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
+  const detalhePorDia = daysBetweenInclusive(period.start, period.end) <= 45;
 
-  async function load() {
-    if (!isManager) return;
+  const load = useCallback(async () => {
+    if (!isManager) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const [{ data: recebidas }, { data: pagas }, { data: contasBancarias }] = await Promise.all([
-          supabase
-            .from("contas_receber")
-            .select("valor, data_recebimento, conta_bancaria_id")
-            .eq("status", "recebida")
-            .gte("data_recebimento", period.start)
-            .lte("data_recebimento", period.end),
-          supabase
-            .from("contas_pagar")
-            .select("valor, data_pagamento, conta_bancaria_id")
-            .eq("status", "paga")
-            .gte("data_pagamento", period.start)
-            .lte("data_pagamento", period.end),
-          supabase
-            .from("contas_bancarias")
-            .select("id, nome, banco, cor, saldo_inicial")
-            .eq("ativa", true)
-            .order("nome"),
-        ]);
+      const params = new URLSearchParams({ start: period.start, end: period.end });
+      const res = await fetch(`/api/financial/fluxo-caixa/?${params.toString()}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const json = (await res.json()) as FluxoCaixaPayload & { error?: string };
 
-      type RecebidaRow = { valor: number | string; data_recebimento: string | null; conta_bancaria_id: string | null };
-      type PagaRow = {
-        valor: number | string;
-        data_pagamento: string | null;
-        conta_bancaria_id: string | null;
-      };
+      if (!res.ok) {
+        throw new Error(json.error ?? `HTTP ${res.status}`);
+      }
 
-      const recebidasRows = (recebidas ?? []) as RecebidaRow[];
-      const pagasRows = (pagas ?? []) as PagaRow[];
-
-      const entradas = recebidasRows
-        .map((r) => toFluxoMovement(r.valor, r.data_recebimento, r.conta_bancaria_id))
-        .filter((m): m is FluxoMovement => m !== null);
-
-      const saidas = pagasRows
-        .map((p) => toFluxoMovement(p.valor, p.data_pagamento, p.conta_bancaria_id))
-        .filter((m): m is FluxoMovement => m !== null);
-
-      const fluxoConsolidado = aggregateCashflow(entradas, saidas, period.start, period.end);
-      setConsolidado(fluxoConsolidado);
-
-      const contasAtivas = (contasBancarias ?? []) as ContaBancaria[];
-      setContas(contasAtivas);
-      setContasResumo(buildFluxoPorConta(contasAtivas, entradas, saidas, period.start, period.end));
+      setConsolidado(json.consolidado);
+      setContas(json.contas ?? []);
+      setContasResumo(json.contasResumo ?? []);
     } catch (err) {
-      toast.error("Erro ao carregar fluxo de caixa", { description: formatSupabaseError(err) });
+      toast.error("Erro ao carregar fluxo de caixa", {
+        description: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setLoading(false);
     }
-  }
+  }, [isManager, period.start, period.end]);
 
   useEffect(() => {
-    if (profile) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, period.start, period.end]);
+    if (authLoading) return;
+    void load();
+  }, [authLoading, load, pathname]);
+
+  useEffect(() => {
+    function onFocus() {
+      if (!authLoading && isManager) void load();
+    }
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [authLoading, isManager, load]);
 
   const activeData = useMemo(() => {
     if (activeTab === "consolidado") return consolidado;
@@ -121,6 +94,11 @@ export function FluxoCaixaClient() {
       saldoAtual: conta.saldoAtual,
     } satisfies FluxoCaixaResult;
   }, [activeTab, consolidado, contasResumo]);
+
+  const resultadoPeriodo = useMemo(() => {
+    if (!activeData) return 0;
+    return activeData.totalEntradas - activeData.totalSaidas;
+  }, [activeData]);
 
   if (!isManager) {
     return (
@@ -218,50 +196,65 @@ export function FluxoCaixaClient() {
                       </Card>
                       <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                          <CardTitle className="text-sm font-medium text-[var(--text-secondary)]">Saldo do período</CardTitle>
+                          <CardTitle className="text-sm font-medium text-[var(--text-secondary)]">Resultado do período</CardTitle>
                           <Wallet className="h-4 w-4 text-[var(--accent-600)]" />
                         </CardHeader>
                         <CardContent>
-                          <p className="text-2xl font-bold">{formatCurrency(activeData.saldoAtual)}</p>
+                          <p className="text-2xl font-bold">{formatCurrency(resultadoPeriodo)}</p>
+                          {activeTab !== "consolidado" && (
+                            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                              Saldo atual: {formatCurrency(activeData.saldoAtual)}
+                              {contas.find((c) => c.id === activeTab)?.data_saldo_inicial && (
+                                <>
+                                  {" "}· referência em{" "}
+                                  {new Date(`${contas.find((c) => c.id === activeTab)!.data_saldo_inicial}T12:00:00`).toLocaleDateString("pt-BR")}
+                                </>
+                              )}
+                            </p>
+                          )}
                         </CardContent>
                       </Card>
                     </div>
 
-                    {activeData.rows.length === 0 ? (
+                    {activeData.totalEntradas === 0 && activeData.totalSaidas === 0 ? (
                       <Card>
                         <CardContent className="py-12 text-center text-sm text-[var(--text-secondary)]">
-                          Nenhuma movimentação no período selecionado.
+                          Nenhuma movimentação recebida ou paga no período selecionado.
+                          <br />
+                          <span className="text-xs">Somente lançamentos com status recebido/pago entram no fluxo de caixa.</span>
                         </CardContent>
                       </Card>
                     ) : (
                       <>
                         <Card>
-                          <CardHeader>
-                            <CardTitle>Saldo acumulado</CardTitle>
+                          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle>Entradas, saídas e saldo acumulado</CardTitle>
+                            <span className="text-xs text-[var(--text-secondary)]">
+                              clique na legenda para alternar séries
+                            </span>
                           </CardHeader>
-                          <CardContent className="h-64">
-                            <FluxoSaldoLineChart rows={activeData.rows} />
+                          <CardContent className="h-80">
+                            <FinanceComposedChart
+                              data={activeData.rows.map((row) => ({
+                                label: row.monthLabel,
+                                entradas: row.entradas,
+                                saidas: row.saidas,
+                                saldo: row.saldoFinal,
+                              }))}
+                              emptyDescription="Os lançamentos recebidos e pagos do período aparecerão aqui."
+                            />
                           </CardContent>
                         </Card>
 
                         <Card>
                           <CardHeader>
-                            <CardTitle>Entradas vs saídas</CardTitle>
-                          </CardHeader>
-                          <CardContent className="h-64">
-                            <FluxoEntradasSaidasBarChart rows={activeData.rows} />
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Detalhamento mensal</CardTitle>
+                            <CardTitle>{detalhePorDia ? "Detalhamento diário" : "Detalhamento mensal"}</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Mês</TableHead>
+                                  <TableHead>{detalhePorDia ? "Dia" : "Mês"}</TableHead>
                                   <TableHead>Saldo inicial</TableHead>
                                   <TableHead>Entradas</TableHead>
                                   <TableHead>Saídas</TableHead>
@@ -296,7 +289,7 @@ export function FluxoCaixaClient() {
             {contas.length === 0 && (
               <p className="text-xs text-[var(--text-secondary)]">
                 Cadastre contas bancárias em Configurações → Contas Bancárias para ver o fluxo por conta.
-                Lançamentos sem conta vinculada aparecem apenas no consolidado.
+                Lançamentos sem conta vinculada são atribuídos à conta principal no resumo por conta.
               </p>
             )}
           </>

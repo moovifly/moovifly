@@ -121,7 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profile, viewAsVendedor]);
 
   const handleSession = useCallback(async () => {
-      const sessionUserId = await syncBrowserSessionFromServer();
+      // Sessão e perfil em paralelo: /api/profile/ valida pelos mesmos cookies do
+      // servidor e não depende do resultado de /api/auth/session/ — evita uma
+      // ida-e-volta extra bloqueando o boot a cada navegação (full page load).
+      const [sessionUserId, profileResult] = await Promise.all([
+        syncBrowserSessionFromServer(),
+        getUserProfileWithTimeout(),
+      ]);
 
       if (!sessionUserId) {
         setProfile(null);
@@ -135,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUserId(sessionUserId);
 
-      const { data: nextProfile, error } = await getUserProfileWithTimeout();
+      const { data: nextProfile, error } = profileResult;
 
       if (error || !nextProfile) {
         console.error("[auth] Falha ao carregar perfil:", error);
@@ -209,6 +215,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let active = true;
     const supabase = getSupabaseClient();
+
+    // Hidratação otimista: o perfil cacheado do último boot renderiza o shell de
+    // imediato (sem esperar rede); handleSession revalida em seguida e corrige
+    // profile/permissões — logout e falhas limpam este cache em clearLocalAuthState.
+    if (isBackofficePage && !isLoginPage) {
+      try {
+        const cached = localStorage.getItem("userProfile");
+        if (cached) {
+          const parsed = JSON.parse(cached) as UserProfile;
+          if (parsed?.user_id && parsed.ativo) {
+            setProfile(parsed);
+            setUserId(parsed.user_id);
+          }
+        }
+      } catch {
+        /* cache inválido é ignorado */
+      }
+    }
 
     (async () => {
       try {

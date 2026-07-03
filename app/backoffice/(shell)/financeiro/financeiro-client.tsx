@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CheckCircle, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { ComparativeBars } from "@/components/backoffice/charts/chart-kit";
 import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
 import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,12 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { defaultFinancePeriod } from "@/lib/financial/period";
+import {
+  type Comissao,
+  type ComissaoAgrupada,
+  agruparComissoesPagasPorVendedorMes,
+  agruparComissoesPorVendedorMes,
+} from "@/lib/financial/comissoes";
 
 type ContaReceber = {
   id: string;
@@ -42,39 +49,8 @@ type ContaPagar = {
   data_pagamento?: string | null;
   status: string;
 };
-type Comissao = {
-  id: string;
-  venda_id: string | null;
-  vendedor_id?: string | null;
-  valor_venda: number | string;
-  base_calculo: number | string | null;
-  percentual_comissao: number | string;
-  valor_comissao: number | string;
-  status: string;
-  data_pagamento: string | null;
-  usuarios?: { nome: string } | { nome: string }[] | null;
-  vendas?: { numero_venda: string | null; descricao: string | null; data_venda: string | null } | null;
-};
-
 type Usuario = { id: string; nome: string; tipo: string };
 type ContaBancaria = { id: string; nome: string; banco: string | null; principal: boolean };
-
-function vendorName(c: Comissao): string {
-  const usr = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios;
-  return usr?.nome ?? "—";
-}
-
-function saleLabel(c: Comissao): string {
-  const v = c.vendas;
-  if (!v) return "—";
-  const parts = [v.numero_venda ? `#${v.numero_venda}` : null, v.descricao].filter(Boolean);
-  return parts.join(" · ") || "—";
-}
-
-function saleDate(c: Comissao): string {
-  const data = c.vendas?.data_venda;
-  return data ? formatDate(data) : "—";
-}
 
 export function FinanceiroClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -92,7 +68,13 @@ export function FinanceiroClient() {
   const [loading, setLoading] = useState(true);
 
   // Modal de pagamento de comissão
-  const [payModal, setPayModal] = useState<{ id: string; nome: string; valor: number } | null>(null);
+  const [payModal, setPayModal] = useState<{
+    ids: string[];
+    nome: string;
+    valor: number;
+    quantidade: number;
+    mesLabel: string;
+  } | null>(null);
   const [payDate, setPayDate] = useState("");
   const [paying, setPaying] = useState(false);
 
@@ -136,19 +118,10 @@ export function FinanceiroClient() {
   const [addReceberOpen, setAddReceberOpen] = useState(false);
   const [addPagarOpen, setAddPagarOpen] = useState(false);
   const [addPagasOpen, setAddPagasOpen] = useState(false);
-  const [addComissaoOpen, setAddComissaoOpen] = useState(false);
 
   const [recForm, setRecForm] = useState({ descricao: "", valor: 0, data_vencimento: "" });
   const [pagForm, setPagForm] = useState({ fornecedor: "", descricao: "", valor: 0, data_vencimento: "" });
   const [pagaForm, setPagaForm] = useState({ fornecedor: "", descricao: "", valor: 0, data_pagamento: "" });
-  const [comForm, setComForm] = useState({
-    vendedor_id: "",
-    valor_venda: 0,
-    base_calculo: null as number | null,
-    percentual_comissao: "",
-    status: "pendente",
-    data_pagamento: "",
-  });
   const [saving, setSaving] = useState(false);
 
   const isManager = profile && ["administrador", "gerente"].includes(profile.tipo);
@@ -378,9 +351,15 @@ export function FinanceiroClient() {
     }
   }
 
-  function abrirModalPagamentoComissao(c: Comissao) {
+  function abrirModalPagamentoComissao(grupo: ComissaoAgrupada) {
     setPayDate(new Date().toISOString().slice(0, 10));
-    setPayModal({ id: c.id, nome: vendorName(c), valor: Number(c.valor_comissao) });
+    setPayModal({
+      ids: grupo.comissaoIds,
+      nome: grupo.vendedorNome,
+      valor: grupo.total,
+      quantidade: grupo.quantidade,
+      mesLabel: grupo.mesLabel,
+    });
   }
 
   async function confirmarPagamentoComissao() {
@@ -390,10 +369,14 @@ export function FinanceiroClient() {
       const { error } = await supabase
         .from("comissoes")
         .update({ status: "paga", data_pagamento: payDate })
-        .eq("id", payModal.id)
+        .in("id", payModal.ids)
         .select("id");
       if (error) throw error;
-      toast.success("Comissão marcada como paga! Conta a pagar vinculada atualizada automaticamente.");
+      toast.success(
+        payModal.quantidade === 1
+          ? "Comissão marcada como paga! Conta a pagar vinculada atualizada automaticamente."
+          : `${payModal.quantidade} comissões marcadas como pagas! Contas a pagar vinculadas atualizadas automaticamente.`,
+      );
       setPayModal(null);
       load();
     } catch (err) {
@@ -473,42 +456,6 @@ export function FinanceiroClient() {
     }
   }
 
-  async function criarComissaoManual() {
-    setSaving(true);
-    try {
-      const valor_venda = comForm.valor_venda;
-      const base_calculo = comForm.base_calculo ?? valor_venda;
-      const percentual = Number(comForm.percentual_comissao);
-      const valor_comissao = Math.round(((base_calculo * percentual) / 100) * 100) / 100;
-
-      if (!comForm.vendedor_id) { toast.error("Selecione um vendedor."); return; }
-      if (!Number.isFinite(valor_venda) || valor_venda < 0) { toast.error("Informe o valor da venda."); return; }
-      if (!Number.isFinite(base_calculo) || base_calculo < 0) { toast.error("Informe a base de cálculo."); return; }
-      if (!Number.isFinite(percentual) || percentual < 0) { toast.error("Informe o percentual de comissão."); return; }
-
-      const payload: Record<string, unknown> = {
-        vendedor_id: comForm.vendedor_id,
-        valor_venda,
-        base_calculo,
-        percentual_comissao: percentual,
-        valor_comissao,
-        status: comForm.status,
-        data_pagamento: comForm.status === "paga" ? (comForm.data_pagamento || new Date().toISOString().slice(0, 10)) : null,
-      };
-
-      const { error } = await supabase.from("comissoes").insert(payload);
-      if (error) throw error;
-      toast.success("Comissão adicionada!");
-      setAddComissaoOpen(false);
-      setComForm({ vendedor_id: "", valor_venda: 0, base_calculo: null, percentual_comissao: "", status: "pendente", data_pagamento: "" });
-      load();
-    } catch (err) {
-      toast.error("Erro ao adicionar comissão", { description: formatSupabaseError(err) });
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function excluirContaReceber(id: string) {
     const ok = await showConfirm({ title: "Excluir conta a receber", message: "Tem certeza que deseja excluir este lançamento?", destructive: true, confirmText: "Excluir" });
     if (!ok) return;
@@ -535,19 +482,6 @@ export function FinanceiroClient() {
     }
   }
 
-  async function excluirComissao(id: string) {
-    const ok = await showConfirm({ title: "Excluir comissão", message: "Tem certeza que deseja excluir esta comissão?", destructive: true, confirmText: "Excluir" });
-    if (!ok) return;
-    try {
-      const { error } = await supabase.from("comissoes").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Comissão excluída.");
-      load();
-    } catch (err) {
-      toast.error("Erro ao excluir", { description: formatSupabaseError(err) });
-    }
-  }
-
   const receberPendentes = useMemo(() => receber.filter((c) => c.status === "pendente"), [receber]);
   const recebidas = useMemo(() => receber.filter((c) => c.status !== "pendente"), [receber]);
   const contasPagarPendentes = useMemo(() => pagar.filter((c) => c.status === "pendente"), [pagar]);
@@ -559,6 +493,64 @@ export function FinanceiroClient() {
 
   const comissoesPendentes = useMemo(() => comissoesFiltradas.filter((c) => c.status === "pendente"), [comissoesFiltradas]);
   const comissoesPagas = useMemo(() => comissoesFiltradas.filter((c) => c.status === "paga"), [comissoesFiltradas]);
+  const comissoesPendentesAgrupadas = useMemo(
+    () => agruparComissoesPorVendedorMes(comissoesPendentes),
+    [comissoesPendentes],
+  );
+  const comissoesPagasAgrupadas = useMemo(
+    () => agruparComissoesPagasPorVendedorMes(comissoesPagas),
+    [comissoesPagas],
+  );
+
+  // Totais para o resumo visual (calculados sobre os dados já carregados).
+  const totalReceberPendente = useMemo(
+    () => receberPendentes.reduce((sum, c) => sum + Number(c.valor ?? 0), 0),
+    [receberPendentes],
+  );
+  const totalPagarPendente = useMemo(
+    () => contasPagarPendentes.reduce((sum, c) => sum + Number(c.valor ?? 0), 0),
+    [contasPagarPendentes],
+  );
+  const totalComissoesPendentes = useMemo(
+    () => comissoesPendentes.reduce((sum, c) => sum + Number(c.valor_comissao ?? 0), 0),
+    [comissoesPendentes],
+  );
+
+  const resumoItems = useMemo(() => {
+    const plural = (n: number, singular: string, pluralWord: string) =>
+      `${n} ${n === 1 ? singular : pluralWord}`;
+    const itens = [
+      {
+        label: "A receber",
+        value: totalReceberPendente,
+        color: "var(--success-text)",
+        hint: plural(receberPendentes.length, "conta pendente", "contas pendentes"),
+      },
+    ];
+    if (isManager) {
+      itens.push({
+        label: "A pagar",
+        value: totalPagarPendente,
+        color: "var(--danger-text)",
+        hint: plural(contasPagarPendentes.length, "conta pendente", "contas pendentes"),
+      });
+    }
+    itens.push({
+      label: "Comissões a pagar",
+      value: totalComissoesPendentes,
+      color: "var(--purple-500)",
+      hint: plural(comissoesPendentesAgrupadas.length, "lote pendente", "lotes pendentes"),
+    });
+    return itens;
+  }, [
+    isManager,
+    totalReceberPendente,
+    totalPagarPendente,
+    totalComissoesPendentes,
+    receberPendentes.length,
+    contasPagarPendentes.length,
+    comissoesPendentesAgrupadas.length,
+  ]);
 
   function statusBadge(status: string, map: Record<string, string>) {
     return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${map[status] ?? "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>{status}</span>;
@@ -566,7 +558,6 @@ export function FinanceiroClient() {
 
   const receberBadge = { recebida: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelada: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
   const pagarBadge = { paga: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelada: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
-  const comissaoBadge = { paga: "bg-[var(--success-bg)] text-[var(--success-text)]", cancelada: "bg-[var(--danger-bg)] text-[var(--danger-text)]" };
 
   const skeletons = (n = 4) => (
     <div className="space-y-2">{Array.from({ length: n }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -578,6 +569,25 @@ export function FinanceiroClient() {
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <FinanceiroNav />
         <FinancePeriodFilter period={period} onChange={setPeriod} maxCustomDays={MAX_DAYS} />
+
+        {/* Resumo visual compacto das pendências */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle>Resumo de pendências</CardTitle>
+            <span className="text-xs text-[var(--text-secondary)]">valores em aberto</span>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: isManager ? 3 : 2 }).map((_, i) => (
+                  <Skeleton key={i} className="h-6 w-full" />
+                ))}
+              </div>
+            ) : (
+              <ComparativeBars items={resumoItems} />
+            )}
+          </CardContent>
+        </Card>
 
         {/* Navegação principal (submenus) */}
         <Tabs value={section} onValueChange={setSection}>
@@ -823,7 +833,7 @@ export function FinanceiroClient() {
             </TabsContent>
           )}
 
-          {/* ── COMISSÕES ── */}
+          {/* ── COMISSÕES (resumo por vendedor/mês) ── */}
           <TabsContent value="comissoes">
             <Tabs value={subComissoes} onValueChange={setSubComissoes}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -831,9 +841,9 @@ export function FinanceiroClient() {
                   <TabsList>
                     <TabsTrigger value="pendentes">
                       A Pagar
-                      {comissoesPendentes.length > 0 && (
+                      {comissoesPendentesAgrupadas.length > 0 && (
                         <span className="ml-1.5 rounded-full bg-[var(--warning-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning-text)]">
-                          {comissoesPendentes.length}
+                          {comissoesPendentesAgrupadas.length}
                         </span>
                       )}
                     </TabsTrigger>
@@ -855,51 +865,44 @@ export function FinanceiroClient() {
                     </div>
                   )}
                 </div>
-                {isManager && (
-                  <Button size="sm" onClick={() => setAddComissaoOpen(true)}>
-                    <Plus className="h-4 w-4" /> Adicionar
-                  </Button>
-                )}
               </div>
 
               <TabsContent value="pendentes">
                 <Card>
-                  <CardHeader><CardTitle>Comissões a Pagar</CardTitle></CardHeader>
+                  <CardHeader>
+                    <CardTitle>Comissões a Pagar</CardTitle>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Total consolidado por vendedor e mês. Para ver cada venda, acesse Financeiro → Comissões no menu.
+                    </p>
+                  </CardHeader>
                   <CardContent>
-                    {loading ? skeletons(3) : comissoesPendentes.length === 0 ? (
+                    {loading ? skeletons(3) : comissoesPendentesAgrupadas.length === 0 ? (
                       <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão pendente.</p>
                     ) : (
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Vendedor</TableHead>
-                            <TableHead>Venda</TableHead>
-                            <TableHead>Data da venda</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>%</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Mês</TableHead>
+                            <TableHead>Comissões</TableHead>
+                            <TableHead>Total</TableHead>
                             {isManager && <TableHead className="text-right">Ação</TableHead>}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {comissoesPendentes.map((c) => (
-                            <TableRow key={c.id}>
-                              <TableCell>{vendorName(c)}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
-                              <TableCell>{saleDate(c)}</TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
-                              <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
-                              <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
+                          {comissoesPendentesAgrupadas.map((g) => (
+                            <TableRow key={g.key}>
+                              <TableCell className="font-medium">{g.vendedorNome}</TableCell>
+                              <TableCell>{g.mesLabel}</TableCell>
+                              <TableCell className="text-[var(--text-secondary)]">
+                                {g.quantidade} {g.quantidade === 1 ? "comissão" : "comissões"}
+                              </TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(g.total)}</TableCell>
                               {isManager && (
                                 <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(c)}>
-                                      <CheckCircle className="h-4 w-4" /> Pagar
-                                    </Button>
-                                    <Button size="icon" variant="ghost" onClick={() => excluirComissao(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                                  <Button size="sm" variant="outline" onClick={() => abrirModalPagamentoComissao(g)}>
+                                    <CheckCircle className="h-4 w-4" /> Pagar
+                                  </Button>
                                 </TableCell>
                               )}
                             </TableRow>
@@ -915,39 +918,27 @@ export function FinanceiroClient() {
                 <Card>
                   <CardHeader><CardTitle>Comissões Pagas</CardTitle></CardHeader>
                   <CardContent>
-                    {loading ? skeletons() : comissoesPagas.length === 0 ? (
+                    {loading ? skeletons() : comissoesPagasAgrupadas.length === 0 ? (
                       <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão paga no período.</p>
                     ) : (
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Vendedor</TableHead>
-                            <TableHead>Venda</TableHead>
-                            <TableHead>Data da venda</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>%</TableHead>
-                            <TableHead>Pago em</TableHead>
-                            <TableHead>Status</TableHead>
-                            {isManager && <TableHead className="text-right">Ação</TableHead>}
+                            <TableHead>Mês do pagamento</TableHead>
+                            <TableHead>Comissões</TableHead>
+                            <TableHead>Total pago</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {comissoesPagas.map((c) => (
-                            <TableRow key={c.id}>
-                              <TableCell>{vendorName(c)}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{saleLabel(c)}</TableCell>
-                              <TableCell>{saleDate(c)}</TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor_comissao))}</TableCell>
-                              <TableCell>{c.percentual_comissao ? `${c.percentual_comissao}%` : "—"}</TableCell>
-                              <TableCell>{formatDate(c.data_pagamento)}</TableCell>
-                              <TableCell>{statusBadge(c.status, comissaoBadge)}</TableCell>
-                              {isManager && (
-                                <TableCell className="text-right">
-                                  <Button size="icon" variant="ghost" onClick={() => excluirComissao(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TableCell>
-                              )}
+                          {comissoesPagasAgrupadas.map((g) => (
+                            <TableRow key={g.key}>
+                              <TableCell className="font-medium">{g.vendedorNome}</TableCell>
+                              <TableCell>{g.mesLabel}</TableCell>
+                              <TableCell className="text-[var(--text-secondary)]">
+                                {g.quantidade} {g.quantidade === 1 ? "comissão" : "comissões"}
+                              </TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(g.total)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1067,7 +1058,13 @@ export function FinanceiroClient() {
                 Vendedor: <span className="font-medium text-foreground">{payModal.nome}</span>
               </p>
               <p className="text-sm text-[var(--text-secondary)]">
-                Valor: <span className="font-semibold text-foreground">{formatCurrency(payModal.valor)}</span>
+                Período: <span className="font-medium text-foreground">{payModal.mesLabel}</span>
+              </p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Comissões: <span className="font-medium text-foreground">{payModal.quantidade}</span>
+              </p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Total: <span className="font-semibold text-foreground">{formatCurrency(payModal.valor)}</span>
               </p>
               <div className="space-y-1.5">
                 <Label>Data de pagamento</Label>
@@ -1252,63 +1249,6 @@ export function FinanceiroClient() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddPagasOpen(false)} disabled={saving}>Cancelar</Button>
             <Button onClick={() => criarContaPagar("paga")} disabled={saving}>{saving ? "Salvando..." : "Adicionar"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal: adicionar comissão manual */}
-      <Dialog open={addComissaoOpen} onOpenChange={setAddComissaoOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Adicionar comissão</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Vendedor</Label>
-              <Select value={comForm.vendedor_id} onChange={(e) => setComForm((p) => ({ ...p, vendedor_id: e.target.value }))}>
-                <option value="">Selecione...</option>
-                {usuarios
-                  .filter((u) => u.tipo === "vendedor")
-                  .map((u) => (
-                    <option key={u.id} value={u.id}>{u.nome}</option>
-                  ))}
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Valor da venda</Label>
-              <CurrencyInput value={comForm.valor_venda} onValueChange={(v) => setComForm((p) => ({ ...p, valor_venda: v ?? 0 }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Base de cálculo</Label>
-              <CurrencyInput
-                allowEmpty
-                value={comForm.base_calculo}
-                onValueChange={(v) => setComForm((p) => ({ ...p, base_calculo: v }))}
-                placeholder="Se vazio, usa o valor da venda"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>% Comissão</Label>
-              <Input inputMode="decimal" value={comForm.percentual_comissao} onChange={(e) => setComForm((p) => ({ ...p, percentual_comissao: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select value={comForm.status} onChange={(e) => setComForm((p) => ({ ...p, status: e.target.value }))}>
-                <option value="pendente">Pendente</option>
-                <option value="paga">Paga</option>
-                <option value="cancelada">Cancelada</option>
-              </Select>
-            </div>
-            {comForm.status === "paga" && (
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Data de pagamento</Label>
-                <Input type="date" value={comForm.data_pagamento} onChange={(e) => setComForm((p) => ({ ...p, data_pagamento: e.target.value }))} />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setAddComissaoOpen(false)} disabled={saving}>Cancelar</Button>
-            <Button onClick={criarComissaoManual} disabled={saving}>{saving ? "Salvando..." : "Adicionar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeftRight, BarChart3, LayoutList } from "lucide-react";
+import { ArrowLeftRight, BadgePercent, BarChart3, LayoutList } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/backoffice/financeiro/", label: "Lançamentos", icon: LayoutList, exact: true },
+  { href: "/backoffice/financeiro/comissoes/", label: "Comissões", icon: BadgePercent, exact: false },
   { href: "/backoffice/financeiro/fluxo-de-caixa/", label: "Fluxo de Caixa", icon: ArrowLeftRight, exact: false },
   { href: "/backoffice/financeiro/relatorio/", label: "Relatório", icon: BarChart3, exact: false },
 ] as const;

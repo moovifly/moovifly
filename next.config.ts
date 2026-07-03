@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   reactStrictMode: true,
+  experimental: {
+    /** Importa só os módulos usados do recharts (menos JS por página). */
+    optimizePackageImports: ["recharts"],
+  },
   /** Redirecionamento na própria Vercel (além do middleware) — garante apex → www em produção. */
   async redirects() {
     if (process.env.VERCEL_ENV !== "production") {

@@ -1,7 +1,8 @@
 "use client";
 
-import { CreditCard, Eye, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { CreditCard, Eye, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
+import { EmptyState } from "@/components/backoffice/empty-state";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +29,8 @@ import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { normalizeDateOnly } from "@/lib/date-only";
 import { loadAeroportos, searchAeroportos, type Aeroporto, loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
+import { emptyVoo, parseVoosFromObservacoes, parseVoosJson, voosToVendaCampos, type Voo } from "@/lib/voos";
+import { VoosFormSection } from "@/components/backoffice/voos-form-section";
 
 type Passageiro = {
   nome: string;
@@ -57,6 +60,8 @@ type Venda = {
   status: string;
   forma_pagamento: string | null;
   fornecedor: string | null;
+  observacoes?: string | null;
+  voos?: Voo[] | null;
   passageiros_dados?: Passageiro[] | null;
   cliente?: { nome: string } | null;
   vendedor?: { nome: string } | null;
@@ -149,6 +154,7 @@ type FormState = {
   fornecedor: string;
   voucher: string;
   passageiros_dados: Passageiro[];
+  voos: Voo[];
   atribuido_a: string | null;
 };
 
@@ -173,6 +179,7 @@ const emptyForm = (): FormState => ({
   fornecedor: "",
   voucher: "",
   passageiros_dados: [emptyPassageiro()],
+  voos: [emptyVoo("ida")],
   atribuido_a: null,
 });
 
@@ -265,6 +272,22 @@ export function VendasClient() {
     setStep("form");
   }
 
+  function voosFromVenda(v: Venda): Voo[] {
+    const parsed = parseVoosJson(v.voos);
+    if (parsed.length) return parsed;
+    const fromObs = parseVoosFromObservacoes(v.observacoes);
+    if (fromObs.length) return fromObs;
+    if (v.categoria_venda === "seguro_viagem") return [];
+    return [{
+      ...emptyVoo("ida"),
+      origem: v.origem ?? "",
+      destino: v.destino ?? "",
+      data_partida: v.data_ida ?? "",
+      data_chegada: v.data_ida ?? "",
+      companhia: v.companhia ?? "",
+    }];
+  }
+
   function openEdit(v: Venda) {
     const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
     setForm({
@@ -290,6 +313,7 @@ export function VendasClient() {
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
+      voos: voosFromVenda(v),
       atribuido_a: v.vendedor_id ?? null,
     });
     setViewMode(false);
@@ -323,6 +347,7 @@ export function VendasClient() {
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
+      voos: voosFromVenda(v),
       atribuido_a: v.vendedor_id ?? null,
     });
     setViewMode(true);
@@ -338,9 +363,12 @@ export function VendasClient() {
     setSaving(true);
     try {
       const isSeguro = form.categoria_venda === "seguro_viagem";
+      const camposVoo = isSeguro ? null : voosToVendaCampos(form.voos);
       const descricao = isSeguro
         ? ["Seguro Viagem", form.destino].filter(Boolean).join(" — ") || "Seguro Viagem"
-        : [form.tipo, form.origem && form.destino ? `${form.origem} → ${form.destino}` : form.destino || form.origem]
+        : [form.tipo, (camposVoo?.origem || form.origem) && (camposVoo?.destino || form.destino)
+            ? `${camposVoo?.origem || form.origem} → ${camposVoo?.destino || form.destino}`
+            : camposVoo?.destino || form.destino || camposVoo?.origem || form.origem]
             .filter(Boolean)
             .join(" — ") || "Venda";
       const passageirosValidos = form.passageiros_dados.filter((p) => p.nome.trim());
@@ -350,12 +378,12 @@ export function VendasClient() {
         vendedor_id: isAdminOrGerente ? (form.atribuido_a ?? profile?.id ?? null) : (profile?.id ?? null),
         tipo: isSeguro ? null : form.tipo || null,
         descricao,
-        origem: isSeguro ? null : form.origem || null,
-        destino: form.destino || null,
-        companhia: isSeguro ? null : form.companhia || null,
+        origem: isSeguro ? null : camposVoo?.origem || form.origem || null,
+        destino: form.destino || camposVoo?.destino || null,
+        companhia: isSeguro ? null : camposVoo?.companhia || form.companhia || null,
         localizador: isSeguro ? null : form.localizador.trim() || null,
-        data_ida: normalizeDateOnly(form.data_ida) || null,
-        data_volta: normalizeDateOnly(form.data_volta) || null,
+        data_ida: isSeguro ? null : camposVoo?.data_ida || normalizeDateOnly(form.data_ida) || null,
+        data_volta: isSeguro ? null : camposVoo?.data_volta || normalizeDateOnly(form.data_volta) || null,
         data_venda: form.data_venda,
         valor_total: form.valor_total,
         taxa_rav: isSeguro ? 0 : form.taxa_rav,
@@ -366,6 +394,7 @@ export function VendasClient() {
         voucher: isSeguro ? form.voucher || null : null,
         passageiros_dados: passageirosValidos.length > 0 ? passageirosValidos : null,
         passageiros: Math.max(passageirosValidos.length, 1),
+        voos: isSeguro ? [] : form.voos,
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
@@ -441,6 +470,14 @@ export function VendasClient() {
     setForm((prev) => ({ ...prev, companhia: c.nome }));
   }
 
+  function handleVooCompanhiaSelect(i: number, c: Companhia) {
+    setForm((prev) => ({
+      ...prev,
+      companhia: prev.companhia || c.nome,
+      voos: prev.voos.map((v, idx) => (idx === i ? { ...v, companhia: c.nome } : v)),
+    }));
+  }
+
   function addPassageiro() {
     setForm((p) => ({ ...p, passageiros_dados: [...p.passageiros_dados, emptyPassageiro()] }));
   }
@@ -499,7 +536,7 @@ export function VendasClient() {
         subtitle={`${filtered.length} venda${filtered.length !== 1 ? "s" : ""}`}
         actions={<Button onClick={openNew}><Plus className="h-4 w-4" />Nova Venda</Button>}
       />
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader className="flex-col gap-3 space-y-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -526,10 +563,10 @@ export function VendasClient() {
                     setDateTo(to);
                     setActivePreset(p.key);
                   }}
-                  className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                     activePreset === p.key
-                      ? "border-(--color-primary) bg-(--color-primary) text-white"
-                      : "border-border bg-background text-foreground hover:bg-muted"
+                      ? "border-[var(--accent-600)] bg-[var(--accent-600)] text-white shadow-[var(--shadow-xs)]"
+                      : "border-[var(--border-subtle)] bg-card text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
                   }`}
                 >
                   {p.label}
@@ -559,7 +596,11 @@ export function VendasClient() {
             {loading ? (
               <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : filtered.length === 0 ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">Nenhuma venda encontrada.</p>
+              <EmptyState
+                icon={ShoppingCart}
+                title="Nenhuma venda encontrada"
+                description="Ajuste os filtros ou o período selecionado."
+              />
             ) : (
               <Table>
                 <TableHeader>
@@ -569,7 +610,7 @@ export function VendasClient() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Destino</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -590,7 +631,7 @@ export function VendasClient() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{v.destino ?? "—"}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(Number(v.valor_total))}</TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -850,6 +891,14 @@ export function VendasClient() {
                           </Select>
                         </div>
                       </div>
+                      <VoosFormSection
+                        voos={form.voos}
+                        onChange={(voos) => setForm((p) => ({ ...p, voos }))}
+                        aeroportos={aeroportos}
+                        companhias={companhias}
+                        disabled={viewMode}
+                        onCompanhiaSelect={handleVooCompanhiaSelect}
+                      />
                       </fieldset>
                     )}
 
