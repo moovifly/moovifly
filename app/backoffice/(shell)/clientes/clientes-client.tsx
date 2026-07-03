@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Search, Trash2, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -49,6 +49,8 @@ type Cliente = {
 
 type FormState = Omit<Cliente, "id" | "created_at"> & { id: string | null };
 
+const PAGE_SIZE = 30;
+
 const emptyForm = (): FormState => ({
   id: null,
   nome: "",
@@ -73,6 +75,7 @@ export function ClientesClient() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -105,6 +108,17 @@ export function ClientesClient() {
       return matchesTerm && matchesStatus;
     });
   }, [items, search, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
 
   function openNew() {
     setForm({ ...emptyForm(), vendedor_id: profile?.id ?? null });
@@ -253,7 +267,7 @@ export function ClientesClient() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((c) => (
+                  {paginated.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">
                         <BackofficeLink
@@ -288,6 +302,33 @@ export function ClientesClient() {
               </Table>
             )}
           </CardContent>
+          {!loading && filtered.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 border-t border-[var(--border-default)] px-6 py-4">
+              <p className="text-sm text-[var(--text-secondary)]">
+                Página {currentPage} de {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
 
