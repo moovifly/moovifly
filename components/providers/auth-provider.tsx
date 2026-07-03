@@ -31,7 +31,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const ADMIN_ONLY = ["/backoffice/configuracoes"];
-const VENDEDOR_RESTRICTED = ["/backoffice/clientes", "/backoffice/financeiro", "/backoffice/checkout"];
+const VENDEDOR_RESTRICTED = ["/backoffice/financeiro", "/backoffice/checkout"];
 const PUBLIC_BACKOFFICE = ["/backoffice/login"];
 
 const VIEW_AS_KEY = "moovifly_view_as_vendedor";

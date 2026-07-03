@@ -31,7 +31,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/backoffice/dashboard/", label: "Dashboard", icon: LayoutGrid },
-  { href: "/backoffice/clientes/", label: "Clientes", icon: Users, roles: ["administrador", "gerente"] },
+  { href: "/backoffice/clientes/", label: "Clientes", icon: Users },
   { href: "/backoffice/orcamentos/", label: "Orçamentos", icon: FileText },
   { href: "/backoffice/vendas/", label: "Vendas", icon: ShoppingCart },
   { href: "/backoffice/embarques/", label: "Embarques", icon: PlaneTakeoff },
