@@ -112,6 +112,14 @@
     "type": "international"
   },
   {
+    "iata": "EEA",
+    "icao": "SNCW",
+    "name": "Aeroporto Regional do Planalto Serrano",
+    "city": "Correia Pinto",
+    "country": "Brasil",
+    "type": "domestic"
+  },
+  {
     "iata": "MCZ",
     "icao": "SBMO",
     "name": "Aeroporto Internacional Zumbi dos Palmares",

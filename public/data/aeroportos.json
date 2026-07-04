@@ -84,6 +84,12 @@
     "pais": "Brasil"
   },
   {
+    "codigo": "EEA",
+    "nome": "Aeroporto Regional do Planalto Serrano",
+    "cidade": "Correia Pinto",
+    "pais": "Brasil"
+  },
+  {
     "codigo": "MCZ",
     "nome": "Aeroporto Internacional Zumbi dos Palmares",
     "cidade": "Maceió",
