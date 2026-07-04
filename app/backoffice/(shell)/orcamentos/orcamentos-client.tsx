@@ -502,7 +502,9 @@ export function OrcamentosClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
+      toast.error(form.id ? "Erro ao atualizar orçamento" : "Erro ao cadastrar orçamento", {
+        description: formatSupabaseError(err),
+      });
     } finally {
       setSaving(false);
     }
@@ -736,7 +738,7 @@ export function OrcamentosClient() {
                     setDateTo(to);
                     setActivePreset(p.key);
                   }}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`rounded-full border px-3 py-2 text-xs font-medium transition-colors sm:py-1.5 ${
                     activePreset === p.key
                       ? "border-[var(--accent-600)] bg-[var(--accent-600)] text-white shadow-[var(--shadow-xs)]"
                       : "border-[var(--border-subtle)] bg-card text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
@@ -745,22 +747,22 @@ export function OrcamentosClient() {
                   {p.label}
                 </button>
               ))}
-              <div className="space-y-1.5">
+              <div className="min-w-[140px] flex-1 space-y-1.5 sm:min-w-0 sm:flex-none">
                 <Label className="text-xs">De</Label>
                 <Input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => { setDateFrom(e.target.value); setActivePreset(""); }}
-                  className="w-40"
+                  className="w-full sm:w-40"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-[140px] flex-1 space-y-1.5 sm:min-w-0 sm:flex-none">
                 <Label className="text-xs">Até</Label>
                 <Input
                   type="date"
                   value={dateTo}
                   onChange={(e) => { setDateTo(e.target.value); setActivePreset(""); }}
-                  className="w-40"
+                  className="w-full sm:w-40"
                 />
               </div>
             </div>
@@ -775,7 +777,73 @@ export function OrcamentosClient() {
                 description="Ajuste os filtros ou o período selecionado."
               />
             ) : (
-              <Table>
+              <>
+              {/* Lista mobile: cards com dados-chave e as mesmas ações da tabela */}
+              <div className="space-y-3 md:hidden">
+                {paginated.map((o) => {
+                  const sb = STATUS_OPTIONS.find((s) => s.value === o.status) ?? STATUS_OPTIONS[0];
+                  return (
+                    <div key={o.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{o.cliente?.nome ?? "—"}</p>
+                          <p className="font-mono text-xs text-[var(--text-secondary)]">
+                            {o.numero_orcamento ?? `#${o.id.slice(0, 6)}`} · {formatDate(o.data_orcamento)}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                          {formatCurrency(Number(o.valor_total))}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-secondary)]">
+                        <Badge variant={sb.variant}>{sb.label}</Badge>
+                        <span>{o.adultos}A · {o.criancas}C · {o.bebes}B</span>
+                        {o.vendedor?.nome && <span className="min-w-0 truncate">{o.vendedor.nome}</span>}
+                      </div>
+                      <div className="mt-2 flex items-center justify-end gap-1 border-t border-[var(--border-subtle)] pt-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11"
+                          title="Baixar PDF do orçamento"
+                          onClick={() => gerarPdf(o)}
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          title="Enviar orçamento pelo WhatsApp"
+                          onClick={() => handleWhatsapp(o)}
+                          className="h-11 w-11 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                        >
+                          <WhatsAppIcon className="h-4 w-4" />
+                        </Button>
+                        {podeGerarVenda(o) ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            title="Gerar venda a partir deste orçamento"
+                            disabled={convertingId === o.id}
+                            onClick={() => handleGerarVenda(o)}
+                            className="h-11 w-11 text-[var(--accent-600)] hover:bg-[var(--accent-50)]"
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => openEdit(o)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(o)} title="Excluir" className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Tabela (md+) */}
+              <div className="hidden md:block">
+              <Table className="min-w-[840px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>
@@ -783,7 +851,7 @@ export function OrcamentosClient() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Pax</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
-                    <TableHead>Vendedor</TableHead>
+                    <TableHead className="hidden lg:table-cell">Vendedor</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -798,7 +866,7 @@ export function OrcamentosClient() {
                         <TableCell className="font-medium">{o.cliente?.nome ?? "—"}</TableCell>
                         <TableCell className="text-xs text-[var(--text-secondary)]">{o.adultos}A · {o.criancas}C · {o.bebes}B</TableCell>
                         <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(o.valor_total))}</TableCell>
-                        <TableCell className="text-[var(--text-secondary)]">{o.vendedor?.nome ?? "—"}</TableCell>
+                        <TableCell className="hidden text-[var(--text-secondary)] lg:table-cell">{o.vendedor?.nome ?? "—"}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -843,6 +911,8 @@ export function OrcamentosClient() {
                   })}
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
             {!loading && filtered.length > PAGE_SIZE && (
               <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-4 sm:flex-row">

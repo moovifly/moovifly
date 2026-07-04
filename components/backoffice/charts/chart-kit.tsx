@@ -264,8 +264,8 @@ export function ComparativeBars({
       {items.map((item) => {
         const pct = max > 0 ? Math.max((item.value / max) * 100, item.value > 0 ? 2 : 0) : 0;
         return (
-          <li key={item.label} className="flex items-center gap-3">
-            <div className="w-36 min-w-0 shrink-0 sm:w-44">
+          <li key={item.label} className="flex items-center gap-2 sm:gap-3">
+            <div className="w-24 min-w-0 shrink-0 sm:w-44">
               <p className="truncate text-xs font-medium text-[var(--text-secondary)]">{item.label}</p>
               {item.hint && <p className="truncate text-[11px] text-[var(--text-muted)]">{item.hint}</p>}
             </div>
@@ -275,7 +275,7 @@ export function ComparativeBars({
                 style={{ width: `${pct}%`, backgroundColor: item.color }}
               />
             </div>
-            <p className="w-28 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
+            <p className="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground sm:w-28">
               {valueFormatter(item.value)}
             </p>
           </li>

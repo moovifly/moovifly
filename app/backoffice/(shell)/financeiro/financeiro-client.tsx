@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { CheckCircle, Pencil, Plus, Trash2 } from "lucide-react";
 
@@ -51,6 +51,54 @@ type ContaPagar = {
 };
 type Usuario = { id: string; nome: string; tipo: string };
 type ContaBancaria = { id: string; nome: string; banco: string | null; principal: boolean };
+
+/** Linha da lista mobile (espelha uma linha da tabela desktop, sem perder ações). */
+type MobileRow = {
+  key: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  value: string;
+  details?: Array<{ label: string; value: ReactNode }>;
+  badge?: ReactNode;
+  actions?: ReactNode;
+};
+
+/** Lista de cards exibida no lugar das tabelas em telas < md. */
+function MobileCardList({ rows }: { rows: MobileRow[] }) {
+  return (
+    <ul className="space-y-3 md:hidden">
+      {rows.map((row) => (
+        <li key={row.key} className="rounded-lg border border-[var(--border-subtle)] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">{row.title}</p>
+              {row.subtitle && (
+                <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{row.subtitle}</p>
+              )}
+            </div>
+            {row.badge && <div className="shrink-0">{row.badge}</div>}
+          </div>
+          <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">{row.value}</p>
+          {row.details && row.details.length > 0 && (
+            <dl className="mt-1.5 space-y-1">
+              {row.details.map((d) => (
+                <div key={d.label} className="flex items-center justify-between gap-3 text-xs">
+                  <dt className="text-[var(--text-secondary)]">{d.label}</dt>
+                  <dd className="text-right text-foreground">{d.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {row.actions && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-3">
+              {row.actions}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function FinanceiroClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -566,13 +614,13 @@ export function FinanceiroClient() {
   return (
     <>
       <Topbar title="Financeiro" />
-      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6 lg:p-8">
         <FinanceiroNav />
         <FinancePeriodFilter period={period} onChange={setPeriod} maxCustomDays={MAX_DAYS} />
 
         {/* Resumo visual compacto das pendências */}
         <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+          <CardHeader className="flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1 space-y-0 pb-3">
             <CardTitle>Resumo de pendências</CardTitle>
             <span className="text-xs text-[var(--text-secondary)]">valores em aberto</span>
           </CardHeader>
@@ -600,7 +648,7 @@ export function FinanceiroClient() {
           {/* ── CONTAS A RECEBER E RECEBIDAS ── */}
           <TabsContent value="receber">
             <Tabs value={subReceber} onValueChange={setSubReceber}>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <TabsList>
                   <TabsTrigger value="pendentes">
                     A Receber
@@ -613,7 +661,7 @@ export function FinanceiroClient() {
                   <TabsTrigger value="recebidas">Recebidas</TabsTrigger>
                 </TabsList>
                 {isManager && (
-                  <Button size="sm" onClick={() => { setAddReceberOpen(true); setRecForm({ descricao: "", valor: 0, data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
+                  <Button size="sm" className="h-11 w-full sm:h-8 sm:w-auto" onClick={() => { setAddReceberOpen(true); setRecForm({ descricao: "", valor: 0, data_vencimento: new Date().toISOString().slice(0, 10) }); }}>
                     <Plus className="h-4 w-4" /> Adicionar
                   </Button>
                 )}
@@ -626,44 +674,74 @@ export function FinanceiroClient() {
                     {loading ? skeletons() : receberPendentes.length === 0 ? (
                       <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma conta a receber.</p>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Vencimento</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ação</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {receberPendentes.map((c) => (
-                            <TableRow key={c.id}>
-                              <TableCell>{c.descricao ?? "—"}</TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                              <TableCell>{formatDate(c.data_vencimento)}</TableCell>
-                              <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => abrirModalRecebimento(c)}>
-                                    <CheckCircle className="h-4 w-4" /> Recebido
-                                  </Button>
-                                  {isManager && (
-                                    <>
-                                      <Button size="icon" variant="ghost" onClick={() => abrirEditarReceber(c)} title="Editar">
-                                        <Pencil className="h-4 w-4" />
+                      <>
+                        <MobileCardList
+                          rows={receberPendentes.map((c) => ({
+                            key: c.id,
+                            title: c.descricao ?? "—",
+                            value: formatCurrency(Number(c.valor)),
+                            details: [{ label: "Vencimento", value: formatDate(c.data_vencimento) }],
+                            badge: statusBadge(c.status, receberBadge),
+                            actions: (
+                              <>
+                                <Button variant="outline" className="h-11 flex-1" onClick={() => abrirModalRecebimento(c)}>
+                                  <CheckCircle className="h-4 w-4" /> Recebido
+                                </Button>
+                                {isManager && (
+                                  <>
+                                    <Button size="icon" variant="ghost" className="h-11 w-11" onClick={() => abrirEditarReceber(c)} title="Editar">
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </>
+                            ),
+                          }))}
+                        />
+                        <div className="hidden md:block">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Vencimento</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Ação</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {receberPendentes.map((c) => (
+                                <TableRow key={c.id}>
+                                  <TableCell>{c.descricao ?? "—"}</TableCell>
+                                  <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                                  <TableCell>{formatDate(c.data_vencimento)}</TableCell>
+                                  <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      <Button size="sm" variant="outline" onClick={() => abrirModalRecebimento(c)}>
+                                        <CheckCircle className="h-4 w-4" /> Recebido
                                       </Button>
-                                      <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                                      {isManager && (
+                                        <>
+                                          <Button size="icon" variant="ghost" onClick={() => abrirEditarReceber(c)} title="Editar">
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                          <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
@@ -676,41 +754,67 @@ export function FinanceiroClient() {
                     {loading ? skeletons() : recebidas.length === 0 ? (
                       <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma conta recebida no período.</p>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Vencimento</TableHead>
-                            <TableHead>Recebido em</TableHead>
-                            <TableHead>Status</TableHead>
-                            {isManager && <TableHead className="text-right">Ação</TableHead>}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {recebidas.map((c) => (
-                            <TableRow key={c.id}>
-                              <TableCell>{c.descricao ?? "—"}</TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
-                              <TableCell>{formatDate(c.data_vencimento)}</TableCell>
-                              <TableCell>{formatDate(c.data_recebimento)}</TableCell>
-                              <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
-                              {isManager && (
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button size="icon" variant="ghost" onClick={() => abrirEditarReceber(c)} title="Editar">
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              )}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <>
+                        <MobileCardList
+                          rows={recebidas.map((c) => ({
+                            key: c.id,
+                            title: c.descricao ?? "—",
+                            value: formatCurrency(Number(c.valor)),
+                            details: [
+                              { label: "Vencimento", value: formatDate(c.data_vencimento) },
+                              { label: "Recebido em", value: formatDate(c.data_recebimento) },
+                            ],
+                            badge: statusBadge(c.status, receberBadge),
+                            actions: isManager ? (
+                              <>
+                                <Button size="icon" variant="ghost" className="h-11 w-11" onClick={() => abrirEditarReceber(c)} title="Editar">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : undefined,
+                          }))}
+                        />
+                        <div className="hidden md:block">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Vencimento</TableHead>
+                                <TableHead>Recebido em</TableHead>
+                                <TableHead>Status</TableHead>
+                                {isManager && <TableHead className="text-right">Ação</TableHead>}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {recebidas.map((c) => (
+                                <TableRow key={c.id}>
+                                  <TableCell>{c.descricao ?? "—"}</TableCell>
+                                  <TableCell className="font-semibold">{formatCurrency(Number(c.valor))}</TableCell>
+                                  <TableCell>{formatDate(c.data_vencimento)}</TableCell>
+                                  <TableCell>{formatDate(c.data_recebimento)}</TableCell>
+                                  <TableCell>{statusBadge(c.status, receberBadge)}</TableCell>
+                                  {isManager && (
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-2">
+                                        <Button size="icon" variant="ghost" onClick={() => abrirEditarReceber(c)} title="Editar">
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={() => excluirContaReceber(c.id)} title="Excluir" className="text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>

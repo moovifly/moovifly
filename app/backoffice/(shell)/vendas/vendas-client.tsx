@@ -442,7 +442,9 @@ export function VendasClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
+      toast.error(form.id ? "Erro ao atualizar venda" : "Erro ao cadastrar venda", {
+        description: formatSupabaseError(err),
+      });
     } finally {
       setSaving(false);
     }
@@ -563,7 +565,7 @@ export function VendasClient() {
                     setDateTo(to);
                     setActivePreset(p.key);
                   }}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`rounded-full border px-3 py-2 text-xs font-medium transition-colors sm:py-1.5 ${
                     activePreset === p.key
                       ? "border-[var(--accent-600)] bg-[var(--accent-600)] text-white shadow-[var(--shadow-xs)]"
                       : "border-[var(--border-subtle)] bg-card text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
@@ -572,22 +574,22 @@ export function VendasClient() {
                   {p.label}
                 </button>
               ))}
-              <div className="space-y-1.5">
+              <div className="min-w-[140px] flex-1 space-y-1.5 sm:min-w-0 sm:flex-none">
                 <Label className="text-xs">De</Label>
                 <Input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => { setDateFrom(e.target.value); setActivePreset(""); }}
-                  className="w-40"
+                  className="w-full sm:w-40"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-[140px] flex-1 space-y-1.5 sm:min-w-0 sm:flex-none">
                 <Label className="text-xs">Até</Label>
                 <Input
                   type="date"
                   value={dateTo}
                   onChange={(e) => { setDateTo(e.target.value); setActivePreset(""); }}
-                  className="w-40"
+                  className="w-full sm:w-40"
                 />
               </div>
             </div>
@@ -602,7 +604,50 @@ export function VendasClient() {
                 description="Ajuste os filtros ou o período selecionado."
               />
             ) : (
-              <Table>
+              <>
+              {/* Lista mobile: cards com dados-chave e as mesmas ações da tabela */}
+              <div className="space-y-3 md:hidden">
+                {filtered.map((v) => {
+                  const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
+                  const sb = STATUS_OPTIONS.find((s) => s.value === v.status) ?? STATUS_OPTIONS[0];
+                  const isSeguro = v.categoria_venda === "seguro_viagem";
+                  return (
+                    <div key={v.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{cli?.nome ?? "—"}</p>
+                          <p className="font-mono text-xs text-[var(--text-secondary)]">
+                            #{v.numero_venda} · {formatDate(v.data_venda)}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                          {formatCurrency(Number(v.valor_total))}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-secondary)]">
+                        <Badge variant={sb.variant}>{sb.label}</Badge>
+                        <Badge variant={isSeguro ? "info" : "default"}>{isSeguro ? "Seguro" : "Aéreo"}</Badge>
+                        {v.destino && <span className="min-w-0 truncate">{v.destino}</span>}
+                        {v.localizador?.trim() && <span className="font-mono uppercase">{v.localizador.trim()}</span>}
+                      </div>
+                      <div className="mt-2 flex items-center justify-end gap-1 border-t border-[var(--border-subtle)] pt-2">
+                        <BackofficeLink href={`/backoffice/checkout/?id=${v.id}`}>
+                          <Button variant="ghost" size="icon" className="h-11 w-11" title="Checkout"><CreditCard className="h-4 w-4" /></Button>
+                        </BackofficeLink>
+                        <Button variant="ghost" size="icon" className="h-11 w-11" title="Visualizar" onClick={() => openView(v)}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-11 w-11" title="Editar" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Excluir" onClick={() => handleDelete(v)} className="h-11 w-11 text-destructive hover:bg-(--danger-bg)"><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="pt-1 text-right text-sm font-semibold">
+                  {filteredSummary.count} Venda{filteredSummary.count !== 1 ? "s" : ""} - Total {formatCurrency(filteredSummary.total)}
+                </p>
+              </div>
+              {/* Tabela (md+) */}
+              <div className="hidden md:block">
+              <Table className="min-w-[880px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>
@@ -610,6 +655,7 @@ export function VendasClient() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Destino</TableHead>
+                    <TableHead className="hidden lg:table-cell">Localizador</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -631,6 +677,7 @@ export function VendasClient() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{v.destino ?? "—"}</TableCell>
+                        <TableCell className="hidden font-mono text-xs uppercase lg:table-cell">{v.localizador?.trim() || "—"}</TableCell>
                         <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -647,12 +694,14 @@ export function VendasClient() {
                     );
                   })}
                   <TableRow className="border-t-2 bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={8} className="py-3 text-right font-semibold">
+                    <TableCell colSpan={9} className="py-3 text-right font-semibold">
                       {filteredSummary.count} Venda{filteredSummary.count !== 1 ? "s" : ""} - Total {formatCurrency(filteredSummary.total)}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -666,7 +715,7 @@ export function VendasClient() {
                 <DialogTitle>Nova venda</DialogTitle>
                 <DialogDescription>Escolha o tipo de venda para continuar.</DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-2 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => selectCategoria("aereo")}
@@ -958,7 +1007,7 @@ export function VendasClient() {
                                 <button
                                   type="button"
                                   onClick={() => removePassageiro(i)}
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-(--danger-bg) hover:text-destructive"
+                                  className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-(--danger-bg) hover:text-destructive sm:h-7 sm:w-7"
                                 >
                                   <X className="h-4 w-4" />
                                 </button>

@@ -23,7 +23,7 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
     >
@@ -43,7 +43,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
     <div
       ref={ref}
       className={cn(
-        "relative z-10 w-full max-w-lg rounded-xl border border-[var(--border-subtle)] bg-card p-6 shadow-[var(--shadow-lg)]",
+        "relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-card p-4 shadow-[var(--shadow-lg)] sm:p-6",
         className,
       )}
       {...props}

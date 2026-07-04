@@ -181,7 +181,9 @@ export function ClientesClient() {
       setOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
+      toast.error(form.id ? "Erro ao atualizar cliente" : "Erro ao cadastrar cliente", {
+        description: formatSupabaseError(err),
+      });
     } finally {
       setSaving(false);
     }
@@ -254,14 +256,51 @@ export function ClientesClient() {
                 description="Ajuste a busca ou cadastre um novo cliente."
               />
             ) : (
-              <Table>
+              <>
+              {/* Lista mobile: cards com dados-chave e as mesmas ações da tabela */}
+              <div className="space-y-3 md:hidden">
+                {paginated.map((c) => (
+                  <div key={c.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <BackofficeLink
+                          href={`/backoffice/clientes/${c.id}/`}
+                          className="block truncate text-sm font-medium text-foreground hover:underline"
+                        >
+                          {c.nome}
+                        </BackofficeLink>
+                        <p className="truncate text-xs text-[var(--text-secondary)]">{c.email ?? "—"}</p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${c.status === "ativo" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`}>
+                        {c.status}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-secondary)]">
+                      <span>{formatPhoneBR(c.telefone) || "—"}</span>
+                      {formatCpfCnpj(c.cpf) && <span className="font-mono">{formatCpfCnpj(c.cpf)}</span>}
+                      <span>Desde {formatDate(c.created_at)}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-end gap-1 border-t border-[var(--border-subtle)] pt-2">
+                      <Button variant="ghost" size="icon" className="h-11 w-11" title="Editar" onClick={() => openEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" title="Excluir" onClick={() => handleDelete(c)} className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Tabela (md+) */}
+              <div className="hidden md:block">
+              <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Cadastro</TableHead>
+                    <TableHead className="hidden lg:table-cell">CPF</TableHead>
+                    <TableHead className="hidden lg:table-cell">Cadastro</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -279,8 +318,8 @@ export function ClientesClient() {
                       </TableCell>
                       <TableCell className="text-[var(--text-secondary)]">{c.email ?? "—"}</TableCell>
                       <TableCell>{formatPhoneBR(c.telefone) || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{formatCpfCnpj(c.cpf) || "—"}</TableCell>
-                      <TableCell className="text-[var(--text-secondary)]">{formatDate(c.created_at)}</TableCell>
+                      <TableCell className="hidden font-mono text-xs lg:table-cell">{formatCpfCnpj(c.cpf) || "—"}</TableCell>
+                      <TableCell className="hidden text-[var(--text-secondary)] lg:table-cell">{formatDate(c.created_at)}</TableCell>
                       <TableCell>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.status === "ativo" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`}>
                           {c.status}
@@ -300,10 +339,12 @@ export function ClientesClient() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
           </CardContent>
           {!loading && filtered.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between gap-4 border-t border-[var(--border-default)] px-6 py-4">
+            <div className="flex flex-col items-center gap-3 border-t border-[var(--border-default)] px-4 py-4 sm:flex-row sm:justify-between sm:gap-4 sm:px-6">
               <p className="text-sm text-[var(--text-secondary)]">
                 Página {currentPage} de {totalPages}
               </p>

@@ -104,13 +104,23 @@ export async function GET(request: NextRequest) {
     const arrIata = extractIataCode(trecho?.destino ?? venda.destino);
 
     if (!flightIata) {
-      if (depIata && arrIata && flightDate) {
-        // Sem número do voo: tenta localizar pelo trecho + data (ex.: vendas só com localizador)
-      } else {
+      if (!depIata || !arrIata || !flightDate) {
         const response: FlightStatusResponse = buildFlightStatusResponse(null, {
           ...metaBase,
           notFoundMessage:
             "Número do voo não cadastrado. O localizador (PNR) não permite rastreamento automático — informe o número do voo na venda.",
+        });
+        return NextResponse.json(response);
+      }
+
+      // Sem número do voo, a busca por rota só encontra voos ao vivo (hoje).
+      // Em datas futuras/passadas a consulta exige o número — não adianta chamar a API.
+      const today = new Date().toISOString().slice(0, 10);
+      if (flightDate !== today) {
+        const response: FlightStatusResponse = buildFlightStatusResponse(null, {
+          ...metaBase,
+          notFoundMessage:
+            "Número do voo não cadastrado na venda. A agenda de outras datas só pode ser consultada pelo número do voo — edite a venda e informe-o. No dia do embarque, a busca pela rota funciona sem o número.",
         });
         return NextResponse.json(response);
       }

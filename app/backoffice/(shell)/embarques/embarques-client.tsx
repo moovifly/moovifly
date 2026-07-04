@@ -162,7 +162,55 @@ export function EmbarquesClient() {
                 description="Vendas confirmadas com data de ida aparecem aqui. Clique em um embarque para ver o status do voo."
               />
             ) : (
-              <Table>
+              <>
+              {/* Lista mobile: cards clicáveis (mesma ação da linha da tabela) */}
+              <div className="space-y-3 md:hidden">
+                {list.map((i) => {
+                  const nome = relNome(i.clientes) ?? "—";
+                  const vendedor = relVendedor(i.usuarios) ?? "—";
+                  const diff = i.data_ida ? i._diffDays : null;
+                  const badge =
+                    diff === null
+                      ? null
+                      : diff === 0
+                        ? { text: "Hoje", variant: "success" as const }
+                        : diff > 0
+                          ? { text: embarqueAlertTitle(diff), variant: "warning" as const }
+                          : { text: "Realizado", variant: "default" as const };
+
+                  return (
+                    <button
+                      key={i.id}
+                      type="button"
+                      onClick={() => openFlightStatus(i)}
+                      title="Toque para ver status do voo"
+                      className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-left transition-colors hover:bg-[var(--bg-hover)]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{nome}</p>
+                          <p className="font-mono text-xs text-[var(--text-secondary)]">#{i.numero_venda}</p>
+                        </div>
+                        {badge ? <Badge variant={badge.variant} className="shrink-0">{badge.text}</Badge> : null}
+                      </div>
+                      <p className="mt-2 truncate text-sm text-[var(--text-secondary)]">
+                        {i.origem ?? "—"} → {i.destino ?? "—"}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-secondary)]">
+                        <span>{i.data_ida ? formatDate(i.data_ida) : "—"}</span>
+                        <span className="font-mono uppercase">Voo {primeiroNumeroVoo(i)}</span>
+                        {i.localizador?.trim() && (
+                          <span className="font-mono uppercase">LOC {i.localizador.trim()}</span>
+                        )}
+                        {profile?.tipo !== "vendedor" && <span className="min-w-0 truncate">{vendedor}</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Tabela (md+) */}
+              <div className="hidden md:block">
+              <Table className="min-w-[880px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>
@@ -170,6 +218,7 @@ export function EmbarquesClient() {
                     <TableHead>Origem</TableHead>
                     <TableHead>Destino</TableHead>
                     <TableHead>Voo</TableHead>
+                    <TableHead className="hidden lg:table-cell">Localizador</TableHead>
                     <TableHead>Embarque</TableHead>
                     {profile?.tipo !== "vendedor" && <TableHead>Vendedor</TableHead>}
                     <TableHead className="text-right">Status</TableHead>
@@ -201,6 +250,7 @@ export function EmbarquesClient() {
                         <TableCell className="text-[var(--text-secondary)]">{i.origem ?? "—"}</TableCell>
                         <TableCell className="text-[var(--text-secondary)]">{i.destino ?? "—"}</TableCell>
                         <TableCell className="font-mono text-xs uppercase">{primeiroNumeroVoo(i)}</TableCell>
+                        <TableCell className="hidden font-mono text-xs uppercase lg:table-cell">{i.localizador?.trim() || "—"}</TableCell>
                         <TableCell>{i.data_ida ? formatDate(i.data_ida) : "—"}</TableCell>
                         {profile?.tipo !== "vendedor" && <TableCell>{vendedor}</TableCell>}
                         <TableCell className="text-right">
@@ -211,6 +261,8 @@ export function EmbarquesClient() {
                   })}
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
           </CardContent>
         </Card>

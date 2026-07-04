@@ -280,9 +280,139 @@ function NavGroupItem({
   );
 }
 
-export function Sidebar() {
+/** Logo MooviFly — compartilhada entre a sidebar desktop e o drawer mobile. */
+export function SidebarBrand({ showName = true }: { showName?: boolean }) {
+  return (
+    <BackofficeLink
+      href="/backoffice/dashboard/"
+      aria-label="MooviFly Dashboard"
+      className="flex min-w-0 items-center gap-2.5"
+    >
+      <Image
+        src="/favicon.png"
+        alt="MooviFly"
+        width={36}
+        height={36}
+        className="h-9 w-9 shrink-0 rounded-[10px]"
+      />
+      {showName && (
+        <span className="truncate font-display text-[15px] font-semibold tracking-tight text-foreground">
+          MooviFly
+        </span>
+      )}
+    </BackofficeLink>
+  );
+}
+
+/** Seções de navegação filtradas por role — compartilhadas entre a sidebar desktop e o drawer mobile. */
+export function SidebarNav({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname() ?? "";
-  const { profile, effectiveProfile, signOut } = useAuth();
+  const { effectiveProfile } = useAuth();
+
+  const canAccess = (roles?: string[]) =>
+    !roles || (effectiveProfile && roles.includes(effectiveProfile.tipo));
+
+  const sections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => canAccess(item.roles)),
+  })).filter((section) => section.items.length > 0);
+
+  return (
+    <nav className={cn("flex-1 py-3", collapsed ? "overflow-visible" : "overflow-y-auto")}>
+      {sections.map((section, idx) => (
+        <div key={section.label}>
+          {collapsed ? (
+            idx > 0 && <div className="mx-auto my-2 h-px w-8 bg-[var(--border-subtle)]" />
+          ) : (
+            <p
+              className={cn(
+                "px-6 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]",
+                idx === 0 ? "pt-2" : "pt-5",
+              )}
+            >
+              {section.label}
+            </p>
+          )}
+          <div className={cn("flex flex-col", collapsed ? "gap-1.5 py-1" : "gap-0.5")}>
+            {section.items.map((entry) =>
+              entry.children?.length ? (
+                <NavGroupItem key={entry.href} entry={entry} pathname={pathname} collapsed={collapsed} />
+              ) : (
+                <NavLeafLink
+                  key={entry.href}
+                  href={entry.href}
+                  label={entry.label}
+                  icon={entry.icon}
+                  active={isEntryActive(pathname, entry)}
+                  collapsed={collapsed}
+                />
+              ),
+            )}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+/** Rodapé com avatar/nome/role + sair — compartilhado entre a sidebar desktop e o drawer mobile. */
+export function SidebarUserFooter({ collapsed = false }: { collapsed?: boolean }) {
+  const { profile, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    const ok = await showConfirm({
+      title: "Sair do sistema",
+      message: "Deseja realmente sair? Você precisará entrar novamente para acessar o backoffice.",
+      confirmText: "Sair",
+      cancelText: "Cancelar",
+    });
+    if (ok) await signOut();
+  };
+
+  return (
+    <div className="shrink-0 border-t border-[var(--border-subtle)] p-3">
+      {collapsed ? (
+        <div className="flex flex-col items-center gap-2">
+          <Avatar className="h-9 w-9" title={profile?.nome}>
+            <AvatarFallback>{getInitials(profile?.nome ?? "?")}</AvatarFallback>
+          </Avatar>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="group relative flex h-9 w-11 items-center justify-center rounded-[10px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--danger-bg)] hover:text-[var(--danger-text)]"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            <ItemTooltip label="Sair" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2.5 px-1.5 py-1">
+          <Avatar className="h-9 w-9 shrink-0">
+            <AvatarFallback>{getInitials(profile?.nome ?? "?")}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold leading-tight text-foreground">
+              {profile?.nome ?? "—"}
+            </p>
+            <p className="mt-0.5 truncate text-[11px] leading-tight text-[var(--text-secondary)]">
+              {profile ? ROLE_LABELS[profile.tipo] ?? profile.tipo : ""}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Sair"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--danger-bg)] hover:text-[var(--danger-text)]"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Sidebar() {
   // O shell só monta a sidebar no cliente (após o loading de auth), então é
   // seguro ler o localStorage no inicializador — sem flash nem mismatch de SSR.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -293,14 +423,6 @@ export function Sidebar() {
       return false;
     }
   });
-
-  const canAccess = (roles?: string[]) =>
-    !roles || (effectiveProfile && roles.includes(effectiveProfile.tipo));
-
-  const sections = NAV_SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => canAccess(item.roles)),
-  })).filter((section) => section.items.length > 0);
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
@@ -313,16 +435,6 @@ export function Sidebar() {
       return next;
     });
   }
-
-  const handleLogout = async () => {
-    const ok = await showConfirm({
-      title: "Sair do sistema",
-      message: "Deseja realmente sair? Você precisará entrar novamente para acessar o backoffice.",
-      confirmText: "Sair",
-      cancelText: "Cancelar",
-    });
-    if (ok) await signOut();
-  };
 
   return (
     <aside
@@ -338,24 +450,7 @@ export function Sidebar() {
           collapsed ? "justify-center" : "px-5",
         )}
       >
-        <BackofficeLink
-          href="/backoffice/dashboard/"
-          aria-label="MooviFly Dashboard"
-          className="flex min-w-0 items-center gap-2.5"
-        >
-          <Image
-            src="/favicon.png"
-            alt="MooviFly"
-            width={36}
-            height={36}
-            className="h-9 w-9 shrink-0 rounded-[10px]"
-          />
-          {!collapsed && (
-            <span className="truncate font-display text-[15px] font-semibold tracking-tight text-foreground">
-              MooviFly
-            </span>
-          )}
-        </BackofficeLink>
+        <SidebarBrand showName={!collapsed} />
       </div>
 
       {/* Botão de recolher/expandir, flutuando sobre a borda */}
@@ -370,81 +465,10 @@ export function Sidebar() {
       </button>
 
       {/* Navegação */}
-      <nav className={cn("flex-1 py-3", collapsed ? "overflow-visible" : "overflow-y-auto")}>
-        {sections.map((section, idx) => (
-          <div key={section.label}>
-            {collapsed ? (
-              idx > 0 && <div className="mx-auto my-2 h-px w-8 bg-[var(--border-subtle)]" />
-            ) : (
-              <p
-                className={cn(
-                  "px-6 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]",
-                  idx === 0 ? "pt-2" : "pt-5",
-                )}
-              >
-                {section.label}
-              </p>
-            )}
-            <div className={cn("flex flex-col", collapsed ? "gap-1.5 py-1" : "gap-0.5")}>
-              {section.items.map((entry) =>
-                entry.children?.length ? (
-                  <NavGroupItem key={entry.href} entry={entry} pathname={pathname} collapsed={collapsed} />
-                ) : (
-                  <NavLeafLink
-                    key={entry.href}
-                    href={entry.href}
-                    label={entry.label}
-                    icon={entry.icon}
-                    active={isEntryActive(pathname, entry)}
-                    collapsed={collapsed}
-                  />
-                ),
-              )}
-            </div>
-          </div>
-        ))}
-      </nav>
+      <SidebarNav collapsed={collapsed} />
 
       {/* Usuário + sair */}
-      <div className="shrink-0 border-t border-[var(--border-subtle)] p-3">
-        {collapsed ? (
-          <div className="flex flex-col items-center gap-2">
-            <Avatar className="h-9 w-9" title={profile?.nome}>
-              <AvatarFallback>{getInitials(profile?.nome ?? "?")}</AvatarFallback>
-            </Avatar>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="group relative flex h-9 w-11 items-center justify-center rounded-[10px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--danger-bg)] hover:text-[var(--danger-text)]"
-            >
-              <LogOut className="h-[18px] w-[18px]" />
-              <ItemTooltip label="Sair" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2.5 px-1.5 py-1">
-            <Avatar className="h-9 w-9 shrink-0">
-              <AvatarFallback>{getInitials(profile?.nome ?? "?")}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold leading-tight text-foreground">
-                {profile?.nome ?? "—"}
-              </p>
-              <p className="mt-0.5 truncate text-[11px] leading-tight text-[var(--text-secondary)]">
-                {profile ? ROLE_LABELS[profile.tipo] ?? profile.tipo : ""}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Sair"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--danger-bg)] hover:text-[var(--danger-text)]"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
+      <SidebarUserFooter collapsed={collapsed} />
     </aside>
   );
 }

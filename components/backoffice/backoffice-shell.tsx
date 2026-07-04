@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/providers/auth-provider";
+import { MobileNavDrawer, MobileNavProvider, useMobileNav } from "./mobile-nav";
 import { Sidebar } from "./sidebar";
 
 const PROFILE_WAIT_MS = 30_000;
@@ -57,11 +58,22 @@ export function BackofficeShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
+    <MobileNavProvider>
+      <div className="flex h-dvh overflow-hidden bg-background">
+        <Sidebar />
+        <MobileNavDrawer />
+        <ShellContent>{children}</ShellContent>
       </div>
+    </MobileNavProvider>
+  );
+}
+
+/** Conteúdo principal — fica inerte (sem foco/interação) enquanto o menu mobile está aberto. */
+function ShellContent({ children }: { children: ReactNode }) {
+  const { open } = useMobileNav();
+  return (
+    <div inert={open} className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
     </div>
   );
 }

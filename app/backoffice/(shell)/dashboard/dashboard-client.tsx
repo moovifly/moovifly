@@ -648,7 +648,7 @@ export function DashboardClient() {
   return (
     <>
       <Topbar />
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
         <PeriodFilter value={period} onChange={setPeriod} />
         {!loading && visibleAlerts.length > 0 && (
           <div className="space-y-2">
@@ -658,7 +658,7 @@ export function DashboardClient() {
               return (
                 <div
                   key={`${a.venda_id}:${a.diffDays}`}
-                  className="flex items-start justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-glow)] px-4 py-3"
+                  className="flex flex-col gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-glow)] px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[var(--accent-700)]">{title}</p>
@@ -687,7 +687,7 @@ export function DashboardClient() {
           </div>
         )}
 
-        <section className={`grid gap-4 md:grid-cols-2 ${isManager ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+        <section className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${isManager ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
           {isManager ? (
             <>
               <StatCard label="Total de Clientes" value={loading ? null : String(stats.totalClientes)} icon={Users} tone="purple" />
@@ -709,7 +709,7 @@ export function DashboardClient() {
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>Relatório de Vendas ({PERIODS.find((p) => p.value === period)?.label ?? ""})</CardTitle>
             </CardHeader>
-            <CardContent className="h-72">
+            <CardContent className="h-56 md:h-72">
               {loading ? (
                 <div className="flex h-full items-center justify-center text-[var(--text-secondary)]">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
@@ -881,7 +881,7 @@ function PeriodFilter({ value, onChange }: { value: Period; onChange: (p: Period
           key={p.value}
           type="button"
           onClick={() => onChange(p.value)}
-          className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`rounded-md px-3 py-2 text-xs font-medium transition-colors sm:py-1.5 ${
             value === p.value
               ? "bg-(--accent-600) text-white shadow-sm"
               : "border border-(--border-subtle) bg-secondary text-muted-foreground hover:bg-(--bg-hover) hover:text-foreground"

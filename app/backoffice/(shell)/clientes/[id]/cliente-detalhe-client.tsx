@@ -187,7 +187,7 @@ export function ClienteDetalheClient() {
       setEditOpen(false);
       await load();
     } catch (err) {
-      toast.error("Erro ao salvar", { description: formatSupabaseError(err) });
+      toast.error("Erro ao atualizar cliente", { description: formatSupabaseError(err) });
     } finally {
       setSaving(false);
     }
@@ -352,7 +352,7 @@ export function ClienteDetalheClient() {
             {orcamentos.length === 0 ? (
               <EmptyState icon={FileText} title="Nenhum orçamento registrado" className="py-8" />
             ) : (
-              <Table>
+              <Table className="min-w-[480px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>
@@ -390,7 +390,7 @@ export function ClienteDetalheClient() {
             {vendas.length === 0 ? (
               <EmptyState icon={ShoppingCart} title="Nenhuma venda registrada" className="py-8" />
             ) : (
-              <Table>
+              <Table className="min-w-[560px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Número</TableHead>

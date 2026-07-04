@@ -45,7 +45,7 @@ const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     <div
       ref={ref}
       className={cn(
-        "inline-flex h-10 items-center gap-1 rounded-lg bg-[var(--bg-overlay)] p-1",
+        "inline-flex h-10 max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-[var(--bg-overlay)] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
       {...props}

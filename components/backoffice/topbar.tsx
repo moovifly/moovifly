@@ -1,8 +1,9 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MOBILE_NAV_ID, useMobileNav } from "@/components/backoffice/mobile-nav";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ROLE_LABELS } from "@/lib/auth";
 
@@ -14,6 +15,7 @@ interface TopbarProps {
 
 export function Topbar({ title, subtitle, actions }: TopbarProps) {
   const { profile, viewAsVendedor, setViewAsVendedor } = useAuth();
+  const { open: mobileNavOpen, setOpen: setMobileNavOpen, enabled: mobileNavEnabled } = useMobileNav();
 
   const isRealAdmin = profile?.tipo === "administrador";
 
@@ -38,25 +40,40 @@ export function Topbar({ title, subtitle, actions }: TopbarProps) {
         </div>
       )}
       <header className="sticky top-0 z-10 flex h-[var(--topbar-height)] shrink-0 items-center justify-between gap-4 border-b border-[var(--border-subtle)] bg-card px-4 md:px-6 lg:px-8">
-        <div className="min-w-0">
-          {title && (
-            <h1 className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground">
-              {title}
-            </h1>
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Hambúrguer — abre o drawer de navegação mobile */}
+          {mobileNavEnabled && (
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Abrir menu"
+              aria-expanded={mobileNavOpen}
+              aria-controls={MOBILE_NAV_ID}
+              className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-foreground md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
           )}
-          {subtitle && (
-            <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{subtitle}</p>
-          )}
-          {!title && profile && (
-            <div>
-              <p className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground">
-                {profile.nome}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
-                {ROLE_LABELS[profile.tipo] ?? profile.tipo}
-              </p>
-            </div>
-          )}
+          <div className="min-w-0">
+            {title && (
+              <h1 className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground">
+                {title}
+              </h1>
+            )}
+            {subtitle && (
+              <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{subtitle}</p>
+            )}
+            {!title && profile && (
+              <div>
+                <p className="truncate font-display text-lg font-semibold leading-tight tracking-tight text-foreground">
+                  {profile.nome}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+                  {ROLE_LABELS[profile.tipo] ?? profile.tipo}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {actions}

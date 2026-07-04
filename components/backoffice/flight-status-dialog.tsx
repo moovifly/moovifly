@@ -332,9 +332,9 @@ export function FlightStatusDialog({
                 </div>
 
                 {/* Partida | Chegada */}
-                <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--border-subtle)] pt-4">
+                <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[var(--border-subtle)] pt-4 sm:grid-cols-2">
                   <EndpointColumn label="Partida programada" endpoint={data.departure} cancelled={cancelled} />
-                  <div className="border-l border-[var(--border-subtle)] pl-4">
+                  <div className="border-t border-[var(--border-subtle)] pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                     <EndpointColumn label="Chegada programada" endpoint={data.arrival} cancelled={cancelled} />
                   </div>
                 </div>
