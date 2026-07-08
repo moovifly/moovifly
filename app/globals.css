@@ -43,6 +43,30 @@
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
   --shadow-glow: var(--shadow-glow);
+
+  --animate-hero-caret-blink: hero-caret-blink 1.1s infinite;
+
+  @keyframes hero-caret-blink {
+    0%,
+    50% {
+      opacity: 1;
+    }
+    50.01%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  --animate-hero-clouds: hero-clouds 120s linear infinite;
+
+  @keyframes hero-clouds {
+    from {
+      transform: translate(-50%, -50%);
+    }
+    to {
+      transform: translate(0%, -50%);
+    }
+  }
 }
 
 :root {
