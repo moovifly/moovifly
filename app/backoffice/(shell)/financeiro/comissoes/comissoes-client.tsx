@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CheckCircle, Plus, Trash2 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
 import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -270,6 +271,31 @@ export function ComissoesClient() {
                 {loading ? skeletons(3) : comissoesPendentes.length === 0 ? (
                   <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão pendente.</p>
                 ) : (
+                  <>
+                    <MobileCardList
+                      rows={comissoesPendentes.map((c) => ({
+                        key: c.id,
+                        title: vendorName(c),
+                        subtitle: saleLabel(c),
+                        value: formatCurrency(Number(c.valor_comissao)),
+                        details: [
+                          { label: "Data da venda", value: saleDate(c) },
+                          { label: "%", value: c.percentual_comissao ? `${c.percentual_comissao}%` : "—" },
+                        ],
+                        badge: statusBadge(c.status),
+                        actions: isManager ? (
+                          <>
+                            <Button variant="outline" className="h-11 flex-1" onClick={() => abrirModalPagamentoComissao(c)}>
+                              <CheckCircle className="h-4 w-4" /> Pagar
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]" onClick={() => excluirComissao(c.id)} title="Excluir">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : undefined,
+                      }))}
+                    />
+                    <div className="hidden md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -307,6 +333,8 @@ export function ComissoesClient() {
                       ))}
                     </TableBody>
                   </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -319,6 +347,27 @@ export function ComissoesClient() {
                 {loading ? skeletons() : comissoesPagas.length === 0 ? (
                   <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão paga no período.</p>
                 ) : (
+                  <>
+                    <MobileCardList
+                      rows={comissoesPagas.map((c) => ({
+                        key: c.id,
+                        title: vendorName(c),
+                        subtitle: saleLabel(c),
+                        value: formatCurrency(Number(c.valor_comissao)),
+                        details: [
+                          { label: "Data da venda", value: saleDate(c) },
+                          { label: "Pago em", value: formatDate(c.data_pagamento) },
+                          { label: "%", value: c.percentual_comissao ? `${c.percentual_comissao}%` : "—" },
+                        ],
+                        badge: statusBadge(c.status),
+                        actions: isManager ? (
+                          <Button size="icon" variant="ghost" className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]" onClick={() => excluirComissao(c.id)} title="Excluir">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        ) : undefined,
+                      }))}
+                    />
+                    <div className="hidden md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -353,6 +402,8 @@ export function ComissoesClient() {
                       ))}
                     </TableBody>
                   </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>

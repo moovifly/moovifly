@@ -29,6 +29,15 @@ export function SiteNavbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
+
   return (
     <nav
       className={cn(
@@ -55,7 +64,7 @@ export function SiteNavbar() {
           aria-label="Menu"
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="rounded-md p-2 text-white transition-colors hover:bg-white/10 md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-md text-white transition-colors hover:bg-white/10 md:hidden"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -92,7 +101,7 @@ export function SiteNavbar() {
                 <a
                   href={l.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-md px-4 py-2 text-sm font-medium text-white/85 transition-colors hover:bg-white/10"
+                  className="block rounded-md px-4 py-3 text-sm font-medium text-white/85 transition-colors hover:bg-white/10"
                 >
                   {l.label}
                 </a>

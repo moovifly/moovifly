@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { BarChart3 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { ChartEmptyState, SimpleBarChart } from "@/components/backoffice/charts/chart-kit";
 import { DonutChart } from "@/components/backoffice/charts/donut-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -331,7 +332,7 @@ export function RelatoriosClient() {
 
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-col gap-2 space-y-0 pb-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Faturamento no período</CardTitle>
               <span className="text-xs text-[var(--text-secondary)]">vendas confirmadas e concluídas</span>
             </CardHeader>
@@ -376,6 +377,30 @@ export function RelatoriosClient() {
             ) : items.length === 0 ? (
               <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma venda no período.</p>
             ) : (
+              <>
+                <MobileCardList
+                  rows={items.map((v) => {
+                    const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
+                    const ven = Array.isArray(v.usuarios) ? v.usuarios[0] : v.usuarios;
+                    return {
+                      key: v.id,
+                      title: v.numero_venda,
+                      subtitle: cli?.nome ?? "—",
+                      value: formatCurrency(Number(v.valor_total)),
+                      details: [
+                        { label: "Data", value: formatDate(v.data_venda) },
+                        { label: "Vendedor", value: ven?.nome ?? "—" },
+                        { label: "Destino", value: v.destino ?? "—" },
+                      ],
+                      badge: (
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${v.status === "confirmada" || v.status === "concluida" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : v.status === "cancelada" ? "bg-[var(--danger-bg)] text-[var(--danger-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
+                          {v.status}
+                        </span>
+                      ),
+                    };
+                  })}
+                />
+                <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -410,6 +435,8 @@ export function RelatoriosClient() {
                   })}
                 </TableBody>
               </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

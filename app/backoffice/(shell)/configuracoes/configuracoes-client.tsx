@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -311,6 +312,60 @@ export function ConfiguracoesClient() {
                     </Button>
                   </div>
                 ) : (
+                  <>
+                    <MobileCardList
+                      rows={filtered.map((u) => {
+                        const isSelf = profile?.id === u.id;
+                        return {
+                          key: u.id,
+                          title: (
+                            <span className="flex items-center gap-1.5">
+                              {u.nome}
+                              {isSelf && (
+                                <span className="rounded-full bg-[var(--bg-overlay)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">
+                                  você
+                                </span>
+                              )}
+                            </span>
+                          ),
+                          subtitle: u.email,
+                          details: u.comissao_percentual != null ? [{ label: "Comissão", value: formatComissao(u.comissao_percentual) }] : undefined,
+                          badge: (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ROLE_BADGE_CLASS[u.tipo] ?? ROLE_BADGE_CLASS.vendedor}`}>
+                                {ROLE_LABELS[u.tipo] ?? u.tipo}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => toggleAtivo(u)}
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${u.ativo ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`}
+                              >
+                                {u.ativo ? "Ativo" : "Inativo"}
+                              </button>
+                            </div>
+                          ),
+                          actions: (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => openEdit(u)} title="Editar" aria-label={`Editar ${u.nome}`}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-11 w-11 text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+                                onClick={() => excluirUsuario(u)}
+                                title={isSelf ? "Você não pode excluir a si mesmo" : "Excluir usuário"}
+                                aria-label={`Excluir ${u.nome}`}
+                                disabled={isSelf}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ),
+                        };
+                      })}
+                    />
+                    <div className="hidden md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -399,6 +454,8 @@ export function ConfiguracoesClient() {
                       )}
                     </TableBody>
                   </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>

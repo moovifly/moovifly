@@ -181,6 +181,10 @@
   border-color: var(--border-default);
 }
 
+html {
+  overflow-x: clip;
+}
+
 html,
 body {
   background-color: var(--bg-base);
@@ -192,6 +196,7 @@ body {
 
 body {
   min-height: 100dvh;
+  overflow-x: clip;
   transition: background-color var(--ease-smooth), color var(--ease-smooth);
 }
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { ComparativeBars } from "@/components/backoffice/charts/chart-kit";
 import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
 import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
@@ -51,54 +52,6 @@ type ContaPagar = {
 };
 type Usuario = { id: string; nome: string; tipo: string };
 type ContaBancaria = { id: string; nome: string; banco: string | null; principal: boolean };
-
-/** Linha da lista mobile (espelha uma linha da tabela desktop, sem perder ações). */
-type MobileRow = {
-  key: string;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  value: string;
-  details?: Array<{ label: string; value: ReactNode }>;
-  badge?: ReactNode;
-  actions?: ReactNode;
-};
-
-/** Lista de cards exibida no lugar das tabelas em telas < md. */
-function MobileCardList({ rows }: { rows: MobileRow[] }) {
-  return (
-    <ul className="space-y-3 md:hidden">
-      {rows.map((row) => (
-        <li key={row.key} className="rounded-lg border border-[var(--border-subtle)] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{row.title}</p>
-              {row.subtitle && (
-                <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{row.subtitle}</p>
-              )}
-            </div>
-            {row.badge && <div className="shrink-0">{row.badge}</div>}
-          </div>
-          <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">{row.value}</p>
-          {row.details && row.details.length > 0 && (
-            <dl className="mt-1.5 space-y-1">
-              {row.details.map((d) => (
-                <div key={d.label} className="flex items-center justify-between gap-3 text-xs">
-                  <dt className="text-[var(--text-secondary)]">{d.label}</dt>
-                  <dd className="text-right text-foreground">{d.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {row.actions && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-3">
-              {row.actions}
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export function FinanceiroClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);

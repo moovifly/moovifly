@@ -6,6 +6,7 @@ import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { Topbar } from "@/components/backoffice/topbar";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { FinanceComposedChart } from "@/components/backoffice/charts/finance-composed-chart";
 import { FinancePeriodFilter } from "@/components/financeiro/finance-period-filter";
 import { FinanceiroNav } from "@/components/financeiro/financeiro-nav";
@@ -227,7 +228,7 @@ export function FluxoCaixaClient() {
                     ) : (
                       <>
                         <Card>
-                          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                          <CardHeader className="flex flex-col gap-2 space-y-0 pb-2 sm:flex-row sm:items-center sm:justify-between">
                             <CardTitle>Entradas, saídas e saldo acumulado</CardTitle>
                             <span className="text-xs text-[var(--text-secondary)]">
                               clique na legenda para alternar séries
@@ -251,6 +252,19 @@ export function FluxoCaixaClient() {
                             <CardTitle>{detalhePorDia ? "Detalhamento diário" : "Detalhamento mensal"}</CardTitle>
                           </CardHeader>
                           <CardContent>
+                            <MobileCardList
+                              rows={activeData.rows.map((row) => ({
+                                key: row.monthKey,
+                                title: row.monthLabel,
+                                value: formatCurrency(row.saldoFinal),
+                                details: [
+                                  { label: "Saldo inicial", value: formatCurrency(row.saldoInicial) },
+                                  { label: "Entradas", value: formatCurrency(row.entradas) },
+                                  { label: "Saídas", value: formatCurrency(row.saidas) },
+                                ],
+                              }))}
+                            />
+                            <div className="hidden md:block">
                             <Table>
                               <TableHeader>
                                 <TableRow>
@@ -277,6 +291,7 @@ export function FluxoCaixaClient() {
                                 ))}
                               </TableBody>
                             </Table>
+                            </div>
                           </CardContent>
                         </Card>
                       </>

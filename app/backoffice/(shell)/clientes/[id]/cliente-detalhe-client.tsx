@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
 import { EmptyState } from "@/components/backoffice/empty-state";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { Topbar } from "@/components/backoffice/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -245,14 +246,20 @@ export function ClienteDetalheClient() {
         title={cliente.nome}
         subtitle={`Membro desde ${formatDate(cliente.created_at)}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <BackofficeLink href="/backoffice/clientes/">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="icon" className="h-11 w-11 md:hidden" aria-label="Voltar para clientes">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="hidden md:inline-flex">
                 <ArrowLeft className="mr-1.5 h-4 w-4" />
                 Clientes
               </Button>
             </BackofficeLink>
-            <Button size="sm" onClick={openEdit}>
+            <Button size="icon" className="h-11 w-11 md:hidden" onClick={openEdit} aria-label="Editar cliente">
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button size="sm" className="hidden md:inline-flex" onClick={openEdit}>
               <Pencil className="mr-1.5 h-4 w-4" />
               Editar
             </Button>
@@ -352,6 +359,20 @@ export function ClienteDetalheClient() {
             {orcamentos.length === 0 ? (
               <EmptyState icon={FileText} title="Nenhum orçamento registrado" className="py-8" />
             ) : (
+              <>
+                <MobileCardList
+                  rows={orcamentos.map((o) => {
+                    const st = ORCAMENTO_STATUS[o.status] ?? { label: o.status, variant: "default" as const };
+                    return {
+                      key: o.id,
+                      title: o.numero_orcamento ?? "—",
+                      subtitle: formatDate(o.data_orcamento),
+                      value: formatCurrency(o.valor_total),
+                      badge: <Badge variant={st.variant}>{st.label}</Badge>,
+                    };
+                  })}
+                />
+                <div className="hidden md:block">
               <Table className="min-w-[480px]">
                 <TableHeader>
                   <TableRow>
@@ -377,6 +398,8 @@ export function ClienteDetalheClient() {
                   })}
                 </TableBody>
               </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -390,6 +413,21 @@ export function ClienteDetalheClient() {
             {vendas.length === 0 ? (
               <EmptyState icon={ShoppingCart} title="Nenhuma venda registrada" className="py-8" />
             ) : (
+              <>
+                <MobileCardList
+                  rows={vendas.map((v) => {
+                    const st = VENDA_STATUS[v.status] ?? { label: v.status, variant: "default" as const };
+                    return {
+                      key: v.id,
+                      title: v.numero_venda,
+                      subtitle: v.origem && v.destino ? `${v.origem} → ${v.destino}` : formatDate(v.data_venda),
+                      value: formatCurrency(v.valor_total),
+                      details: [{ label: "Data", value: formatDate(v.data_venda) }],
+                      badge: <Badge variant={st.variant}>{st.label}</Badge>,
+                    };
+                  })}
+                />
+                <div className="hidden md:block">
               <Table className="min-w-[560px]">
                 <TableHeader>
                   <TableRow>
@@ -419,6 +457,8 @@ export function ClienteDetalheClient() {
                   })}
                 </TableBody>
               </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

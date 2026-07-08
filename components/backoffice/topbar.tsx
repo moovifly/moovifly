@@ -75,17 +75,18 @@ export function Topbar({ title, subtitle, actions }: TopbarProps) {
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex max-w-[50%] shrink-0 items-center gap-1.5 sm:max-w-none sm:gap-2">
           {actions}
           {isRealAdmin && !viewAsVendedor && (
             <button
               type="button"
               onClick={() => setViewAsVendedor(true)}
               title="Visualizar painel como Vendedor"
-              className="flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-card px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-foreground"
+              aria-label="Visualizar painel como Vendedor"
+              className="flex h-11 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-card px-2.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-foreground sm:px-3"
             >
-              <Eye className="h-3.5 w-3.5" />
-              Visualizar como
+              <Eye className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">Visualizar como</span>
             </button>
           )}
           <ThemeToggle />

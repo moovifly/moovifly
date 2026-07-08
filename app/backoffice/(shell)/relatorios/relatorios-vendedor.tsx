@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Award, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -247,6 +248,28 @@ export function RelatoriosVendedor() {
               Nenhuma venda no período.
             </p>
           ) : (
+            <>
+              <MobileCardList
+                rows={vendas.map((v) => {
+                  const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
+                  return {
+                    key: v.id,
+                    title: v.numero_venda,
+                    subtitle: cli?.nome ?? "—",
+                    value: formatCurrency(Number(v.valor_total)),
+                    details: [
+                      { label: "Data", value: formatDate(v.data_venda) },
+                      { label: "Destino", value: v.destino ?? "—" },
+                    ],
+                    badge: (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(v.status)}`}>
+                        {statusLabel(v.status)}
+                      </span>
+                    ),
+                  };
+                })}
+              />
+              <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -278,15 +301,17 @@ export function RelatoriosVendedor() {
                 })}
               </TableBody>
             </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* Comissões */}
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Minhas Comissões</CardTitle>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className="text-[var(--text-secondary)]">Total recebido:</span>
             <span className="font-semibold text-foreground">{formatCurrency(comissaoTotal - comissaoPendente)}</span>
             <span className="text-[var(--text-secondary)]">Pendente:</span>
@@ -305,6 +330,25 @@ export function RelatoriosVendedor() {
               Nenhuma comissão registrada.
             </p>
           ) : (
+            <>
+              <MobileCardList
+                rows={comissoes.map((c) => {
+                  const venda = Array.isArray(c.vendas) ? c.vendas[0] : c.vendas;
+                  return {
+                    key: c.id,
+                    title: venda?.numero_venda ?? "—",
+                    subtitle: venda?.destino ?? "—",
+                    value: formatCurrency(Number(c.valor_comissao)),
+                    details: [{ label: "Data", value: formatDate(c.created_at) }],
+                    badge: (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(c.status)}`}>
+                        {statusLabel(c.status)}
+                      </span>
+                    ),
+                  };
+                })}
+              />
+              <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -334,6 +378,8 @@ export function RelatoriosVendedor() {
                 })}
               </TableBody>
             </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/backoffice/empty-state";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { Topbar } from "@/components/backoffice/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,9 +129,9 @@ export function CheckoutClient() {
         </Card>
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Histórico de pagamentos</CardTitle>
-            <Button variant="ghost" size="icon" onClick={loadPagamentos}><RefreshCcw className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 self-end sm:self-auto" onClick={loadPagamentos} aria-label="Atualizar lista"><RefreshCcw className="h-4 w-4" /></Button>
           </CardHeader>
           <CardContent>
             {loadingPag ? (
@@ -142,6 +143,30 @@ export function CheckoutClient() {
                 description="Gere um link de pagamento para começar."
               />
             ) : (
+              <>
+                <MobileCardList
+                  rows={pagamentos.map((p) => {
+                    const v = Array.isArray(p.vendas) ? p.vendas[0] : p.vendas;
+                    return {
+                      key: p.id,
+                      title: v?.numero_venda ?? "—",
+                      subtitle: formatDateTime(p.created_at),
+                      value: formatCurrency(Number(p.valor)),
+                      badge: statusBadge(p.status),
+                      actions: p.checkout_url ? (
+                        <a
+                          href={p.checkout_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-11 flex-1 items-center justify-center gap-1 rounded-md border border-[var(--border-subtle)] text-sm font-medium text-[var(--accent-600)] hover:bg-[var(--bg-hover)]"
+                        >
+                          Abrir link <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : undefined,
+                    };
+                  })}
+                />
+                <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -173,6 +198,8 @@ export function CheckoutClient() {
                   })}
                 </TableBody>
               </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

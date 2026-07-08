@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { showConfirm } from "@/components/confirm-modal";
+import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { Button } from "@/components/ui/button";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -284,6 +285,46 @@ export function ConfiguracoesContasBancarias() {
               </Button>
             </div>
           ) : (
+            <>
+              <MobileCardList
+                rows={items.map((c) => ({
+                  key: c.id,
+                  title: c.nome,
+                  subtitle: c.banco ?? TIPO_LABEL[c.tipo_conta],
+                  value: formatCurrency(Number(c.saldo_inicial)),
+                  details: [
+                    ...(dadosBancarios(c) ? [{ label: "Dados", value: dadosBancarios(c)! }] : []),
+                    ...(c.chave_pix ? [{ label: "PIX", value: c.chave_pix }] : []),
+                    { label: "Ref. saldo", value: formatDate(c.data_saldo_inicial) },
+                  ],
+                  badge: (
+                    <div className="flex flex-col items-end gap-1">
+                      {c.principal && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-glow)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-600)]">
+                          <Star className="h-2.5 w-2.5 fill-current" />
+                          Principal
+                        </span>
+                      )}
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.ativa ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`}>
+                        {c.ativa ? "Ativa" : "Inativa"}
+                      </span>
+                    </div>
+                  ),
+                  actions: (
+                    <>
+                      {!c.principal && c.ativa && (
+                        <Button variant="outline" className="h-11 flex-1" onClick={() => togglePrincipal(c)}>
+                          <Star className="h-4 w-4" /> Principal
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-11 w-11" title="Editar" aria-label={`Editar ${c.nome}`} onClick={() => openEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ),
+                }))}
+              />
+              <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -368,6 +409,8 @@ export function ConfiguracoesContasBancarias() {
                 ))}
               </TableBody>
             </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
