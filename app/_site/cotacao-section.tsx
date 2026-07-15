@@ -86,7 +86,7 @@ export function CotacaoSection() {
     msg += `*Nome:* ${nome}\n`;
     msg += `*Telefone:* ${telefone}\n`;
 
-    const url = `https://wa.me/5511934762251?text=${encodeURIComponent(msg)}`;
+    const url = `https://wa.me/558296280173?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
 
     setOrigem("");

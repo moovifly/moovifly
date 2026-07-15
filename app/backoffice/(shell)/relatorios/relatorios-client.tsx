@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Download } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
 import { MobileCardList } from "@/components/backoffice/mobile-card-list";
@@ -29,6 +29,8 @@ type Venda = {
   taxa_du: number | string;
   status: string;
   data_venda: string;
+  categoria_venda: "aereo" | "seguro_viagem" | null;
+  forma_pagamento: string | null;
   clientes?: { nome: string } | { nome: string }[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
@@ -129,7 +131,7 @@ export function RelatoriosClient() {
     try {
       let qVendas = supabase
         .from("vendas")
-        .select("id, numero_venda, destino, valor_total, taxa_rav, taxa_du, status, data_venda, clientes(nome), usuarios(nome)")
+        .select("id, numero_venda, destino, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, clientes(nome), usuarios(nome)")
         .gte("data_venda", dateFrom)
         .lte("data_venda", dateTo)
         .order("data_venda", { ascending: false });
@@ -161,10 +163,12 @@ export function RelatoriosClient() {
 
   const totalRavDu = useMemo(() => {
     if (!isAdmin) return 0;
-    return items.reduce(
-      (sum, v) => sum + Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0),
-      0,
-    );
+    return items.reduce((sum, v) => {
+      if (v.categoria_venda === "seguro_viagem") {
+        return sum + Number(v.valor_total ?? 0) * 0.4;
+      }
+      return sum + Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
+    }, 0);
   }, [items, isAdmin]);
 
   const vendasConfirmadas = useMemo(
@@ -223,6 +227,100 @@ export function RelatoriosClient() {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [vendasConfirmadas]);
+
+  async function exportarExcel() {
+    const ExcelJS = (await import("exceljs")).default;
+    const PRODUTO_LABEL: Record<string, string> = {
+      aereo: "Aéreo",
+      seguro_viagem: "Seguro",
+    };
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Relatório Contador");
+
+    ws.columns = [
+      { key: "cliente", width: 38 },
+      { key: "produto", width: 14 },
+      { key: "pagamento", width: 34 },
+      { key: "valor", width: 16 },
+    ];
+
+    const headerRow = ws.addRow(["CLIENTE", "PRODUTO", "PAGAMENTO", "VALOR"]);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2E7D32" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF1B5E20" } },
+        bottom: { style: "thin", color: { argb: "FF1B5E20" } },
+        left: { style: "thin", color: { argb: "FF1B5E20" } },
+        right: { style: "thin", color: { argb: "FF1B5E20" } },
+      };
+    });
+    headerRow.height = 22;
+
+    let totalGeral = 0;
+
+    for (const v of items) {
+      const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
+      const nome = cli?.nome ?? "—";
+      const produto = v.categoria_venda ? (PRODUTO_LABEL[v.categoria_venda] ?? v.categoria_venda) : "—";
+      const pagamento = v.forma_pagamento ?? "—";
+      const valor = v.categoria_venda === "seguro_viagem"
+        ? Number(v.valor_total ?? 0) * 0.4
+        : Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
+      totalGeral += valor;
+
+      const row = ws.addRow([nome, produto, pagamento, valor]);
+      row.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+      row.getCell(2).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(4).numFmt = 'R$ #,##0.00';
+      row.getCell(4).alignment = { horizontal: "right", vertical: "middle" };
+
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFD0D0D0" } },
+          bottom: { style: "thin", color: { argb: "FFD0D0D0" } },
+          left: { style: "thin", color: { argb: "FFD0D0D0" } },
+          right: { style: "thin", color: { argb: "FFD0D0D0" } },
+        };
+        cell.font = { size: 11 };
+      });
+    }
+
+    ws.addRow([]);
+
+    const totalRow = ws.addRow(["", "", "TOTAL", totalGeral]);
+    totalRow.height = 24;
+    totalRow.eachCell((cell, colNumber) => {
+      if (colNumber >= 3) {
+        cell.font = { bold: true, size: 12, color: { argb: "FF1B5E20" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8F5E9" } };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF2E7D32" } },
+          bottom: { style: "thin", color: { argb: "FF2E7D32" } },
+          left: { style: "thin", color: { argb: "FF2E7D32" } },
+          right: { style: "thin", color: { argb: "FF2E7D32" } },
+        };
+      }
+      if (colNumber === 3) cell.alignment = { horizontal: "left", vertical: "middle" };
+      if (colNumber === 4) {
+        cell.numFmt = 'R$ #,##0.00';
+        cell.alignment = { horizontal: "right", vertical: "middle" };
+      }
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-contador_${dateFrom}_${dateTo}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Excel exportado com sucesso!");
+  }
 
   if (isVendedor) {
     return (
@@ -297,6 +395,17 @@ export function RelatoriosClient() {
                   <option value="cancelada">Cancelada</option>
                 </Select>
               </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={exportarExcel}
+                  disabled={loading || items.length === 0}
+                  className="inline-flex items-center gap-2 rounded-lg border border-(--color-primary) bg-white px-4 py-2 text-sm font-medium text-(--color-primary) transition-colors hover:bg-(--color-primary) hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  Exportar Excel
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -317,7 +426,7 @@ export function RelatoriosClient() {
           {isAdmin && (
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-[var(--text-secondary)] uppercase">RAV/DU</p>
+                <p className="text-xs text-[var(--text-secondary)] uppercase">RAV/DU + Seguro</p>
                 <p className="text-2xl font-semibold text-foreground">{formatCurrency(totalRavDu)}</p>
               </CardContent>
             </Card>

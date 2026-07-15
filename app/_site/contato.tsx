@@ -31,7 +31,7 @@ export function Contato() {
     msg += `*Telefone:* ${telefone}\n`;
     if (destino) msg += `*Destino de interesse:* ${destino}\n`;
     msg += `\n*Mensagem:*\n${mensagem}\n`;
-    const url = `https://wa.me/5511934762251?text=${encodeURIComponent(msg)}`;
+    const url = `https://wa.me/558296280173?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
     setNome("");
     setEmail("");
@@ -91,7 +91,7 @@ export function Contato() {
                 <Instagram className="h-4 w-4" />
               </a>
               <a
-                href="https://wa.me/5511934762251"
+                href="https://wa.me/558296280173"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"

@@ -14,6 +14,7 @@ type Body = {
   tipo?: string;
   ativo?: boolean;
   comissao_percentual?: number;
+  comissao_seguro_percentual?: number;
 };
 
 function resolveRedirectTo(request: Request): string {
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
     const tipo = typeof body.tipo === "string" ? body.tipo : "";
     const ativo = body.ativo !== false;
     const comissao_percentual = typeof body.comissao_percentual === "number" ? body.comissao_percentual : 0;
+    const comissao_seguro_percentual = typeof body.comissao_seguro_percentual === "number" ? body.comissao_seguro_percentual : 0;
 
     if (!nome || !emailRaw) {
       return NextResponse.json({ error: "Nome e e-mail são obrigatórios." }, { status: 400 });
@@ -105,6 +107,7 @@ export async function POST(request: Request) {
       tipo,
       ativo,
       comissao_percentual,
+      comissao_seguro_percentual,
     });
 
     if (insertError) {

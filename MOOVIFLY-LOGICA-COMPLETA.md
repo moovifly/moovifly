@@ -775,7 +775,7 @@ footer        → SiteFooter
 
 **Montagem da mensagem WhatsApp:**
 ```
-POST → https://wa.me/5511934762251?text=MENSAGEM_ENCODED
+POST → https://wa.me/558296280173?text=MENSAGEM_ENCODED
 ```
 
 ### 7.3 Formulário de Contato (WhatsApp)

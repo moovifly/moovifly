@@ -29,13 +29,13 @@ import { formatPercent, getInitials } from "@/lib/format";
 import { publicUrlForPath } from "@/lib/public-site-url";
 import { ConfiguracoesContasBancarias } from "./configuracoes-contas-bancarias";
 
-type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: number | null };
+type Usuario = { id: string; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: number | null; comissao_seguro_percentual: number | null };
 
-type FormState = { id: string | null; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: string };
+type FormState = { id: string | null; nome: string; email: string; tipo: string; ativo: boolean; comissao_percentual: string; comissao_seguro_percentual: string };
 
-type FormErrors = { nome?: string; email?: string; comissao?: string };
+type FormErrors = { nome?: string; email?: string; comissao?: string; comissao_seguro?: string };
 
-const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true, comissao_percentual: "0" });
+const emptyForm = (): FormState => ({ id: null, nome: "", email: "", tipo: "vendedor", ativo: true, comissao_percentual: "0", comissao_seguro_percentual: "0" });
 
 type NovoFluxo = "invite" | "link";
 
@@ -110,12 +110,12 @@ export function ConfiguracoesClient() {
   }
 
   function openEdit(u: Usuario) {
-    setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo, comissao_percentual: String(u.comissao_percentual ?? 0) });
+    setForm({ id: u.id, nome: u.nome, email: u.email, tipo: u.tipo, ativo: u.ativo, comissao_percentual: String(u.comissao_percentual ?? 0), comissao_seguro_percentual: String(u.comissao_seguro_percentual ?? 0) });
     setErrors({});
     setOpen(true);
   }
 
-  function validate(): { ok: boolean; comissao: number } {
+  function validate(): { ok: boolean; comissao: number; comissaoSeguro: number } {
     const next: FormErrors = {};
     if (form.nome.trim().length < 2) next.nome = "Informe o nome completo do usuário.";
     if (!form.id) {
@@ -128,20 +128,26 @@ export function ConfiguracoesClient() {
     } else if (comissao < 0 || comissao > 100) {
       next.comissao = "O percentual deve estar entre 0 e 100.";
     }
+    const comissaoSeguro = Number(form.comissao_seguro_percentual.replace(",", "."));
+    if (form.comissao_seguro_percentual.trim() === "" || Number.isNaN(comissaoSeguro)) {
+      next.comissao_seguro = "Informe um percentual (use 0 se não houver comissão).";
+    } else if (comissaoSeguro < 0 || comissaoSeguro > 100) {
+      next.comissao_seguro = "O percentual deve estar entre 0 e 100.";
+    }
     setErrors(next);
-    return { ok: Object.keys(next).length === 0, comissao: Number.isNaN(comissao) ? 0 : comissao };
+    return { ok: Object.keys(next).length === 0, comissao: Number.isNaN(comissao) ? 0 : comissao, comissaoSeguro: Number.isNaN(comissaoSeguro) ? 0 : comissaoSeguro };
   }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    const { ok, comissao } = validate();
+    const { ok, comissao, comissaoSeguro } = validate();
     if (!ok) return;
     setSaving(true);
     try {
       if (form.id) {
         const { error } = await supabase
           .from("usuarios")
-          .update({ nome: form.nome.trim(), tipo: form.tipo, ativo: form.ativo, comissao_percentual: comissao })
+          .update({ nome: form.nome.trim(), tipo: form.tipo, ativo: form.ativo, comissao_percentual: comissao, comissao_seguro_percentual: comissaoSeguro })
           .eq("id", form.id);
         if (error) throw error;
         toast.success("Usuário atualizado!");
@@ -160,6 +166,7 @@ export function ConfiguracoesClient() {
             tipo: form.tipo,
             ativo: form.ativo,
             comissao_percentual: comissao,
+            comissao_seguro_percentual: comissaoSeguro,
           }),
         });
         const json = (await res.json()) as { error?: string };
@@ -329,7 +336,10 @@ export function ConfiguracoesClient() {
                             </span>
                           ),
                           subtitle: u.email,
-                          details: u.comissao_percentual != null ? [{ label: "Comissão", value: formatComissao(u.comissao_percentual) }] : undefined,
+                          details: [
+                            { label: "Comissão Aéreo", value: u.comissao_percentual != null ? formatComissao(u.comissao_percentual) : "—" },
+                            { label: "Comissão Seguro", value: u.comissao_seguro_percentual != null ? formatComissao(u.comissao_seguro_percentual) : "—" },
+                          ],
                           badge: (
                             <div className="flex flex-col items-end gap-1">
                               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${ROLE_BADGE_CLASS[u.tipo] ?? ROLE_BADGE_CLASS.vendedor}`}>
@@ -371,7 +381,8 @@ export function ConfiguracoesClient() {
                       <TableRow>
                         <TableHead>Usuário</TableHead>
                         <TableHead>Função</TableHead>
-                        <TableHead className="text-right">Comissão</TableHead>
+                        <TableHead className="text-right">Comissão Aéreo</TableHead>
+                        <TableHead className="text-right">Comissão Seguro</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
@@ -379,7 +390,7 @@ export function ConfiguracoesClient() {
                     <TableBody>
                       {filtered.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="py-8 text-center text-sm text-[var(--text-secondary)]">
+                          <TableCell colSpan={6} className="py-8 text-center text-sm text-[var(--text-secondary)]">
                             Nenhum usuário com a função {ROLE_LABELS[roleFilter] ?? roleFilter}.
                           </TableCell>
                         </TableRow>
@@ -417,6 +428,9 @@ export function ConfiguracoesClient() {
                               </TableCell>
                               <TableCell className="text-right tabular-nums">
                                 {u.comissao_percentual != null ? formatComissao(u.comissao_percentual) : "—"}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {u.comissao_seguro_percentual != null ? formatComissao(u.comissao_seguro_percentual) : "—"}
                               </TableCell>
                               <TableCell>
                                 <button
@@ -531,28 +545,53 @@ export function ConfiguracoesClient() {
                 {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="usuario-comissao">Comissão (%)</Label>
-              <Input
-                id="usuario-comissao"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                inputMode="decimal"
-                value={form.comissao_percentual}
-                onChange={(e) => { setForm((f) => ({ ...f, comissao_percentual: e.target.value })); setErrors((er) => ({ ...er, comissao: undefined })); }}
-                placeholder="0"
-                aria-invalid={!!errors.comissao}
-                className={errors.comissao ? "border-[var(--danger-text)]" : undefined}
-              />
-              {errors.comissao ? (
-                <p className="text-xs text-[var(--danger-text)]">{errors.comissao}</p>
-              ) : (
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Percentual aplicado sobre a base de comissão (RAV + DU) das vendas aéreas.
-                </p>
-              )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="usuario-comissao">Comissão Aéreo (%)</Label>
+                <Input
+                  id="usuario-comissao"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  inputMode="decimal"
+                  value={form.comissao_percentual}
+                  onChange={(e) => { setForm((f) => ({ ...f, comissao_percentual: e.target.value })); setErrors((er) => ({ ...er, comissao: undefined })); }}
+                  placeholder="0"
+                  aria-invalid={!!errors.comissao}
+                  className={errors.comissao ? "border-[var(--danger-text)]" : undefined}
+                />
+                {errors.comissao ? (
+                  <p className="text-xs text-[var(--danger-text)]">{errors.comissao}</p>
+                ) : (
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Sobre RAV + DU das vendas aéreas.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="usuario-comissao-seguro">Comissão Seguro (%)</Label>
+                <Input
+                  id="usuario-comissao-seguro"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  inputMode="decimal"
+                  value={form.comissao_seguro_percentual}
+                  onChange={(e) => { setForm((f) => ({ ...f, comissao_seguro_percentual: e.target.value })); setErrors((er) => ({ ...er, comissao_seguro: undefined })); }}
+                  placeholder="0"
+                  aria-invalid={!!errors.comissao_seguro}
+                  className={errors.comissao_seguro ? "border-[var(--danger-text)]" : undefined}
+                />
+                {errors.comissao_seguro ? (
+                  <p className="text-xs text-[var(--danger-text)]">{errors.comissao_seguro}</p>
+                ) : (
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Sobre os 40% que a seguradora repassa.
+                  </p>
+                )}
+              </div>
             </div>
             <label
               className={`flex items-start gap-3 rounded-lg border border-[var(--border-subtle)] p-3 ${

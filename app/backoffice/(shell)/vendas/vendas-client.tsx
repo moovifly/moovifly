@@ -74,6 +74,7 @@ type UsuarioSimples = {
   nome: string;
   tipo: string;
   comissao_percentual: number | null;
+  comissao_seguro_percentual: number | null;
 };
 
 const STATUS_OPTIONS = [
@@ -124,11 +125,10 @@ function formaPagamentoSelectOptions(current: string): string[] {
   return FORMA_PAGAMENTO_OPTIONS;
 }
 
-/** Seguro: fornecedor paga 40% do total; vendedor recebe 50% desse repasse. */
-function calcComissaoSeguro(valorTotal: number) {
+function calcComissaoSeguro(valorTotal: number, percentualVendedor: number) {
   const repasseFornecedor = Math.round(valorTotal * 40) / 100;
-  const comissaoVendedor = Math.round(repasseFornecedor * 50) / 100;
-  return { repasseFornecedor, comissaoVendedor };
+  const comissaoVendedor = Math.round(repasseFornecedor * percentualVendedor) / 100;
+  return { repasseFornecedor, comissaoVendedor, percentualVendedor };
 }
 
 const emptyPassageiro = (): Passageiro => ({ nome: "", documento: "", data_nascimento: "" });
@@ -223,7 +223,7 @@ export function VendasClient() {
       if (profile?.tipo === "administrador" || profile?.tipo === "gerente") {
         const { data: usrData } = await supabase
           .from("usuarios")
-          .select("id, nome, tipo, comissao_percentual")
+          .select("id, nome, tipo, comissao_percentual, comissao_seguro_percentual")
           .eq("ativo", true)
           .order("nome");
         setUsuarios((usrData ?? []) as UsuarioSimples[]);
@@ -402,10 +402,16 @@ export function VendasClient() {
 
         // Recalculate commission using same logic as comissaoPreview
         if (isSeguro && form.valor_total > 0) {
-          const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total);
+          const userAtribuido = isAdminOrGerente && form.atribuido_a
+            ? usuarios.find(u => u.id === form.atribuido_a)
+            : null;
+          const percentualSeguro = Number(
+            userAtribuido?.comissao_seguro_percentual ?? (profile as { comissao_seguro_percentual?: number } | null)?.comissao_seguro_percentual ?? 0
+          );
+          const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total, percentualSeguro);
           await supabase
             .from("comissoes")
-            .update({ base_calculo: repasseFornecedor, percentual_comissao: 50, valor_comissao: comissaoVendedor })
+            .update({ base_calculo: repasseFornecedor, percentual_comissao: percentualSeguro, valor_comissao: comissaoVendedor })
             .eq("venda_id", form.id)
             .eq("status", "pendente");
         } else if (!isSeguro) {
@@ -502,12 +508,21 @@ export function VendasClient() {
   const comissaoPreview = useMemo(() => {
     if (form.categoria_venda === "seguro_viagem") {
       if (!form.valor_total || form.valor_total <= 0) return null;
-      const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total);
+      const userAtribuido = isAdminOrGerente && form.atribuido_a
+        ? usuarios.find(u => u.id === form.atribuido_a)
+        : null;
+      const percentualSeguro = Number(
+        userAtribuido?.comissao_seguro_percentual ?? (profile as { comissao_seguro_percentual?: number } | null)?.comissao_seguro_percentual ?? 0
+      );
+      const nomeAtribuido = userAtribuido?.nome ?? null;
+      const { repasseFornecedor, comissaoVendedor, percentualVendedor } = calcComissaoSeguro(form.valor_total, percentualSeguro);
       return {
         isSeguro: true as const,
         valorTotal: form.valor_total,
         repasseFornecedor,
         comissaoVendedor,
+        percentualVendedor,
+        nomeAtribuido,
       };
     }
     const base = (form.taxa_rav || 0) + (form.taxa_du || 0);
@@ -755,7 +770,7 @@ export function VendasClient() {
                   {viewMode
                     ? `${form.categoria_venda === "seguro_viagem" ? "Seguro Viagem" : "Aéreo"} · somente leitura`
                     : form.categoria_venda === "seguro_viagem"
-                    ? "Fornecedor paga 40% do valor total; o vendedor recebe 50% desse repasse (20% do total) ao confirmar."
+                    ? "Preencha os dados do seguro viagem."
                     : "Preencha os dados da venda aérea."}
                 </DialogDescription>
               </DialogHeader>
@@ -960,7 +975,11 @@ export function VendasClient() {
                               <span className="font-medium">{formatCurrency(comissaoPreview.repasseFornecedor)}</span>
                             </div>
                             <div className="flex justify-between border-t pt-1.5">
-                              <span className="text-muted-foreground">Comissão vendedor (50% do repasse)</span>
+                              <span className="text-muted-foreground">
+                                {comissaoPreview.nomeAtribuido && comissaoPreview.nomeAtribuido !== profile?.nome
+                                  ? `Comissão de ${comissaoPreview.nomeAtribuido} (${comissaoPreview.percentualVendedor}% do repasse)`
+                                  : `Comissão vendedor (${comissaoPreview.percentualVendedor}% do repasse)`}
+                              </span>
                               <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
                             </div>
                           </>
