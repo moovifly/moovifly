@@ -26,7 +26,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { ROLE_LABELS } from "@/lib/auth";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { formatCurrency, formatDate, getInitials } from "@/lib/format";
 import { normalizeDateOnly } from "@/lib/date-only";
 import { loadAeroportos, searchAeroportos, type Aeroporto, loadCompanhias, searchCompanhias, type Companhia } from "@/lib/datasets";
 import { emptyVoo, parseVoosFromObservacoes, parseVoosJson, voosToVendaCampos, type Voo } from "@/lib/voos";
@@ -673,6 +674,7 @@ export function VendasClient() {
                     <TableHead className="hidden lg:table-cell">Localizador</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="hidden text-center xl:table-cell">Vendedor</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -695,6 +697,19 @@ export function VendasClient() {
                         <TableCell className="hidden font-mono text-xs uppercase lg:table-cell">{v.localizador?.trim() || "—"}</TableCell>
                         <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          {(() => {
+                            const ven = Array.isArray(v.vendedor) ? v.vendedor[0] : v.vendedor;
+                            if (!ven?.nome) return null;
+                            return (
+                              <div className="flex justify-center">
+                                <Avatar className="h-7 w-7" title={ven.nome}>
+                                  <AvatarFallback className="text-[10px]">{getInitials(ven.nome)}</AvatarFallback>
+                                </Avatar>
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <BackofficeLink href={`/backoffice/checkout/?id=${v.id}`}>
@@ -709,7 +724,7 @@ export function VendasClient() {
                     );
                   })}
                   <TableRow className="border-t-2 bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={9} className="py-3 text-right font-semibold">
+                    <TableCell colSpan={10} className="py-3 text-right font-semibold">
                       {filteredSummary.count} Venda{filteredSummary.count !== 1 ? "s" : ""} - Total {formatCurrency(filteredSummary.total)}
                     </TableCell>
                   </TableRow>
