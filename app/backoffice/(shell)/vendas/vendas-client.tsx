@@ -120,6 +120,7 @@ const FORMAS_CARTAO = new Set(["1x Cartão de Crédito", "Parcelado Cartão de C
 const TAXA_CARTAO_MAP: Record<string, number> = {
   "BRT": 3.99,
   "MaisFly": 3.99,
+  "Sakura": 3.99,
 };
 
 function formaPagamentoSelectOptions(current: string): string[] {
