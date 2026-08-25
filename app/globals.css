@@ -92,6 +92,9 @@
   --accent-400: #4a7c59;
   --accent-500: #3d6b47;
   --accent-600: #2d5016;
+  /* Preenchimento de botões/CTAs (no light = mesmo que accent-600) */
+  --accent-solid: var(--accent-600);
+  --accent-solid-hover: var(--accent-500);
   --accent-gold: #d4c4a8;
   --accent-glow: rgba(45, 80, 22, 0.12);
   --accent-glow-sm: rgba(45, 80, 22, 0.08);
@@ -145,13 +148,15 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
+
   --bg-base: #070b18;
   --bg-surface: #0b1121;
   --bg-elevated: #11192e;
   --bg-overlay: #182338;
   --bg-card: #1e2b42;
   --bg-hover: rgba(255, 255, 255, 0.035);
-  --bg-active: rgba(45, 80, 22, 0.15);
+  --bg-active: rgba(143, 188, 143, 0.14);
 
   --border-dim: rgba(255, 255, 255, 0.05);
   --border-subtle: rgba(255, 255, 255, 0.09);
@@ -160,21 +165,55 @@
 
   --text-primary: #edf0f7;
   --text-secondary: #8896b0;
-  --text-muted: #4a5770;
+  /* ≥ 4.5:1 em card/base — placeholders, hints, eixos */
+  --text-muted: #9aa6bd;
   --text-inverse: #070b18;
 
-  --accent-glow: rgba(45, 80, 22, 0.18);
-  --accent-glow-sm: rgba(45, 80, 22, 0.10);
+  /*
+   * Accent no dark:
+   * - 300–600: texto, ícones, links, rings, charts (≥ 4.5:1 em card)
+   * - solid: preenchimento de botão (branco ≥ 4.5:1 sobre o fill)
+   */
+  --accent-300: #b5d4b8;
+  --accent-400: #8fbc8f;
+  --accent-500: #7fa984;
+  --accent-600: #8fbc8f;
+  --accent-solid: #3d6b47;
+  --accent-solid-hover: #4a7c59;
+  --accent-gold: #e0d0b0;
+  --accent-glow: rgba(143, 188, 143, 0.16);
+  --accent-glow-sm: rgba(143, 188, 143, 0.10);
 
-  --success-bg: rgba(200, 230, 201, 0.12);
-  --success-text: #7fa984;
-  --success-border: rgba(127, 169, 132, 0.25);
+  --purple-300: #c5d0e4;
+  --purple-500: #a8b8d4;
+  --purple-700: #8896b0;
+  --purple-glow: rgba(168, 184, 212, 0.16);
+
+  --teal-400: #99f6e4;
+  --teal-500: #5eead4;
+  --teal-glow: rgba(94, 234, 212, 0.16);
+
+  --success-bg: rgba(163, 217, 165, 0.18);
+  --success-text: #a3d9a5;
+  --success-border: rgba(163, 217, 165, 0.35);
+
+  --warning-bg: rgba(230, 211, 168, 0.18);
+  --warning-text: #e6d3a8;
+  --warning-border: rgba(230, 211, 168, 0.35);
+
+  --danger-bg: rgba(242, 160, 160, 0.16);
+  --danger-text: #f2a0a0;
+  --danger-border: rgba(242, 160, 160, 0.35);
+
+  --info-bg: rgba(158, 208, 176, 0.16);
+  --info-text: #9ed0b0;
+  --info-border: rgba(158, 208, 176, 0.35);
 
   --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.45);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.65);
-  --shadow-glow: 0 0 28px rgba(45, 80, 22, 0.25);
+  --shadow-glow: 0 0 28px rgba(143, 188, 143, 0.22);
 }
 
 * {
@@ -226,4 +265,8 @@ textarea {
   outline: 2px solid var(--accent-600);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
+}
+
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--accent-400);
 }

@@ -60,7 +60,7 @@ export function FinancePeriodFilter({ period, onChange, maxCustomDays }: Finance
               onClick={() => applyPreset(p.key)}
               className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                 period.preset === p.key
-                  ? "border-(--color-primary) bg-(--color-primary) text-white"
+                  ? "border-(--accent-solid) bg-(--accent-solid) text-white"
                   : "border-border bg-background text-foreground hover:bg-muted"
               }`}
             >

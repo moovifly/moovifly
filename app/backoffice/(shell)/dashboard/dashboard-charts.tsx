@@ -15,6 +15,7 @@ import { DonutChart } from "@/components/backoffice/charts/donut-chart";
 
 const REVENUE_CATEGORY_LABELS: Record<string, string> = {
   seguro_viagem: "Seguro Viagem",
+  servico: "Serviço",
   passagem: "Passagem",
   pacote: "Pacote",
   hospedagem: "Hospedagem",
@@ -23,6 +24,10 @@ const REVENUE_CATEGORY_LABELS: Record<string, string> = {
   grupo: "Grupo",
   economica: "Econômica",
   executiva: "Executiva",
+  "aluguel de carro": "Aluguel de Carro",
+  hotel: "Hotel",
+  "ônibus": "Ônibus",
+  "mudança de voo": "Mudança de Voo",
   outros: "Outros",
 };
 

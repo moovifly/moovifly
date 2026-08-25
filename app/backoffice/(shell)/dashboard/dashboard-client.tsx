@@ -532,6 +532,8 @@ async function loadRevenueByCategory(profile: UserProfile, range: DateRange) {
     let key: string;
     if (v.categoria_venda === "seguro_viagem") {
       key = "seguro_viagem";
+    } else if (v.categoria_venda === "servico") {
+      key = "servico";
     } else if (v.tipo?.trim()) {
       key = v.tipo.trim().toLowerCase();
     } else if (v.classe?.trim()) {
@@ -883,7 +885,7 @@ function PeriodFilter({ value, onChange }: { value: Period; onChange: (p: Period
           onClick={() => onChange(p.value)}
           className={`rounded-md px-3 py-2 text-xs font-medium transition-colors sm:py-1.5 ${
             value === p.value
-              ? "bg-(--accent-600) text-white shadow-sm"
+              ? "bg-(--accent-solid) text-white shadow-sm"
               : "border border-(--border-subtle) bg-secondary text-muted-foreground hover:bg-(--bg-hover) hover:text-foreground"
           }`}
         >

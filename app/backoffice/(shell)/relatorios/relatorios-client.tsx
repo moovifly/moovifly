@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BarChart3, Download } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 import { Topbar } from "@/components/backoffice/topbar";
 import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { ChartEmptyState, SimpleBarChart } from "@/components/backoffice/charts/chart-kit";
 import { DonutChart } from "@/components/backoffice/charts/donut-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -20,20 +21,40 @@ import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { RelatoriosVendedor } from "./relatorios-vendedor";
 
+const PAGE_SIZE = 30;
+
 type Venda = {
   id: string;
   numero_venda: string;
   destino: string | null;
+  tipo: string | null;
   valor_total: number | string;
   taxa_rav: number | string;
   taxa_du: number | string;
   status: string;
   data_venda: string;
-  categoria_venda: "aereo" | "seguro_viagem" | null;
+  categoria_venda: "aereo" | "seguro_viagem" | "servico" | null;
   forma_pagamento: string | null;
   clientes?: { nome: string } | { nome: string }[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
+
+const PRODUTO_LABEL: Record<string, string> = {
+  aereo: "Aéreo",
+  seguro_viagem: "Seguro",
+  servico: "Serviço",
+};
+
+function categoriaLabel(cat: string | null | undefined) {
+  if (!cat) return "—";
+  return PRODUTO_LABEL[cat] ?? cat;
+}
+
+function vendaResumo(v: Venda) {
+  if (v.categoria_venda === "servico") return v.tipo ?? "Serviço";
+  if (v.categoria_venda === "seguro_viagem") return v.destino ?? "Seguro Viagem";
+  return v.destino ?? "—";
+}
 
 export function RelatoriosClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -51,6 +72,7 @@ export function RelatoriosClient() {
   });
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   const PRESETS = [
     {
@@ -131,7 +153,7 @@ export function RelatoriosClient() {
     try {
       let qVendas = supabase
         .from("vendas")
-        .select("id, numero_venda, destino, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, clientes(nome), usuarios(nome)")
+        .select("id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, clientes(nome), usuarios(nome)")
         .gte("data_venda", dateFrom)
         .lte("data_venda", dateTo)
         .order("data_venda", { ascending: false });
@@ -153,6 +175,17 @@ export function RelatoriosClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, dateFrom, dateTo, statusFilter, isVendedor]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [dateFrom, dateTo, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [items, currentPage],
+  );
+
   const totalFaturamento = useMemo(
     () =>
       items
@@ -167,6 +200,7 @@ export function RelatoriosClient() {
       if (v.categoria_venda === "seguro_viagem") {
         return sum + Number(v.valor_total ?? 0) * 0.4;
       }
+      // Aéreo e Serviço: soma de RAV + DU
       return sum + Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
     }, 0);
   }, [items, isAdmin]);
@@ -175,6 +209,63 @@ export function RelatoriosClient() {
     () => items.filter((v) => ["confirmada", "concluida"].includes(v.status)),
     [items],
   );
+
+  const porCategoria = useMemo(() => {
+    const order = ["aereo", "seguro_viagem", "servico"] as const;
+    const map = new Map<string, { count: number; valor: number }>();
+    for (const key of order) map.set(key, { count: 0, valor: 0 });
+
+    for (const v of items) {
+      const key = v.categoria_venda && order.includes(v.categoria_venda as typeof order[number])
+        ? v.categoria_venda
+        : "aereo";
+      const prev = map.get(key) ?? { count: 0, valor: 0 };
+      map.set(key, {
+        count: prev.count + 1,
+        valor: prev.valor + Number(v.valor_total ?? 0),
+      });
+    }
+
+    return order.map((key) => {
+      const count = map.get(key)?.count ?? 0;
+      const value = map.get(key)?.valor ?? 0;
+      return {
+        key,
+        name: PRODUTO_LABEL[key],
+        count,
+        value,
+      };
+    });
+  }, [items]);
+
+  /** Ticket médio por produto com base em vendas confirmadas/concluídas. */
+  const ticketMedioPorProduto = useMemo(() => {
+    const order = ["aereo", "seguro_viagem", "servico"] as const;
+    const map = new Map<string, { count: number; valor: number }>();
+    for (const key of order) map.set(key, { count: 0, valor: 0 });
+
+    for (const v of vendasConfirmadas) {
+      const key = v.categoria_venda && order.includes(v.categoria_venda as typeof order[number])
+        ? v.categoria_venda
+        : "aereo";
+      const prev = map.get(key) ?? { count: 0, valor: 0 };
+      map.set(key, {
+        count: prev.count + 1,
+        valor: prev.valor + Number(v.valor_total ?? 0),
+      });
+    }
+
+    return order.map((key) => {
+      const count = map.get(key)?.count ?? 0;
+      const value = map.get(key)?.valor ?? 0;
+      return {
+        key,
+        name: PRODUTO_LABEL[key],
+        count,
+        ticketMedio: count > 0 ? value / count : 0,
+      };
+    });
+  }, [vendasConfirmadas]);
 
   // Série de faturamento por dia (ou por mês, em períodos longos) a partir das vendas já carregadas.
   const faturamentoSerie = useMemo(() => {
@@ -230,10 +321,6 @@ export function RelatoriosClient() {
 
   async function exportarExcel() {
     const ExcelJS = (await import("exceljs")).default;
-    const PRODUTO_LABEL: Record<string, string> = {
-      aereo: "Aéreo",
-      seguro_viagem: "Seguro",
-    };
 
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Relatório Contador");
@@ -264,7 +351,7 @@ export function RelatoriosClient() {
     for (const v of items) {
       const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
       const nome = cli?.nome ?? "—";
-      const produto = v.categoria_venda ? (PRODUTO_LABEL[v.categoria_venda] ?? v.categoria_venda) : "—";
+      const produto = categoriaLabel(v.categoria_venda);
       const pagamento = v.forma_pagamento ?? "—";
       const valor = v.categoria_venda === "seguro_viagem"
         ? Number(v.valor_total ?? 0) * 0.4
@@ -354,7 +441,7 @@ export function RelatoriosClient() {
                   }}
                   className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                     activePreset === p.key
-                      ? "border-(--color-primary) bg-(--color-primary) text-white"
+                      ? "border-(--accent-solid) bg-(--accent-solid) text-white"
                       : "border-border bg-background text-foreground hover:bg-muted"
                   }`}
                 >
@@ -400,7 +487,7 @@ export function RelatoriosClient() {
                   type="button"
                   onClick={exportarExcel}
                   disabled={loading || items.length === 0}
-                  className="inline-flex items-center gap-2 rounded-lg border border-(--color-primary) bg-white px-4 py-2 text-sm font-medium text-(--color-primary) transition-colors hover:bg-(--color-primary) hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-(--accent-600) bg-card px-4 py-2 text-sm font-medium text-(--accent-600) transition-colors hover:bg-(--accent-solid) hover:border-(--accent-solid) hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Download className="h-4 w-4" />
                   Exportar Excel
@@ -437,6 +524,35 @@ export function RelatoriosClient() {
               <p className="text-2xl font-semibold text-foreground">{formatCurrency(items.length ? totalFaturamento / items.length : 0)}</p>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {porCategoria.map((cat) => (
+            <Card key={cat.key}>
+              <CardContent className="p-4">
+                <p className="text-xs uppercase text-[var(--text-secondary)]">{cat.name}</p>
+                <p className="text-2xl font-semibold text-foreground">{cat.count}</p>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">{formatCurrency(cat.value)}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div>
+          <p className="mb-3 text-sm font-medium text-[var(--text-secondary)]">Ticket médio por produto</p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {ticketMedioPorProduto.map((cat) => (
+              <Card key={cat.key}>
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase text-[var(--text-secondary)]">{cat.name}</p>
+                  <p className="text-2xl font-semibold text-foreground">{formatCurrency(cat.ticketMedio)}</p>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    {cat.count} venda{cat.count !== 1 ? "s" : ""} confirmada{cat.count !== 1 ? "s" : ""}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -488,7 +604,7 @@ export function RelatoriosClient() {
             ) : (
               <>
                 <MobileCardList
-                  rows={items.map((v) => {
+                  rows={paginated.map((v) => {
                     const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
                     const ven = Array.isArray(v.usuarios) ? v.usuarios[0] : v.usuarios;
                     return {
@@ -498,8 +614,9 @@ export function RelatoriosClient() {
                       value: formatCurrency(Number(v.valor_total)),
                       details: [
                         { label: "Data", value: formatDate(v.data_venda) },
+                        { label: "Tipo", value: categoriaLabel(v.categoria_venda) },
                         { label: "Vendedor", value: ven?.nome ?? "—" },
-                        { label: "Destino", value: v.destino ?? "—" },
+                        { label: "Detalhe", value: vendaResumo(v) },
                       ],
                       badge: (
                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${v.status === "confirmada" || v.status === "concluida" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : v.status === "cancelada" ? "bg-[var(--danger-bg)] text-[var(--danger-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
@@ -517,13 +634,14 @@ export function RelatoriosClient() {
                     <TableHead>Data</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Vendedor</TableHead>
-                    <TableHead>Destino</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Detalhe</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((v) => {
+                  {paginated.map((v) => {
                     const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
                     const ven = Array.isArray(v.usuarios) ? v.usuarios[0] : v.usuarios;
                     return (
@@ -532,7 +650,8 @@ export function RelatoriosClient() {
                         <TableCell>{formatDate(v.data_venda)}</TableCell>
                         <TableCell>{cli?.nome ?? "—"}</TableCell>
                         <TableCell className="text-[var(--text-secondary)]">{ven?.nome ?? "—"}</TableCell>
-                        <TableCell>{v.destino ?? "—"}</TableCell>
+                        <TableCell>{categoriaLabel(v.categoria_venda)}</TableCell>
+                        <TableCell>{vendaResumo(v)}</TableCell>
                         <TableCell className="font-semibold">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell>
                           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${v.status === "confirmada" || v.status === "concluida" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : v.status === "cancelada" ? "bg-[var(--danger-bg)] text-[var(--danger-text)]" : "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
@@ -548,6 +667,36 @@ export function RelatoriosClient() {
               </>
             )}
           </CardContent>
+          {!loading && items.length > PAGE_SIZE && (
+            <div className="flex flex-col items-center gap-3 border-t border-[var(--border-default)] px-4 py-4 sm:flex-row sm:justify-between sm:gap-4 sm:px-6">
+              <p className="text-sm text-[var(--text-secondary)]">
+                Exibindo {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, items.length)} de {items.length} venda{items.length !== 1 ? "s" : ""}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <span className="text-sm text-[var(--text-secondary)]">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </>

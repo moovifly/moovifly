@@ -740,7 +740,7 @@ export function OrcamentosClient() {
                   }}
                   className={`rounded-full border px-3 py-2 text-xs font-medium transition-colors sm:py-1.5 ${
                     activePreset === p.key
-                      ? "border-[var(--accent-600)] bg-[var(--accent-600)] text-white shadow-[var(--shadow-xs)]"
+                      ? "border-[var(--accent-solid)] bg-[var(--accent-solid)] text-white shadow-[var(--shadow-xs)]"
                       : "border-[var(--border-subtle)] bg-card text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
                   }`}
                 >

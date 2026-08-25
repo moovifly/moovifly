@@ -20,12 +20,12 @@ import { formatCurrency } from "@/lib/format";
  * Tokens CSS garantem que light/dark funcionem automaticamente.
  */
 export const CHART_SERIES_COLORS = [
-  "var(--accent-600)",
+  "var(--accent-400)",
   "var(--teal-500)",
   "var(--purple-500)",
   "var(--accent-gold)",
   "var(--accent-300)",
-  "var(--accent-400)",
+  "var(--accent-500)",
   "var(--purple-300)",
   "var(--teal-400)",
 ] as const;
@@ -54,7 +54,7 @@ export const chartGridProps = {
   vertical: false,
 } as const;
 
-const axisTick = { fontSize: 11, fill: "var(--text-muted)" };
+const axisTick = { fontSize: 11, fill: "var(--text-secondary)" };
 
 /** Eixo X padrão (categorias/dias/meses). */
 export const chartXAxisProps = {
@@ -148,7 +148,7 @@ export function ChartEmptyState({
 }) {
   return (
     <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-2 px-4 text-center">
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--bg-overlay)] text-[var(--text-muted)]">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--bg-overlay)] text-[var(--text-secondary)]">
         <Icon className="h-5 w-5" />
       </div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{title}</p>
@@ -289,7 +289,7 @@ export function ComparativeBars({
 export function SimpleBarChart({
   data,
   name,
-  color = "var(--accent-500)",
+  color = "var(--accent-400)",
   labelFormatter,
 }: {
   data: { label: string; value: number }[];

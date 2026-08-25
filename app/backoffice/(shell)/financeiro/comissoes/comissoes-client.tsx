@@ -208,6 +208,23 @@ export function ComissoesClient() {
     [comissoesFiltradas],
   );
 
+  const resumoPendentes = useMemo(
+    () => ({
+      count: comissoesPendentes.length,
+      total: comissoesPendentes.reduce((sum, c) => sum + Number(c.valor_comissao ?? 0), 0),
+    }),
+    [comissoesPendentes],
+  );
+  const resumoPagas = useMemo(
+    () => ({
+      count: comissoesPagas.length,
+      total: comissoesPagas.reduce((sum, c) => sum + Number(c.valor_comissao ?? 0), 0),
+    }),
+    [comissoesPagas],
+  );
+
+  const mostrarResumoVendedor = Boolean(comissaoVendedorFilter);
+
   function statusBadge(status: string) {
     return (
       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${COMISSAO_BADGE[status as keyof typeof COMISSAO_BADGE] ?? "bg-[var(--warning-bg)] text-[var(--warning-text)]"}`}>
@@ -331,9 +348,21 @@ export function ComissoesClient() {
                           )}
                         </TableRow>
                       ))}
+                      {mostrarResumoVendedor && (
+                        <TableRow className="border-t-2 bg-muted/30 hover:bg-muted/30">
+                          <TableCell colSpan={isManager ? 7 : 6} className="py-3 text-right font-semibold">
+                            {resumoPendentes.count} comiss{resumoPendentes.count === 1 ? "ão" : "ões"} — Total {formatCurrency(resumoPendentes.total)}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                     </div>
+                    {mostrarResumoVendedor && (
+                      <p className="pt-3 text-right text-sm font-semibold md:hidden">
+                        {resumoPendentes.count} comiss{resumoPendentes.count === 1 ? "ão" : "ões"} — Total {formatCurrency(resumoPendentes.total)}
+                      </p>
+                    )}
                   </>
                 )}
               </CardContent>
@@ -400,9 +429,21 @@ export function ComissoesClient() {
                           )}
                         </TableRow>
                       ))}
+                      {mostrarResumoVendedor && (
+                        <TableRow className="border-t-2 bg-muted/30 hover:bg-muted/30">
+                          <TableCell colSpan={isManager ? 8 : 7} className="py-3 text-right font-semibold">
+                            {resumoPagas.count} comiss{resumoPagas.count === 1 ? "ão" : "ões"} — Total {formatCurrency(resumoPagas.total)}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                     </div>
+                    {mostrarResumoVendedor && (
+                      <p className="pt-3 text-right text-sm font-semibold md:hidden">
+                        {resumoPagas.count} comiss{resumoPagas.count === 1 ? "ão" : "ões"} — Total {formatCurrency(resumoPagas.total)}
+                      </p>
+                    )}
                   </>
                 )}
               </CardContent>

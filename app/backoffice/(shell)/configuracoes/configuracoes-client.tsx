@@ -286,7 +286,7 @@ export function ConfiguracoesClient() {
                           aria-pressed={active}
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                             active
-                              ? "border-transparent bg-[var(--accent-600)] text-white"
+                              ? "border-transparent bg-[var(--accent-solid)] text-white"
                               : "border-[var(--border-subtle)] bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
                           }`}
                         >

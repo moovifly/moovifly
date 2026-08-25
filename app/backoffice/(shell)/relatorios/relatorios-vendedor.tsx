@@ -21,6 +21,8 @@ type Venda = {
   id: string;
   numero_venda: string;
   destino: string | null;
+  tipo: string | null;
+  categoria_venda: "aereo" | "seguro_viagem" | "servico" | null;
   valor_total: number | string;
   status: string;
   data_venda: string;
@@ -62,6 +64,18 @@ function statusLabel(status: string) {
   return labels[status] ?? status;
 }
 
+function categoriaLabel(cat: string | null | undefined) {
+  if (cat === "seguro_viagem") return "Seguro";
+  if (cat === "servico") return "Serviço";
+  if (cat === "aereo") return "Aéreo";
+  return "—";
+}
+
+function vendaDetalhe(v: Venda) {
+  if (v.categoria_venda === "servico") return v.tipo ?? "Serviço";
+  return v.destino ?? "—";
+}
+
 export function RelatoriosVendedor() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile } = useAuth();
@@ -90,7 +104,7 @@ export function RelatoriosVendedor() {
     try {
       let q = supabase
         .from("vendas")
-        .select("id, numero_venda, destino, valor_total, status, data_venda, clientes(nome)")
+        .select("id, numero_venda, destino, tipo, categoria_venda, valor_total, status, data_venda, clientes(nome)")
         .gte("data_venda", dateFrom)
         .lte("data_venda", dateTo)
         .order("data_venda", { ascending: false });
@@ -259,7 +273,8 @@ export function RelatoriosVendedor() {
                     value: formatCurrency(Number(v.valor_total)),
                     details: [
                       { label: "Data", value: formatDate(v.data_venda) },
-                      { label: "Destino", value: v.destino ?? "—" },
+                      { label: "Tipo", value: categoriaLabel(v.categoria_venda) },
+                      { label: "Detalhe", value: vendaDetalhe(v) },
                     ],
                     badge: (
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(v.status)}`}>
@@ -276,7 +291,8 @@ export function RelatoriosVendedor() {
                   <TableHead>Número</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Destino</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Detalhe</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -289,7 +305,8 @@ export function RelatoriosVendedor() {
                       <TableCell className="font-mono text-xs">{v.numero_venda}</TableCell>
                       <TableCell>{formatDate(v.data_venda)}</TableCell>
                       <TableCell>{cli?.nome ?? "—"}</TableCell>
-                      <TableCell>{v.destino ?? "—"}</TableCell>
+                      <TableCell>{categoriaLabel(v.categoria_venda)}</TableCell>
+                      <TableCell>{vendaDetalhe(v)}</TableCell>
                       <TableCell className="font-semibold">{formatCurrency(Number(v.valor_total))}</TableCell>
                       <TableCell>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(v.status)}`}>

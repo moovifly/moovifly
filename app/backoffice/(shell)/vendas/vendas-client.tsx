@@ -39,12 +39,14 @@ type Passageiro = {
   data_nascimento: string;
 };
 
+type CategoriaVenda = "aereo" | "seguro_viagem" | "servico";
+
 type Venda = {
   id: string;
   numero_venda: string;
   cliente_id: string | null;
   vendedor_id: string | null;
-  categoria_venda: "aereo" | "seguro_viagem" | null;
+  categoria_venda: CategoriaVenda | null;
   tipo: string | null;
   origem: string | null;
   destino: string | null;
@@ -100,8 +102,10 @@ const PERIOD_PRESETS: { key: string; label: string; range: () => { from: string;
 
 const TIPO_OPTIONS = ["passagem", "pacote", "hospedagem", "corporativo", "lua-de-mel", "grupo", "outros"];
 
+const TIPO_SERVICO_OPTIONS = ["Aluguel de Carro", "Hotel", "Ônibus", "Mudança de Voo"];
+
 const FORNECEDOR_OPTIONS = [
-  "BRT", "MaisFly", "GTA",
+  "BRT", "MaisFly", "GTA", "Sakura",
 ];
 
 const FORMA_PAGAMENTO_OPTIONS = [
@@ -132,11 +136,37 @@ function calcComissaoSeguro(valorTotal: number, percentualVendedor: number) {
   return { repasseFornecedor, comissaoVendedor, percentualVendedor };
 }
 
+/** Admins e Sandra: 50%; demais vendedores: 40% sobre RAV+DU. */
+function percentualComissaoServico(user: { tipo?: string | null; nome?: string | null } | null | undefined) {
+  if (!user) return 40;
+  if (user.tipo === "administrador") return 50;
+  if ((user.nome ?? "").trim().toLowerCase().startsWith("sandra")) return 50;
+  return 40;
+}
+
+function calcComissaoServico(taxaRav: number, taxaDu: number, percentual: number) {
+  const base = (taxaRav || 0) + (taxaDu || 0);
+  const comissaoVendedor = percentual > 0 ? Math.round(base * percentual) / 100 : 0;
+  return { base, comissaoVendedor, percentual };
+}
+
+function categoriaVendaLabel(cat: CategoriaVenda | null | undefined) {
+  if (cat === "seguro_viagem") return "Seguro Viagem";
+  if (cat === "servico") return "Serviço";
+  return "Aéreo";
+}
+
+function categoriaVendaBadge(cat: CategoriaVenda | null | undefined) {
+  if (cat === "seguro_viagem") return { label: "Seguro", variant: "info" as const };
+  if (cat === "servico") return { label: "Serviço", variant: "warning" as const };
+  return { label: "Aéreo", variant: "default" as const };
+}
+
 const emptyPassageiro = (): Passageiro => ({ nome: "", documento: "", data_nascimento: "" });
 
 type FormState = {
   id: string | null;
-  categoria_venda: "aereo" | "seguro_viagem";
+  categoria_venda: CategoriaVenda;
   cliente_id: string | null;
   cliente_nome: string;
   tipo: string;
@@ -187,7 +217,8 @@ const emptyForm = (): FormState => ({
 export function VendasClient() {
   const supabase = useMemo(() => getSupabaseClient(), []);
   const { profile } = useAuth();
-  const isAdminOrGerente = profile?.tipo === "administrador" || profile?.tipo === "gerente";
+  const isAdmin = profile?.tipo === "administrador";
+  const isAdminOrGerente = isAdmin || profile?.tipo === "gerente";
   const [items, setItems] = useState<Venda[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioSimples[]>([]);
@@ -267,8 +298,15 @@ export function VendasClient() {
 
   function openNew() { setForm({ ...emptyForm(), atribuido_a: profile?.id ?? null }); setStep("select-type"); setActiveTab("dados"); setViewMode(false); setOpen(true); }
 
-  function selectCategoria(cat: "aereo" | "seguro_viagem") {
-    setForm((prev) => ({ ...prev, categoria_venda: cat }));
+  function selectCategoria(cat: CategoriaVenda) {
+    setForm((prev) => ({
+      ...prev,
+      categoria_venda: cat,
+      tipo: cat === "servico" ? TIPO_SERVICO_OPTIONS[0] : cat === "aereo" ? "passagem" : prev.tipo,
+      localizador: cat === "servico" ? "" : prev.localizador,
+      voucher: "",
+      voos: cat === "aereo" ? (prev.voos.length ? prev.voos : [emptyVoo("ida")]) : [],
+    }));
     setActiveTab("dados");
     setStep("form");
   }
@@ -278,7 +316,7 @@ export function VendasClient() {
     if (parsed.length) return parsed;
     const fromObs = parseVoosFromObservacoes(v.observacoes);
     if (fromObs.length) return fromObs;
-    if (v.categoria_venda === "seguro_viagem") return [];
+    if (v.categoria_venda === "seguro_viagem" || v.categoria_venda === "servico") return [];
     return [{
       ...emptyVoo("ida"),
       origem: v.origem ?? "",
@@ -291,16 +329,17 @@ export function VendasClient() {
 
   function openEdit(v: Venda) {
     const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
+    const categoria = (v.categoria_venda ?? "aereo") as CategoriaVenda;
     setForm({
       id: v.id,
-      categoria_venda: v.categoria_venda ?? "aereo",
+      categoria_venda: categoria,
       cliente_id: v.cliente_id,
       cliente_nome: cli?.nome ?? "",
-      tipo: v.tipo ?? "passagem",
+      tipo: v.tipo ?? (categoria === "servico" ? TIPO_SERVICO_OPTIONS[0] : "passagem"),
       origem: v.origem ?? "",
       destino: v.destino ?? "",
       companhia: v.companhia ?? "",
-      localizador: v.localizador ?? "",
+      localizador: v.localizador ?? v.voucher ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
       data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
@@ -310,7 +349,7 @@ export function VendasClient() {
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       fornecedor: v.fornecedor ?? "",
-      voucher: v.voucher ?? "",
+      voucher: v.voucher ?? v.localizador ?? "",
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
@@ -325,16 +364,17 @@ export function VendasClient() {
 
   function openView(v: Venda) {
     const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
+    const categoria = (v.categoria_venda ?? "aereo") as CategoriaVenda;
     setForm({
       id: v.id,
-      categoria_venda: v.categoria_venda ?? "aereo",
+      categoria_venda: categoria,
       cliente_id: v.cliente_id,
       cliente_nome: cli?.nome ?? "",
-      tipo: v.tipo ?? "passagem",
+      tipo: v.tipo ?? (categoria === "servico" ? TIPO_SERVICO_OPTIONS[0] : "passagem"),
       origem: v.origem ?? "",
       destino: v.destino ?? "",
       companhia: v.companhia ?? "",
-      localizador: v.localizador ?? "",
+      localizador: v.localizador ?? v.voucher ?? "",
       data_ida: v.data_ida ?? "",
       data_volta: v.data_volta ?? "",
       data_venda: v.data_venda ?? new Date().toISOString().slice(0, 10),
@@ -344,7 +384,7 @@ export function VendasClient() {
       status: v.status,
       forma_pagamento: v.forma_pagamento ?? "",
       fornecedor: v.fornecedor ?? "",
-      voucher: v.voucher ?? "",
+      voucher: v.voucher ?? v.localizador ?? "",
       passageiros_dados: (v.passageiros_dados && v.passageiros_dados.length > 0)
         ? v.passageiros_dados
         : [emptyPassageiro()],
@@ -364,38 +404,42 @@ export function VendasClient() {
     setSaving(true);
     try {
       const isSeguro = form.categoria_venda === "seguro_viagem";
-      const camposVoo = isSeguro ? null : voosToVendaCampos(form.voos);
+      const isServico = form.categoria_venda === "servico";
+      const camposVoo = isSeguro || isServico ? null : voosToVendaCampos(form.voos);
       const descricao = isSeguro
         ? ["Seguro Viagem", form.destino].filter(Boolean).join(" — ") || "Seguro Viagem"
+        : isServico
+        ? ["Serviço", form.tipo].filter(Boolean).join(" — ") || "Serviço"
         : [form.tipo, (camposVoo?.origem || form.origem) && (camposVoo?.destino || form.destino)
             ? `${camposVoo?.origem || form.origem} → ${camposVoo?.destino || form.destino}`
             : camposVoo?.destino || form.destino || camposVoo?.origem || form.origem]
             .filter(Boolean)
             .join(" — ") || "Venda";
       const passageirosValidos = form.passageiros_dados.filter((p) => p.nome.trim());
+      const localizadoVoucher = form.localizador.trim() || form.voucher.trim() || null;
       const payload = {
         categoria_venda: form.categoria_venda,
         cliente_id: form.cliente_id,
         vendedor_id: isAdminOrGerente ? (form.atribuido_a ?? profile?.id ?? null) : (profile?.id ?? null),
         tipo: isSeguro ? null : form.tipo || null,
         descricao,
-        origem: isSeguro ? null : camposVoo?.origem || form.origem || null,
-        destino: form.destino || camposVoo?.destino || null,
-        companhia: isSeguro ? null : camposVoo?.companhia || form.companhia || null,
-        localizador: isSeguro ? null : form.localizador.trim() || null,
-        data_ida: isSeguro ? null : camposVoo?.data_ida || normalizeDateOnly(form.data_ida) || null,
-        data_volta: isSeguro ? null : camposVoo?.data_volta || normalizeDateOnly(form.data_volta) || null,
+        origem: isSeguro || isServico ? null : camposVoo?.origem || form.origem || null,
+        destino: isServico ? null : (form.destino || camposVoo?.destino || null),
+        companhia: isSeguro || isServico ? null : camposVoo?.companhia || form.companhia || null,
+        localizador: isSeguro ? null : localizadoVoucher,
+        data_ida: isSeguro || isServico ? null : camposVoo?.data_ida || normalizeDateOnly(form.data_ida) || null,
+        data_volta: isSeguro || isServico ? null : camposVoo?.data_volta || normalizeDateOnly(form.data_volta) || null,
         data_venda: form.data_venda,
         valor_total: form.valor_total,
         taxa_rav: isSeguro ? 0 : form.taxa_rav,
         taxa_du: isSeguro ? 0 : form.taxa_du,
         status: form.status,
         forma_pagamento: form.forma_pagamento || null,
-        fornecedor: isSeguro ? null : form.fornecedor || null,
-        voucher: isSeguro ? form.voucher || null : null,
-        passageiros_dados: passageirosValidos.length > 0 ? passageirosValidos : null,
-        passageiros: Math.max(passageirosValidos.length, 1),
-        voos: isSeguro ? [] : form.voos,
+        fornecedor: isSeguro || isServico ? null : form.fornecedor || null,
+        voucher: isSeguro || isServico ? localizadoVoucher : null,
+        passageiros_dados: isServico ? null : (passageirosValidos.length > 0 ? passageirosValidos : null),
+        passageiros: isServico ? 1 : Math.max(passageirosValidos.length, 1),
+        voos: isSeguro || isServico ? [] : form.voos,
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
@@ -415,6 +459,21 @@ export function VendasClient() {
             .update({ base_calculo: repasseFornecedor, percentual_comissao: percentualSeguro, valor_comissao: comissaoVendedor })
             .eq("venda_id", form.id)
             .eq("status", "pendente");
+        } else if (isServico) {
+          const base = (payload.taxa_rav ?? 0) + (payload.taxa_du ?? 0);
+          if (base > 0) {
+            const userAtribuido = isAdminOrGerente && form.atribuido_a
+              ? usuarios.find(u => u.id === form.atribuido_a)
+              : null;
+            const targetUser = userAtribuido ?? { tipo: profile?.tipo, nome: profile?.nome };
+            const percentual = percentualComissaoServico(targetUser);
+            const { comissaoVendedor } = calcComissaoServico(payload.taxa_rav ?? 0, payload.taxa_du ?? 0, percentual);
+            await supabase
+              .from("comissoes")
+              .update({ base_calculo: base, percentual_comissao: percentual, valor_comissao: comissaoVendedor })
+              .eq("venda_id", form.id)
+              .eq("status", "pendente");
+          }
         } else if (!isSeguro) {
           const base = (payload.taxa_rav ?? 0) + (payload.taxa_du ?? 0);
           if (base > 0) {
@@ -507,18 +566,19 @@ export function VendasClient() {
   const passageirosPreenchidos = form.passageiros_dados.filter((p) => p.nome.trim()).length;
 
   const comissaoPreview = useMemo(() => {
+    const userAtribuido = isAdminOrGerente && form.atribuido_a
+      ? usuarios.find(u => u.id === form.atribuido_a)
+      : null;
+    const nomeAtribuido = userAtribuido?.nome ?? null;
+
     if (form.categoria_venda === "seguro_viagem") {
       if (!form.valor_total || form.valor_total <= 0) return null;
-      const userAtribuido = isAdminOrGerente && form.atribuido_a
-        ? usuarios.find(u => u.id === form.atribuido_a)
-        : null;
       const percentualSeguro = Number(
         userAtribuido?.comissao_seguro_percentual ?? (profile as { comissao_seguro_percentual?: number } | null)?.comissao_seguro_percentual ?? 0
       );
-      const nomeAtribuido = userAtribuido?.nome ?? null;
       const { repasseFornecedor, comissaoVendedor, percentualVendedor } = calcComissaoSeguro(form.valor_total, percentualSeguro);
       return {
-        isSeguro: true as const,
+        kind: "seguro" as const,
         valorTotal: form.valor_total,
         repasseFornecedor,
         comissaoVendedor,
@@ -526,15 +586,27 @@ export function VendasClient() {
         nomeAtribuido,
       };
     }
+
+    if (form.categoria_venda === "servico") {
+      const base = (form.taxa_rav || 0) + (form.taxa_du || 0);
+      if (base <= 0) return null;
+      const targetUser = userAtribuido ?? { tipo: profile?.tipo, nome: profile?.nome };
+      const percentual = percentualComissaoServico(targetUser);
+      const { comissaoVendedor } = calcComissaoServico(form.taxa_rav, form.taxa_du, percentual);
+      return {
+        kind: "servico" as const,
+        base,
+        comissaoVendedor,
+        percentualVendedor: percentual,
+        nomeAtribuido,
+      };
+    }
+
     const base = (form.taxa_rav || 0) + (form.taxa_du || 0);
     if (base <= 0) return null;
-    const userAtribuido = isAdminOrGerente && form.atribuido_a
-      ? usuarios.find(u => u.id === form.atribuido_a)
-      : null;
     const percentualVendedor = Number(
       userAtribuido?.comissao_percentual ?? (profile as { comissao_percentual?: number } | null)?.comissao_percentual ?? 0
     );
-    const nomeAtribuido = userAtribuido?.nome ?? null;
     let taxaCartaoVal = 0;
     let baseComissao = base;
     const temTaxaCartao = FORMAS_CARTAO.has(form.forma_pagamento) && form.fornecedor in TAXA_CARTAO_MAP;
@@ -544,7 +616,7 @@ export function VendasClient() {
       baseComissao = Math.round((base - taxaCartaoVal) * 100) / 100;
     }
     const comissaoVendedor = percentualVendedor > 0 ? Math.round(baseComissao * percentualVendedor) / 100 : null;
-    return { isSeguro: false as const, base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao, nomeAtribuido };
+    return { kind: "aereo" as const, base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao, nomeAtribuido };
   }, [form.categoria_venda, form.valor_total, form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, form.atribuido_a, profile, usuarios, isAdminOrGerente]);
 
   return (
@@ -583,7 +655,7 @@ export function VendasClient() {
                   }}
                   className={`rounded-full border px-3 py-2 text-xs font-medium transition-colors sm:py-1.5 ${
                     activePreset === p.key
-                      ? "border-[var(--accent-600)] bg-[var(--accent-600)] text-white shadow-[var(--shadow-xs)]"
+                      ? "border-[var(--accent-solid)] bg-[var(--accent-solid)] text-white shadow-[var(--shadow-xs)]"
                       : "border-[var(--border-subtle)] bg-card text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-foreground"
                   }`}
                 >
@@ -626,7 +698,7 @@ export function VendasClient() {
                 {filtered.map((v) => {
                   const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
                   const sb = STATUS_OPTIONS.find((s) => s.value === v.status) ?? STATUS_OPTIONS[0];
-                  const isSeguro = v.categoria_venda === "seguro_viagem";
+                  const catBadge = categoriaVendaBadge(v.categoria_venda);
                   return (
                     <div key={v.id} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <div className="flex items-start justify-between gap-3">
@@ -642,8 +714,8 @@ export function VendasClient() {
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-secondary)]">
                         <Badge variant={sb.variant}>{sb.label}</Badge>
-                        <Badge variant={isSeguro ? "info" : "default"}>{isSeguro ? "Seguro" : "Aéreo"}</Badge>
-                        {v.destino && <span className="min-w-0 truncate">{v.destino}</span>}
+                        <Badge variant={catBadge.variant}>{catBadge.label}</Badge>
+                        {(v.destino || v.tipo) && <span className="min-w-0 truncate">{v.destino ?? v.tipo}</span>}
                         {v.localizador?.trim() && <span className="font-mono uppercase">{v.localizador.trim()}</span>}
                       </div>
                       <div className="mt-2 flex items-center justify-end gap-1 border-t border-[var(--border-subtle)] pt-2">
@@ -682,18 +754,16 @@ export function VendasClient() {
                   {filtered.map((v) => {
                     const cli = Array.isArray(v.cliente) ? v.cliente[0] : v.cliente;
                     const sb = STATUS_OPTIONS.find((s) => s.value === v.status) ?? STATUS_OPTIONS[0];
-                    const isSeguro = v.categoria_venda === "seguro_viagem";
+                    const catBadge = categoriaVendaBadge(v.categoria_venda);
                     return (
                       <TableRow key={v.id}>
                         <TableCell className="font-mono text-xs">{v.numero_venda}</TableCell>
                         <TableCell>{formatDate(v.data_venda)}</TableCell>
                         <TableCell className="font-medium">{cli?.nome ?? "—"}</TableCell>
                         <TableCell>
-                          <Badge variant={isSeguro ? "info" : "default"}>
-                            {isSeguro ? "Seguro" : "Aéreo"}
-                          </Badge>
+                          <Badge variant={catBadge.variant}>{catBadge.label}</Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{v.destino ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{v.destino ?? v.tipo ?? "—"}</TableCell>
                         <TableCell className="hidden font-mono text-xs uppercase lg:table-cell">{v.localizador?.trim() || "—"}</TableCell>
                         <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(v.valor_total))}</TableCell>
                         <TableCell><Badge variant={sb.variant}>{sb.label}</Badge></TableCell>
@@ -745,7 +815,7 @@ export function VendasClient() {
                 <DialogTitle>Nova venda</DialogTitle>
                 <DialogDescription>Escolha o tipo de venda para continuar.</DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-2 sm:gap-4">
+              <div className="grid grid-cols-1 gap-3 py-4 sm:grid-cols-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => selectCategoria("aereo")}
@@ -764,6 +834,15 @@ export function VendasClient() {
                   <span className="text-base font-semibold">Seguro Viagem</span>
                   <span className="text-xs text-muted-foreground">Venda Seguro Viagem</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => selectCategoria("servico")}
+                  className="flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 text-center transition-colors hover:border-primary hover:bg-accent"
+                >
+                  <span className="text-4xl">🛎️</span>
+                  <span className="text-base font-semibold">Serviço</span>
+                  <span className="text-xs text-muted-foreground">Carro, hotel, ônibus e mudança de voo</span>
+                </button>
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -777,15 +856,15 @@ export function VendasClient() {
                     ? "Detalhes da Venda"
                     : form.id
                     ? "Editar venda"
-                    : form.categoria_venda === "seguro_viagem"
-                    ? "Nova venda — Seguro Viagem"
-                    : "Nova venda — Aéreo"}
+                    : `Nova venda — ${categoriaVendaLabel(form.categoria_venda)}`}
                 </DialogTitle>
                 <DialogDescription>
                   {viewMode
-                    ? `${form.categoria_venda === "seguro_viagem" ? "Seguro Viagem" : "Aéreo"} · somente leitura`
+                    ? `${categoriaVendaLabel(form.categoria_venda)} · somente leitura`
                     : form.categoria_venda === "seguro_viagem"
                     ? "Preencha os dados do seguro viagem."
+                    : form.categoria_venda === "servico"
+                    ? "Preencha os dados do serviço."
                     : "Preencha os dados da venda aérea."}
                 </DialogDescription>
               </DialogHeader>
@@ -802,7 +881,7 @@ export function VendasClient() {
                   />
                 </div>
 
-                {isAdminOrGerente && usuarios.length > 0 && (
+                {(form.categoria_venda === "servico" ? isAdmin : isAdminOrGerente) && usuarios.length > 0 && (
                   <div className="space-y-1.5">
                     <Label>Atribuir venda a</Label>
                     <Select
@@ -825,9 +904,11 @@ export function VendasClient() {
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "dados" | "passageiros")}>
                   <TabsList className="w-full">
                     <TabsTrigger value="dados" className="flex-1">Dados da Venda</TabsTrigger>
-                    <TabsTrigger value="passageiros" className="flex-1">
-                      Passageiros{passageirosPreenchidos > 0 ? ` (${passageirosPreenchidos})` : ""}
-                    </TabsTrigger>
+                    {form.categoria_venda !== "servico" && (
+                      <TabsTrigger value="passageiros" className="flex-1">
+                        Passageiros{passageirosPreenchidos > 0 ? ` (${passageirosPreenchidos})` : ""}
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   <TabsContent value="dados">
@@ -872,6 +953,56 @@ export function VendasClient() {
                         <div className="space-y-1.5">
                           <Label>Data da venda *</Label>
                           <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                        </div>
+                      </div>
+                      </fieldset>
+                    ) : form.categoria_venda === "servico" ? (
+                      <fieldset disabled={viewMode} className="disabled:opacity-70">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label>Tipo</Label>
+                          <Select value={form.tipo} onChange={f("tipo")}>
+                            {TIPO_SERVICO_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Data da venda *</Label>
+                          <Input type="date" value={form.data_venda} onChange={f("data_venda")} required />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Localizado/Voucher</Label>
+                          <Input
+                            value={form.localizador}
+                            onChange={f("localizador")}
+                            placeholder="Localizador ou código do voucher"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Valor total (R$) *</Label>
+                          <CurrencyInput value={form.valor_total} onValueChange={(v) => setForm((p) => ({ ...p, valor_total: v ?? 0 }))} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Taxa RAV (R$)</Label>
+                          <CurrencyInput value={form.taxa_rav} onValueChange={(v) => setForm((p) => ({ ...p, taxa_rav: v ?? 0 }))} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Taxa DU (R$)</Label>
+                          <CurrencyInput value={form.taxa_du} onValueChange={(v) => setForm((p) => ({ ...p, taxa_du: v ?? 0 }))} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Status</Label>
+                          <Select value={form.status} onChange={f("status")}>
+                            {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Forma de Pagamento</Label>
+                          <Select value={form.forma_pagamento} onChange={f("forma_pagamento")}>
+                            <option value="">Selecione...</option>
+                            {formaPagamentoSelectOptions(form.forma_pagamento).map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </Select>
                         </div>
                       </div>
                       </fieldset>
@@ -983,7 +1114,7 @@ export function VendasClient() {
 
                     {comissaoPreview && (
                       <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5 text-sm mt-4">
-                        {comissaoPreview.isSeguro ? (
+                        {comissaoPreview.kind === "seguro" ? (
                           <>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Repasse fornecedor (40%)</span>
@@ -994,6 +1125,21 @@ export function VendasClient() {
                                 {comissaoPreview.nomeAtribuido && comissaoPreview.nomeAtribuido !== profile?.nome
                                   ? `Comissão de ${comissaoPreview.nomeAtribuido} (${comissaoPreview.percentualVendedor}% do repasse)`
                                   : `Comissão vendedor (${comissaoPreview.percentualVendedor}% do repasse)`}
+                              </span>
+                              <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
+                            </div>
+                          </>
+                        ) : comissaoPreview.kind === "servico" ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">RAV + DU</span>
+                              <span className="font-medium">{formatCurrency(comissaoPreview.base)}</span>
+                            </div>
+                            <div className="flex justify-between border-t pt-1.5">
+                              <span className="text-muted-foreground">
+                                {comissaoPreview.nomeAtribuido && comissaoPreview.nomeAtribuido !== profile?.nome
+                                  ? `Comissão de ${comissaoPreview.nomeAtribuido} (${comissaoPreview.percentualVendedor}%)`
+                                  : `Sua Comissão (${comissaoPreview.percentualVendedor}%)`}
                               </span>
                               <span className="font-semibold text-primary">{formatCurrency(comissaoPreview.comissaoVendedor)}</span>
                             </div>
