@@ -215,7 +215,7 @@ export function RelatoriosClient() {
     const map = new Map<string, { count: number; valor: number }>();
     for (const key of order) map.set(key, { count: 0, valor: 0 });
 
-    for (const v of items) {
+    for (const v of vendasConfirmadas) {
       const key = v.categoria_venda && order.includes(v.categoria_venda as typeof order[number])
         ? v.categoria_venda
         : "aereo";
@@ -236,7 +236,7 @@ export function RelatoriosClient() {
         value,
       };
     });
-  }, [items]);
+  }, [vendasConfirmadas]);
 
   /** Ticket médio por produto com base em vendas confirmadas/concluídas. */
   const ticketMedioPorProduto = useMemo(() => {
@@ -521,7 +521,7 @@ export function RelatoriosClient() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs text-[var(--text-secondary)] uppercase">Ticket médio</p>
-              <p className="text-2xl font-semibold text-foreground">{formatCurrency(items.length ? totalFaturamento / items.length : 0)}</p>
+              <p className="text-2xl font-semibold text-foreground">{formatCurrency(vendasConfirmadas.length ? totalFaturamento / vendasConfirmadas.length : 0)}</p>
             </CardContent>
           </Card>
         </div>
