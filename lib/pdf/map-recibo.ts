@@ -1,6 +1,6 @@
 import { formatCpfCnpj, formatCurrency, formatPhoneBR } from "@/lib/format";
 import { EMPRESA_MOOVIFLY } from "@/lib/pdf/empresa";
-import type { DadosRecibo, ReciboTrecho } from "@/lib/pdf/recibo-types";
+import type { DadosRecibo, ReciboPagante, ReciboTrecho } from "@/lib/pdf/recibo-types";
 import { valorPorExtenso } from "@/lib/pdf/valor-extenso";
 import { parseVoosJson, type Voo } from "@/lib/voos";
 
@@ -186,7 +186,46 @@ function formaPagamentoLabel(forma: string | null): string {
   return t.startsWith("Pagamento") ? t : `Pagamento via ${t}`;
 }
 
-export function vendaToDadosRecibo(venda: VendaReciboRow, dataEmissao = new Date()): DadosRecibo {
+function paganteFromCliente(cliente: NonNullable<VendaReciboRow["cliente"]>): ReciboPagante {
+  return {
+    nome: (cliente.nome ?? "").trim(),
+    endereco: (cliente.endereco ?? "").trim(),
+    bairro: "",
+    cidade: (cliente.cidade ?? "").trim(),
+    uf: (cliente.estado ?? "").trim(),
+    cep: (cliente.cep ?? "").trim(),
+    cpfCnpj: formatCpfCnpj(cliente.cpf),
+    ieRg: (cliente.rg ?? "").trim(),
+    telefones: formatPhoneBR(cliente.telefone),
+    email: (cliente.email ?? "").trim(),
+  };
+}
+
+function normalizePaganteOverride(raw: Partial<ReciboPagante>): ReciboPagante {
+  return {
+    nome: (raw.nome ?? "").trim(),
+    endereco: (raw.endereco ?? "").trim(),
+    bairro: (raw.bairro ?? "").trim(),
+    cidade: (raw.cidade ?? "").trim(),
+    uf: (raw.uf ?? "").trim(),
+    cep: (raw.cep ?? "").trim(),
+    cpfCnpj: formatCpfCnpj(raw.cpfCnpj) || (raw.cpfCnpj ?? "").trim(),
+    ieRg: (raw.ieRg ?? "").trim(),
+    telefones: formatPhoneBR(raw.telefones) || (raw.telefones ?? "").trim(),
+    email: (raw.email ?? "").trim(),
+  };
+}
+
+export type VendaToReciboOptions = {
+  dataEmissao?: Date;
+  paganteOverride?: Partial<ReciboPagante> | null;
+};
+
+export function vendaToDadosRecibo(
+  venda: VendaReciboRow,
+  options?: VendaToReciboOptions,
+): DadosRecibo {
+  const dataEmissao = options?.dataEmissao ?? new Date();
   const cliente = venda.cliente ?? {};
   const total = num(venda.valor_total);
   const taxaDu = num(venda.taxa_du);
@@ -226,20 +265,13 @@ export function vendaToDadosRecibo(venda: VendaReciboRow, dataEmissao = new Date
     produtoDetalhe = bits.join(" · ") || undefined;
   }
 
+  const pagante = options?.paganteOverride
+    ? normalizePaganteOverride(options.paganteOverride)
+    : paganteFromCliente(cliente);
+
   return {
     tituloFaixa,
-    pagante: {
-      nome: (cliente.nome ?? "").trim(),
-      endereco: (cliente.endereco ?? "").trim(),
-      bairro: "",
-      cidade: (cliente.cidade ?? "").trim(),
-      uf: (cliente.estado ?? "").trim(),
-      cep: (cliente.cep ?? "").trim(),
-      cpfCnpj: formatCpfCnpj(cliente.cpf),
-      ieRg: (cliente.rg ?? "").trim(),
-      telefones: formatPhoneBR(cliente.telefone),
-      email: (cliente.email ?? "").trim(),
-    },
+    pagante,
     produtoTitulo: produtoTitulo(categoria, venda.tipo),
     companhia: (venda.companhia ?? "").trim(),
     localizador: loc,

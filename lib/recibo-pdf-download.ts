@@ -1,11 +1,17 @@
+import type { ReciboPagante } from "@/lib/pdf/recibo-types";
+
 /**
  * Solicita o PDF do recibo da venda e dispara o download no browser.
  */
-export async function downloadReciboPdf(vendaId: string, filename: string) {
+export async function downloadReciboPdf(
+  vendaId: string,
+  filename: string,
+  pagante?: ReciboPagante,
+) {
   const res = await fetch("/api/recibo/pdf/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ vendaId }),
+    body: JSON.stringify({ vendaId, pagante }),
   });
 
   if (!res.ok) {
