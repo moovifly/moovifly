@@ -56,7 +56,15 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/backoffice/dashboard/", label: "Dashboard", icon: LayoutGrid },
       { href: "/backoffice/clientes/", label: "Clientes", icon: Users },
       { href: "/backoffice/orcamentos/", label: "Orçamentos", icon: FileText },
-      { href: "/backoffice/vendas/", label: "Vendas", icon: ShoppingCart },
+      {
+        href: "/backoffice/vendas/",
+        label: "Vendas",
+        icon: ShoppingCart,
+        children: [
+          { href: "/backoffice/vendas/", label: "Vendas" },
+          { href: "/backoffice/vendas/recibo/", label: "Recibo" },
+        ],
+      },
       { href: "/backoffice/embarques/", label: "Embarques", icon: PlaneTakeoff },
     ],
   },
