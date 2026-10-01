@@ -22,6 +22,12 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/format";
 import type { UserProfile } from "@/lib/auth";
+import {
+  EMPTY_COMISSAO_EMPRESA,
+  aggregateComissaoEmpresa,
+  type ComissaoEmpresaResumo,
+} from "@/lib/financial/comissao-empresa";
+import { ComissaoEmpresaCard } from "@/components/financeiro/comissao-empresa-card";
 import { SalesTrendChart, RevenueDonut, type SalesChartPoint } from "./dashboard-charts";
 import { Sparkline } from "@/components/backoffice/charts/chart-kit";
 import {
@@ -333,6 +339,44 @@ async function loadStats(profile: UserProfile, range: DateRange): Promise<Stats>
   };
 }
 
+async function loadComissaoEmpresa(profile: UserProfile, range: DateRange): Promise<ComissaoEmpresaResumo> {
+  if (profile.tipo !== "administrador") return EMPTY_COMISSAO_EMPRESA;
+  const supabase = getSupabaseClient();
+  const start = range.start.slice(0, 10);
+  const end = range.end.slice(0, 10);
+
+  const { data: vendas, error } = await supabase
+    .from("vendas")
+    .select("id, categoria_venda, valor_total, taxa_rav, taxa_du, forma_pagamento, fornecedor, status, comissoes(venda_id, valor_comissao, status)")
+    .gte("data_venda", start)
+    .lte("data_venda", end)
+    .in("status", ["confirmada", "concluida"]);
+
+  if (error) throw error;
+
+  const rows = (vendas ?? []) as Array<{
+    id: string;
+    categoria_venda?: string | null;
+    valor_total?: number | string | null;
+    taxa_rav?: number | string | null;
+    taxa_du?: number | string | null;
+    forma_pagamento?: string | null;
+    fornecedor?: string | null;
+    status?: string | null;
+    comissoes?: Array<{ venda_id?: string | null; valor_comissao?: number | string | null; status?: string | null }> | null;
+  }>;
+
+  const comissoes = rows.flatMap((v) =>
+    (v.comissoes ?? []).map((c) => ({
+      venda_id: c.venda_id ?? v.id,
+      valor_comissao: c.valor_comissao,
+      status: c.status,
+    })),
+  );
+
+  return aggregateComissaoEmpresa(rows, comissoes);
+}
+
 async function loadRecentSales(profile: UserProfile, range: DateRange): Promise<RecentSale[]> {
   const supabase = getSupabaseClient();
   let q = supabase
@@ -565,10 +609,12 @@ function statusBadgeColor(status: string) {
 export function DashboardClient() {
   const { profile } = useAuth();
   const isManager = ["administrador", "gerente"].includes(profile?.tipo ?? "");
+  const isAdmin = profile?.tipo === "administrador";
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("mes");
   const [stats, setStats] = useState<Stats>(initialStats);
   const [financial, setFinancial] = useState<Financial>(initialFinancial);
+  const [comissaoEmpresa, setComissaoEmpresa] = useState<ComissaoEmpresaResumo>(EMPTY_COMISSAO_EMPRESA);
   const [recent, setRecent] = useState<RecentSale[]>([]);
   const [sellers, setSellers] = useState<TopSeller[]>([]);
   const [chartData, setChartData] = useState<SalesChartPoint[]>([]);
@@ -581,7 +627,7 @@ export function DashboardClient() {
     const range = getDateRange(p);
     const managerProfile = ["administrador", "gerente"].includes(profile.tipo);
     try {
-      const [s, f, r, t, c, d, e] = await Promise.all([
+      const [s, f, r, t, c, d, e, ce] = await Promise.all([
         loadStats(profile, range),
         managerProfile ? loadFinancial(profile) : Promise.resolve(initialFinancial),
         loadRecentSales(profile, range),
@@ -589,6 +635,12 @@ export function DashboardClient() {
         loadSalesByDay(profile, range),
         loadRevenueByCategory(profile, range),
         loadEmbarqueAlerts(profile),
+        profile.tipo === "administrador"
+          ? loadComissaoEmpresa(profile, range).catch((err) => {
+              console.error("[dashboard] comissão da empresa:", err);
+              return EMPTY_COMISSAO_EMPRESA;
+            })
+          : Promise.resolve(EMPTY_COMISSAO_EMPRESA),
       ]);
       setStats(s);
       setFinancial(f);
@@ -597,6 +649,7 @@ export function DashboardClient() {
       setChartData(c);
       setDonutData(d);
       setEmbarqueAlerts(e);
+      setComissaoEmpresa(ce);
     } catch (err) {
       console.error("[dashboard] erro:", err);
     } finally {
@@ -705,6 +758,14 @@ export function DashboardClient() {
             </>
           )}
         </section>
+
+        {isAdmin && (
+          <ComissaoEmpresaCard
+            data={comissaoEmpresa}
+            loading={loading}
+            periodLabel={`${PERIODS.find((p) => p.value === period)?.label ?? "Período"} · após taxas e comissões dos vendedores`}
+          />
+        )}
 
         <section className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">

@@ -44,7 +44,12 @@ export function ComissoesClient() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [payModal, setPayModal] = useState<{ id: string; nome: string; valor: number } | null>(null);
+  const [payModal, setPayModal] = useState<{
+    ids: string[];
+    nome: string;
+    valor: number;
+    quantidade: number;
+  } | null>(null);
   const [payDate, setPayDate] = useState("");
   const [paying, setPaying] = useState(false);
 
@@ -117,20 +122,44 @@ export function ComissoesClient() {
 
   function abrirModalPagamentoComissao(c: Comissao) {
     setPayDate(new Date().toISOString().slice(0, 10));
-    setPayModal({ id: c.id, nome: vendorName(c), valor: Number(c.valor_comissao) });
+    setPayModal({
+      ids: [c.id],
+      nome: vendorName(c),
+      valor: Number(c.valor_comissao),
+      quantidade: 1,
+    });
+  }
+
+  function abrirModalPagamentoTodas() {
+    if (comissoesPendentes.length === 0) return;
+    const nome =
+      usuarios.find((u) => u.id === comissaoVendedorFilter)?.nome ??
+      vendorName(comissoesPendentes[0]);
+    setPayDate(new Date().toISOString().slice(0, 10));
+    setPayModal({
+      ids: comissoesPendentes.map((c) => c.id),
+      nome,
+      valor: resumoPendentes.total,
+      quantidade: comissoesPendentes.length,
+    });
   }
 
   async function confirmarPagamentoComissao() {
-    if (!payModal || !payDate) return;
+    if (!payModal || !payDate || payModal.ids.length === 0) return;
     setPaying(true);
     try {
       const { error } = await supabase
         .from("comissoes")
         .update({ status: "paga", data_pagamento: payDate })
-        .eq("id", payModal.id)
+        .in("id", payModal.ids)
+        .eq("status", "pendente")
         .select("id");
       if (error) throw error;
-      toast.success("Comissão marcada como paga! Conta a pagar vinculada atualizada automaticamente.");
+      toast.success(
+        payModal.quantidade === 1
+          ? "Comissão marcada como paga! Conta a pagar vinculada atualizada automaticamente."
+          : `${payModal.quantidade} comissões de ${payModal.nome} marcadas como pagas! Contas a pagar vinculadas atualizadas automaticamente.`,
+      );
       setPayModal(null);
       load();
     } catch (err) {
@@ -224,6 +253,18 @@ export function ComissoesClient() {
   );
 
   const mostrarResumoVendedor = Boolean(comissaoVendedorFilter);
+  const vendedorSelecionadoNome =
+    usuarios.find((u) => u.id === comissaoVendedorFilter)?.nome ??
+    (comissoesPendentes[0] ? vendorName(comissoesPendentes[0]) : "");
+  const podePagarTodas = Boolean(
+    isManager && mostrarResumoVendedor && comissoesPendentes.length > 0,
+  );
+  const vendedoresFiltro = useMemo(() => {
+    const idsComComissao = new Set(
+      comissoes.map((c) => c.vendedor_id).filter((id): id is string => Boolean(id)),
+    );
+    return usuarios.filter((u) => u.tipo === "vendedor" || idsComComissao.has(u.id));
+  }, [usuarios, comissoes]);
 
   function statusBadge(status: string) {
     return (
@@ -259,18 +300,24 @@ export function ComissoesClient() {
                 <TabsTrigger value="pagas">Pagas</TabsTrigger>
               </TabsList>
               {isManager && (
-                <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <Label className="sr-only">Vendedor</Label>
                   <Select
                     value={comissaoVendedorFilter}
                     onChange={(e) => setComissaoVendedorFilter(e.target.value)}
                     className="w-52"
+                    aria-label="Filtrar comissões por vendedor"
                   >
                     <option value="">Todos os vendedores</option>
-                    {usuarios.map((u) => (
+                    {vendedoresFiltro.map((u) => (
                       <option key={u.id} value={u.id}>{u.nome}</option>
                     ))}
                   </Select>
+                  {podePagarTodas && subComissoes === "pendentes" && (
+                    <Button size="sm" onClick={abrirModalPagamentoTodas}>
+                      <CheckCircle className="h-4 w-4" /> Pagar todas
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -283,7 +330,28 @@ export function ComissoesClient() {
 
           <TabsContent value="pendentes">
             <Card>
-              <CardHeader><CardTitle>Comissões a Pagar</CardTitle></CardHeader>
+              <CardHeader>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <CardTitle>Comissões a Pagar</CardTitle>
+                    {mostrarResumoVendedor && !loading && (
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        {vendedorSelecionadoNome
+                          ? `Vendedor: ${vendedorSelecionadoNome}`
+                          : "Vendedor selecionado"}
+                        {comissoesPendentes.length > 0
+                          ? ` · ${resumoPendentes.count} comiss${resumoPendentes.count === 1 ? "ão" : "ões"} · Total ${formatCurrency(resumoPendentes.total)}`
+                          : " · Nenhuma comissão pendente neste período"}
+                      </p>
+                    )}
+                  </div>
+                  {podePagarTodas && (
+                    <Button size="sm" className="w-full sm:w-auto" onClick={abrirModalPagamentoTodas}>
+                      <CheckCircle className="h-4 w-4" /> Pagar todas
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
               <CardContent>
                 {loading ? skeletons(3) : comissoesPendentes.length === 0 ? (
                   <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nenhuma comissão pendente.</p>
@@ -455,15 +523,25 @@ export function ComissoesClient() {
       <Dialog open={!!payModal} onOpenChange={(open) => { if (!open) setPayModal(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Registrar Pagamento de Comissão</DialogTitle>
+            <DialogTitle>
+              {payModal && payModal.quantidade > 1
+                ? "Pagar todas as comissões"
+                : "Registrar Pagamento de Comissão"}
+            </DialogTitle>
           </DialogHeader>
           {payModal && (
             <div className="space-y-4 py-2">
               <p className="text-sm text-[var(--text-secondary)]">
                 Vendedor: <span className="font-medium text-foreground">{payModal.nome}</span>
               </p>
+              {payModal.quantidade > 1 && (
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Comissões: <span className="font-medium text-foreground">{payModal.quantidade}</span>
+                </p>
+              )}
               <p className="text-sm text-[var(--text-secondary)]">
-                Valor: <span className="font-semibold text-foreground">{formatCurrency(payModal.valor)}</span>
+                {payModal.quantidade > 1 ? "Total: " : "Valor: "}
+                <span className="font-semibold text-foreground">{formatCurrency(payModal.valor)}</span>
               </p>
               <div className="space-y-1.5">
                 <Label>Data de pagamento</Label>
@@ -474,7 +552,11 @@ export function ComissoesClient() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPayModal(null)} disabled={paying}>Cancelar</Button>
             <Button onClick={confirmarPagamentoComissao} disabled={paying || !payDate}>
-              {paying ? "Salvando..." : "Confirmar pagamento"}
+              {paying
+                ? "Salvando..."
+                : payModal && payModal.quantidade > 1
+                  ? `Pagar ${payModal.quantidade} comissões`
+                  : "Confirmar pagamento"}
             </Button>
           </DialogFooter>
         </DialogContent>

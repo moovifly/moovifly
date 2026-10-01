@@ -19,6 +19,12 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { ComissaoEmpresaCard } from "@/components/financeiro/comissao-empresa-card";
+import {
+  EMPTY_COMISSAO_EMPRESA,
+  aggregateComissaoEmpresa,
+  type ComissaoVendedorEmpresa,
+} from "@/lib/financial/comissao-empresa";
 import { RelatoriosVendedor } from "./relatorios-vendedor";
 
 const PAGE_SIZE = 30;
@@ -35,6 +41,7 @@ type Venda = {
   data_venda: string;
   categoria_venda: "aereo" | "seguro_viagem" | "servico" | null;
   forma_pagamento: string | null;
+  fornecedor: string | null;
   clientes?: { nome: string } | { nome: string }[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
@@ -64,6 +71,7 @@ export function RelatoriosClient() {
   const isAdmin = effectiveProfile?.tipo === "administrador";
 
   const [items, setItems] = useState<Venda[]>([]);
+  const [comissoesVendedor, setComissoesVendedor] = useState<ComissaoVendedorEmpresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePreset, setActivePreset] = useState<string>("mes");
   const [dateFrom, setDateFrom] = useState(() => {
@@ -151,18 +159,45 @@ export function RelatoriosClient() {
   async function load() {
     setLoading(true);
     try {
-      let qVendas = supabase
-        .from("vendas")
-        .select("id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, clientes(nome), usuarios(nome)")
-        .gte("data_venda", dateFrom)
-        .lte("data_venda", dateTo)
-        .order("data_venda", { ascending: false });
-      if (statusFilter) qVendas = qVendas.eq("status", statusFilter);
+      const baseSelect =
+        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, clientes(nome), usuarios(nome)";
+      const adminSelect = `${baseSelect}, comissoes(venda_id, valor_comissao, status)`;
 
-      const { data: vendas, error: vendasError } = await qVendas;
+      const fetchVendas = (select: string) => {
+        let q = supabase
+          .from("vendas")
+          .select(select)
+          .gte("data_venda", dateFrom)
+          .lte("data_venda", dateTo)
+          .order("data_venda", { ascending: false });
+        if (statusFilter) q = q.eq("status", statusFilter);
+        return q;
+      };
 
+      let { data: vendas, error: vendasError } = await fetchVendas(isAdmin ? adminSelect : baseSelect);
+      if (vendasError && isAdmin) {
+        const retry = await fetchVendas(baseSelect);
+        vendas = retry.data;
+        vendasError = retry.error;
+      }
       if (vendasError) throw vendasError;
-      setItems((vendas ?? []) as unknown as Venda[]);
+
+      const rows = (vendas ?? []) as unknown as Array<Venda & { comissoes?: ComissaoVendedorEmpresa[] | null }>;
+      setItems(rows);
+
+      const comissoes: ComissaoVendedorEmpresa[] = [];
+      if (isAdmin) {
+        for (const v of rows) {
+          for (const c of v.comissoes ?? []) {
+            comissoes.push({
+              venda_id: c.venda_id ?? v.id,
+              valor_comissao: c.valor_comissao,
+              status: c.status,
+            });
+          }
+        }
+      }
+      setComissoesVendedor(comissoes);
     } catch (err) {
       toast.error("Erro ao carregar relatório", { description: formatSupabaseError(err) });
     } finally {
@@ -173,7 +208,7 @@ export function RelatoriosClient() {
   useEffect(() => {
     if (profile && !isVendedor) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, dateFrom, dateTo, statusFilter, isVendedor]);
+  }, [profile?.id, dateFrom, dateTo, statusFilter, isVendedor, isAdmin]);
 
   useEffect(() => {
     setPage(1);
@@ -204,6 +239,11 @@ export function RelatoriosClient() {
       return sum + Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
     }, 0);
   }, [items, isAdmin]);
+
+  const comissaoEmpresa = useMemo(() => {
+    if (!isAdmin) return EMPTY_COMISSAO_EMPRESA;
+    return aggregateComissaoEmpresa(items, comissoesVendedor);
+  }, [isAdmin, items, comissoesVendedor]);
 
   const vendasConfirmadas = useMemo(
     () => items.filter((v) => ["confirmada", "concluida"].includes(v.status)),
@@ -525,6 +565,14 @@ export function RelatoriosClient() {
             </CardContent>
           </Card>
         </div>
+
+        {isAdmin && (
+          <ComissaoEmpresaCard
+            data={comissaoEmpresa}
+            loading={loading}
+            periodLabel="Após taxas de cartão e comissões dos vendedores · vendas confirmadas/concluídas"
+          />
+        )}
 
         <div className="grid gap-4 sm:grid-cols-3">
           {porCategoria.map((cat) => (

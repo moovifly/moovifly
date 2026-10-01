@@ -40,6 +40,9 @@ export function formatSupabaseError(err: unknown): string {
     const raw = rawParts.join(" — ");
     const friendly = friendlyMessage(raw);
     if (friendly) return friendly;
+    if (/<!DOCTYPE html>/i.test(raw) || /This page could not be found/i.test(raw)) {
+      return "Falha ao comunicar com o servidor. Recarregue a página e tente de novo.";
+    }
     if (raw.length) return raw;
   }
   return err instanceof Error ? err.message : String(err);
