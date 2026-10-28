@@ -7,6 +7,20 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
+function parseValor(raw: unknown): number | null {
+  if (typeof raw === "number") {
+    if (!Number.isFinite(raw) || raw <= 0) return null;
+    return Math.round(raw * 100) / 100;
+  }
+  if (typeof raw === "string") {
+    const normalized = raw.trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+    const n = Number(normalized.replace(/[^\d.-]/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n * 100) / 100;
+  }
+  return null;
+}
+
 function parsePagante(raw: unknown): ReciboPagante | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -28,9 +42,9 @@ function parsePagante(raw: unknown): ReciboPagante | null {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { vendaId?: string; pagante?: unknown };
+  let body: { vendaId?: string; pagante?: unknown; valor?: unknown };
   try {
-    body = (await req.json()) as { vendaId?: string; pagante?: unknown };
+    body = (await req.json()) as { vendaId?: string; pagante?: unknown; valor?: unknown };
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
@@ -46,6 +60,15 @@ export async function POST(req: NextRequest) {
       { error: "Informe o nome do pagante" },
       { status: 400 },
     );
+  }
+
+  let valorOverride: number | undefined;
+  if (body.valor !== undefined && body.valor !== null && body.valor !== "") {
+    const parsed = parseValor(body.valor);
+    if (parsed == null) {
+      return NextResponse.json({ error: "Informe um valor válido" }, { status: 400 });
+    }
+    valorOverride = parsed;
   }
 
   const supabase = await createServerSupabaseClient();
@@ -91,6 +114,7 @@ export async function POST(req: NextRequest) {
   try {
     const dados = vendaToDadosRecibo(venda as unknown as VendaReciboRow, {
       paganteOverride: paganteOverride ?? null,
+      valorOverride: valorOverride ?? null,
     });
     const pdfBuffer = await gerarReciboPdfBuffer(dados);
     const numero = (venda.numero_venda ?? "recibo").replace(/[^\w.-]+/g, "_");

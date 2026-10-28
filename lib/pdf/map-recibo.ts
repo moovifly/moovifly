@@ -219,7 +219,35 @@ function normalizePaganteOverride(raw: Partial<ReciboPagante>): ReciboPagante {
 export type VendaToReciboOptions = {
   dataEmissao?: Date;
   paganteOverride?: Partial<ReciboPagante> | null;
+  /** Total impresso no recibo. Quando informado, substitui o valor da venda. */
+  valorOverride?: number | null;
 };
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** Recalcula produtos e taxas para que a soma feche no total escolhido. */
+function valoresDoTotal(total: number, taxaDuRaw: number, taxaRavRaw: number) {
+  let taxaDu = round2(Math.max(0, taxaDuRaw));
+  let taxaRav = round2(Math.max(0, taxaRavRaw));
+  let taxasRodape = round2(taxaDu + taxaRav);
+
+  if (taxasRodape > total) {
+    if (total <= 0 || taxasRodape <= 0) {
+      taxaDu = 0;
+      taxaRav = 0;
+    } else {
+      const factor = total / taxasRodape;
+      taxaDu = round2(taxaDu * factor);
+      taxaRav = round2(Math.max(0, total - taxaDu));
+    }
+    taxasRodape = round2(taxaDu + taxaRav);
+  }
+
+  const produtos = round2(Math.max(0, total - taxasRodape));
+  return { produtos, taxaDu, taxaRav, taxasRodape, total: round2(total) };
+}
 
 export function vendaToDadosRecibo(
   venda: VendaReciboRow,
@@ -227,11 +255,15 @@ export function vendaToDadosRecibo(
 ): DadosRecibo {
   const dataEmissao = options?.dataEmissao ?? new Date();
   const cliente = venda.cliente ?? {};
-  const total = num(venda.valor_total);
-  const taxaDu = num(venda.taxa_du);
-  const taxaRav = num(venda.taxa_rav);
-  const taxasRodape = taxaDu + taxaRav;
-  const produtos = Math.max(0, Math.round((total - taxasRodape) * 100) / 100);
+  const totalVenda = num(venda.valor_total);
+  const override = options?.valorOverride;
+  const total =
+    override != null && Number.isFinite(override) ? round2(Math.max(0, override)) : totalVenda;
+  const { produtos, taxaDu, taxaRav, taxasRodape } = valoresDoTotal(
+    total,
+    num(venda.taxa_du),
+    num(venda.taxa_rav),
+  );
 
   const dataVenda = formatDataCurta(venda.data_venda);
   const numero = (venda.numero_venda ?? "").replace(/^VEN/i, "").trim() || "—";

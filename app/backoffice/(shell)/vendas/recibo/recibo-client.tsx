@@ -9,6 +9,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,6 +105,7 @@ export function ReciboClient() {
   const [loadingCliente, setLoadingCliente] = useState(false);
   const [clienteBase, setClienteBase] = useState<ClientePagante | null>(null);
   const [pagante, setPagante] = useState<ReciboPagante>(emptyPagante);
+  const [valorRecibo, setValorRecibo] = useState(0);
 
   async function load() {
     setLoading(true);
@@ -158,8 +160,11 @@ export function ReciboClient() {
     if (!selected) {
       setClienteBase(null);
       setPagante(emptyPagante());
+      setValorRecibo(0);
       return;
     }
+
+    setValorRecibo(Number(selected.valor_total) || 0);
 
     let cancelled = false;
     async function loadCliente() {
@@ -217,13 +222,22 @@ export function ReciboClient() {
       toast.error("Informe o nome do pagante.");
       return;
     }
+    if (!(valorRecibo > 0)) {
+      toast.error("Informe um valor maior que zero.");
+      return;
+    }
     setGenerating(true);
     try {
       const filename = `Recibo-${selected.numero_venda || selected.id.slice(0, 8)}.pdf`;
-      await downloadReciboPdf(selected.id, filename, {
-        ...pagante,
-        nome: pagante.nome.trim(),
-      });
+      await downloadReciboPdf(
+        selected.id,
+        filename,
+        {
+          ...pagante,
+          nome: pagante.nome.trim(),
+        },
+        valorRecibo,
+      );
       toast.success("Recibo gerado com sucesso.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao gerar recibo");
@@ -232,7 +246,11 @@ export function ReciboClient() {
     }
   }
 
-  const canGenerate = Boolean(selected && pagante.nome.trim() && !generating && !loadingCliente);
+  const canGenerate = Boolean(
+    selected && pagante.nome.trim() && valorRecibo > 0 && !generating && !loadingCliente,
+  );
+  const valorVenda = selected ? Number(selected.valor_total) || 0 : 0;
+  const valorAlterado = selected != null && Math.abs(valorRecibo - valorVenda) > 0.001;
 
   return (
     <>
@@ -285,8 +303,8 @@ export function ReciboClient() {
                 <div>
                   <CardTitle className="text-base">Dados do pagante</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Edite se quem paga for outra pessoa ou empresa. Passageiros e valores
-                    continuam da venda.
+                    Edite se quem paga for outra pessoa ou empresa. O valor do recibo pode
+                    ser alterado; passageiros continuam da venda.
                   </p>
                 </div>
                 <Button
@@ -300,7 +318,23 @@ export function ReciboClient() {
                   Usar dados do cliente
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="recibo-valor">Valor *</Label>
+                    <CurrencyInput
+                      id="recibo-valor"
+                      value={valorRecibo}
+                      onValueChange={(v) => setValorRecibo(v ?? 0)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {valorAlterado
+                        ? `Diferente do valor da venda (${formatCurrency(valorVenda)}). O recibo usará este valor.`
+                        : "Este valor será impresso no recibo. A venda não é alterada."}
+                    </p>
+                  </div>
+                </div>
                 {loadingCliente ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {Array.from({ length: 6 }).map((_, i) => (

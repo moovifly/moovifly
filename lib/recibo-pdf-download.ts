@@ -7,11 +7,12 @@ export async function downloadReciboPdf(
   vendaId: string,
   filename: string,
   pagante?: ReciboPagante,
+  valor?: number,
 ) {
   const res = await fetch("/api/recibo/pdf/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ vendaId, pagante }),
+    body: JSON.stringify({ vendaId, pagante, valor }),
   });
 
   if (!res.ok) {
