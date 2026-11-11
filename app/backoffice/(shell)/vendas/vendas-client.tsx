@@ -436,7 +436,7 @@ export function VendasClient() {
         taxa_du: isSeguro ? 0 : form.taxa_du,
         status: form.status,
         forma_pagamento: form.forma_pagamento || null,
-        fornecedor: isSeguro || isServico ? null : form.fornecedor || null,
+        fornecedor: isServico ? null : form.fornecedor || null,
         voucher: isSeguro || isServico ? localizadoVoucher : null,
         passageiros_dados: isServico ? null : (passageirosValidos.length > 0 ? passageirosValidos : null),
         passageiros: isServico ? 1 : Math.max(passageirosValidos.length, 1),
@@ -943,6 +943,13 @@ export function VendasClient() {
                             {formaPagamentoSelectOptions(form.forma_pagamento).map((o) => (
                               <option key={o} value={o}>{o}</option>
                             ))}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label>Fornecedor</Label>
+                          <Select value={form.fornecedor} onChange={f("fornecedor")}>
+                            <option value="">Selecione...</option>
+                            {FORNECEDOR_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                           </Select>
                         </div>
                         <div className="space-y-1.5">

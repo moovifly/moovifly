@@ -29,6 +29,14 @@ import { RelatoriosVendedor } from "./relatorios-vendedor";
 
 const PAGE_SIZE = 30;
 
+type ClienteResumo = {
+  nome: string;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+};
+
 type Venda = {
   id: string;
   numero_venda: string;
@@ -42,7 +50,7 @@ type Venda = {
   categoria_venda: "aereo" | "seguro_viagem" | "servico" | null;
   forma_pagamento: string | null;
   fornecedor: string | null;
-  clientes?: { nome: string } | { nome: string }[] | null;
+  clientes?: ClienteResumo | ClienteResumo[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
 
@@ -61,6 +69,11 @@ function vendaResumo(v: Venda) {
   if (v.categoria_venda === "servico") return v.tipo ?? "Serviço";
   if (v.categoria_venda === "seguro_viagem") return v.destino ?? "Seguro Viagem";
   return v.destino ?? "—";
+}
+
+function textoOuTraco(value: string | null | undefined) {
+  const texto = (value ?? "").trim();
+  return texto || "—";
 }
 
 export function RelatoriosClient() {
@@ -160,7 +173,7 @@ export function RelatoriosClient() {
     setLoading(true);
     try {
       const baseSelect =
-        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, clientes(nome), usuarios(nome)";
+        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, clientes(nome, endereco, cidade, estado, cep), usuarios(nome)";
       const adminSelect = `${baseSelect}, comissoes(venda_id, valor_comissao, status)`;
 
       const fetchVendas = (select: string) => {
@@ -367,12 +380,16 @@ export function RelatoriosClient() {
 
     ws.columns = [
       { key: "cliente", width: 38 },
+      { key: "endereco", width: 46 },
+      { key: "cidade", width: 22 },
+      { key: "estado", width: 10 },
+      { key: "cep", width: 14 },
       { key: "produto", width: 14 },
       { key: "pagamento", width: 34 },
       { key: "valor", width: 16 },
     ];
 
-    const headerRow = ws.addRow(["CLIENTE", "PRODUTO", "PAGAMENTO", "VALOR"]);
+    const headerRow = ws.addRow(["CLIENTE", "ENDEREÇO", "CIDADE", "UF", "CEP", "PRODUTO", "PAGAMENTO", "VALOR"]);
     headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2E7D32" } };
@@ -391,6 +408,10 @@ export function RelatoriosClient() {
     for (const v of items) {
       const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
       const nome = cli?.nome ?? "—";
+      const endereco = textoOuTraco(cli?.endereco);
+      const cidade = textoOuTraco(cli?.cidade);
+      const estado = textoOuTraco(cli?.estado);
+      const cep = textoOuTraco(cli?.cep);
       const produto = categoriaLabel(v.categoria_venda);
       const pagamento = v.forma_pagamento ?? "—";
       const valor = v.categoria_venda === "seguro_viagem"
@@ -398,12 +419,16 @@ export function RelatoriosClient() {
         : Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
       totalGeral += valor;
 
-      const row = ws.addRow([nome, produto, pagamento, valor]);
-      row.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
-      row.getCell(2).alignment = { horizontal: "center", vertical: "middle" };
-      row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
-      row.getCell(4).numFmt = 'R$ #,##0.00';
-      row.getCell(4).alignment = { horizontal: "right", vertical: "middle" };
+      const row = ws.addRow([nome, endereco, cidade, estado, cep, produto, pagamento, valor]);
+      row.getCell(1).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      row.getCell(2).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      row.getCell(3).alignment = { horizontal: "left", vertical: "middle" };
+      row.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(6).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(7).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(8).numFmt = 'R$ #,##0.00';
+      row.getCell(8).alignment = { horizontal: "right", vertical: "middle" };
 
       row.eachCell((cell) => {
         cell.border = {
@@ -418,10 +443,10 @@ export function RelatoriosClient() {
 
     ws.addRow([]);
 
-    const totalRow = ws.addRow(["", "", "TOTAL", totalGeral]);
+    const totalRow = ws.addRow(["", "", "", "", "", "", "TOTAL", totalGeral]);
     totalRow.height = 24;
     totalRow.eachCell((cell, colNumber) => {
-      if (colNumber >= 3) {
+      if (colNumber >= 7) {
         cell.font = { bold: true, size: 12, color: { argb: "FF1B5E20" } };
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8F5E9" } };
         cell.border = {
@@ -431,8 +456,8 @@ export function RelatoriosClient() {
           right: { style: "thin", color: { argb: "FF2E7D32" } },
         };
       }
-      if (colNumber === 3) cell.alignment = { horizontal: "left", vertical: "middle" };
-      if (colNumber === 4) {
+      if (colNumber === 7) cell.alignment = { horizontal: "left", vertical: "middle" };
+      if (colNumber === 8) {
         cell.numFmt = 'R$ #,##0.00';
         cell.alignment = { horizontal: "right", vertical: "middle" };
       }
