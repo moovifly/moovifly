@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDocumento } from "@/lib/format";
 import { ComissaoEmpresaCard } from "@/components/financeiro/comissao-empresa-card";
 import {
   EMPTY_COMISSAO_EMPRESA,
@@ -31,6 +31,8 @@ const PAGE_SIZE = 30;
 
 type ClienteResumo = {
   nome: string;
+  cpf: string | null;
+  tipo_documento: string | null;
   endereco: string | null;
   cidade: string | null;
   estado: string | null;
@@ -173,7 +175,7 @@ export function RelatoriosClient() {
     setLoading(true);
     try {
       const baseSelect =
-        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, clientes(nome, endereco, cidade, estado, cep), usuarios(nome)";
+        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, clientes(nome, cpf, tipo_documento, endereco, cidade, estado, cep), usuarios(nome)";
       const adminSelect = `${baseSelect}, comissoes(venda_id, valor_comissao, status)`;
 
       const fetchVendas = (select: string) => {
@@ -380,6 +382,7 @@ export function RelatoriosClient() {
 
     ws.columns = [
       { key: "cliente", width: 38 },
+      { key: "documento", width: 22 },
       { key: "endereco", width: 46 },
       { key: "cidade", width: 22 },
       { key: "estado", width: 10 },
@@ -389,7 +392,7 @@ export function RelatoriosClient() {
       { key: "valor", width: 16 },
     ];
 
-    const headerRow = ws.addRow(["CLIENTE", "ENDEREÇO", "CIDADE", "UF", "CEP", "PRODUTO", "PAGAMENTO", "VALOR"]);
+    const headerRow = ws.addRow(["CLIENTE", "DOCUMENTO", "ENDEREÇO", "CIDADE", "UF", "CEP", "PRODUTO", "PAGAMENTO", "VALOR"]);
     headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2E7D32" } };
@@ -408,6 +411,7 @@ export function RelatoriosClient() {
     for (const v of items) {
       const cli = Array.isArray(v.clientes) ? v.clientes[0] : v.clientes;
       const nome = cli?.nome ?? "—";
+      const documento = textoOuTraco(formatDocumento(cli?.cpf, cli?.tipo_documento));
       const endereco = textoOuTraco(cli?.endereco);
       const cidade = textoOuTraco(cli?.cidade);
       const estado = textoOuTraco(cli?.estado);
@@ -419,16 +423,18 @@ export function RelatoriosClient() {
         : Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
       totalGeral += valor;
 
-      const row = ws.addRow([nome, endereco, cidade, estado, cep, produto, pagamento, valor]);
+      const row = ws.addRow([nome, documento, endereco, cidade, estado, cep, produto, pagamento, valor]);
       row.getCell(1).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
-      row.getCell(2).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
-      row.getCell(3).alignment = { horizontal: "left", vertical: "middle" };
-      row.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
+      row.getCell(2).numFmt = "@";
+      row.getCell(3).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      row.getCell(4).alignment = { horizontal: "left", vertical: "middle" };
       row.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
       row.getCell(6).alignment = { horizontal: "center", vertical: "middle" };
       row.getCell(7).alignment = { horizontal: "center", vertical: "middle" };
-      row.getCell(8).numFmt = 'R$ #,##0.00';
-      row.getCell(8).alignment = { horizontal: "right", vertical: "middle" };
+      row.getCell(8).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(9).numFmt = 'R$ #,##0.00';
+      row.getCell(9).alignment = { horizontal: "right", vertical: "middle" };
 
       row.eachCell((cell) => {
         cell.border = {
@@ -443,10 +449,10 @@ export function RelatoriosClient() {
 
     ws.addRow([]);
 
-    const totalRow = ws.addRow(["", "", "", "", "", "", "TOTAL", totalGeral]);
+    const totalRow = ws.addRow(["", "", "", "", "", "", "", "TOTAL", totalGeral]);
     totalRow.height = 24;
     totalRow.eachCell((cell, colNumber) => {
-      if (colNumber >= 7) {
+      if (colNumber >= 8) {
         cell.font = { bold: true, size: 12, color: { argb: "FF1B5E20" } };
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8F5E9" } };
         cell.border = {
@@ -456,8 +462,8 @@ export function RelatoriosClient() {
           right: { style: "thin", color: { argb: "FF2E7D32" } },
         };
       }
-      if (colNumber === 7) cell.alignment = { horizontal: "left", vertical: "middle" };
-      if (colNumber === 8) {
+      if (colNumber === 8) cell.alignment = { horizontal: "left", vertical: "middle" };
+      if (colNumber === 9) {
         cell.numFmt = 'R$ #,##0.00';
         cell.alignment = { horizontal: "right", vertical: "middle" };
       }
