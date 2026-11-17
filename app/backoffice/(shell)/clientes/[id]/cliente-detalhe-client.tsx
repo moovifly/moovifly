@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
+import { DocumentoClienteField } from "@/components/backoffice/documento-cliente-field";
 import { EmptyState } from "@/components/backoffice/empty-state";
 import { MobileCardList } from "@/components/backoffice/mobile-card-list";
 import { Topbar } from "@/components/backoffice/topbar";
@@ -28,13 +29,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
-import { formatCpfCnpj, formatCurrency, formatDate, formatPhoneBR } from "@/lib/format";
+import {
+  TIPO_DOCUMENTO_LABEL,
+  documentoParaSalvar,
+  formatCurrency,
+  formatDate,
+  formatDocumento,
+  formatDocumentoInput,
+  formatPhoneBR,
+  normalizeTipoDocumento,
+  validarDocumento,
+  type TipoDocumento,
+} from "@/lib/format";
 
 type Cliente = {
   id: string;
   nome: string;
   email: string | null;
   telefone: string | null;
+  tipo_documento: TipoDocumento;
   cpf: string | null;
   rg: string | null;
   data_nascimento: string | null;
@@ -89,7 +102,8 @@ function emptyForm(cliente?: Cliente): FormState {
     nome: cliente?.nome ?? "",
     email: cliente?.email ?? "",
     telefone: cliente?.telefone ?? "",
-    cpf: cliente?.cpf ?? "",
+    tipo_documento: normalizeTipoDocumento(cliente?.tipo_documento),
+    cpf: formatDocumentoInput(cliente?.cpf ?? "", normalizeTipoDocumento(cliente?.tipo_documento)),
     rg: cliente?.rg ?? "",
     data_nascimento: cliente?.data_nascimento ?? "",
     endereco: cliente?.endereco ?? "",
@@ -163,6 +177,11 @@ export function ClienteDetalheClient() {
       toast.error("Informe o nome do cliente.");
       return;
     }
+    const documentoInvalido = validarDocumento(form.cpf ?? "", form.tipo_documento);
+    if (documentoInvalido) {
+      toast.error(documentoInvalido);
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -171,7 +190,8 @@ export function ClienteDetalheClient() {
           nome: form.nome.trim(),
           email: form.email || null,
           telefone: form.telefone || null,
-          cpf: form.cpf || null,
+          tipo_documento: form.tipo_documento,
+          cpf: documentoParaSalvar(form.cpf ?? "", form.tipo_documento),
           rg: form.rg || null,
           data_nascimento: form.data_nascimento || null,
           endereco: form.endereco || null,
@@ -323,7 +343,10 @@ export function ClienteDetalheClient() {
                 [
                   { label: "Email", value: cliente.email },
                   { label: "Telefone", value: formatPhoneBR(cliente.telefone) || null },
-                  { label: "CPF", value: formatCpfCnpj(cliente.cpf) || null },
+                  {
+                    label: TIPO_DOCUMENTO_LABEL[normalizeTipoDocumento(cliente.tipo_documento)],
+                    value: formatDocumento(cliente.cpf, cliente.tipo_documento) || null,
+                  },
                   { label: "RG", value: cliente.rg },
                   {
                     label: "Nascimento",
@@ -485,10 +508,12 @@ export function ClienteDetalheClient() {
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input id="telefone" value={form.telefone ?? ""} onChange={f("telefone")} placeholder="(11) 99999-9999" />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cpf">CPF</Label>
-                <Input id="cpf" value={form.cpf ?? ""} onChange={f("cpf")} placeholder="000.000.000-00" />
-              </div>
+              <DocumentoClienteField
+                tipo={form.tipo_documento}
+                value={form.cpf ?? ""}
+                onTipoChange={(tipo) => setForm((prev) => ({ ...prev, tipo_documento: tipo }))}
+                onValueChange={(cpf) => setForm((prev) => ({ ...prev, cpf }))}
+              />
               <div className="space-y-1.5">
                 <Label htmlFor="rg">RG</Label>
                 <Input id="rg" value={form.rg ?? ""} onChange={f("rg")} />

@@ -22,18 +22,29 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BackofficeLink } from "@/components/backoffice/backoffice-link";
+import { DocumentoClienteField } from "@/components/backoffice/documento-cliente-field";
 import { EmptyState } from "@/components/backoffice/empty-state";
 import { showConfirm } from "@/components/confirm-modal";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase/format-error";
-import { formatDate, formatPhoneBR, formatCpfCnpj } from "@/lib/format";
+import {
+  documentoParaSalvar,
+  formatDate,
+  formatDocumento,
+  formatDocumentoInput,
+  formatPhoneBR,
+  normalizeTipoDocumento,
+  validarDocumento,
+  type TipoDocumento,
+} from "@/lib/format";
 
 type Cliente = {
   id: string;
   nome: string;
   email: string | null;
   telefone: string | null;
+  tipo_documento: TipoDocumento;
   cpf: string | null;
   rg: string | null;
   data_nascimento: string | null;
@@ -56,6 +67,7 @@ const emptyForm = (): FormState => ({
   nome: "",
   email: "",
   telefone: "",
+  tipo_documento: "cpf",
   cpf: "",
   rg: "",
   data_nascimento: "",
@@ -131,7 +143,8 @@ export function ClientesClient() {
       nome: c.nome,
       email: c.email ?? "",
       telefone: c.telefone ?? "",
-      cpf: c.cpf ?? "",
+      tipo_documento: normalizeTipoDocumento(c.tipo_documento),
+      cpf: formatDocumentoInput(c.cpf ?? "", normalizeTipoDocumento(c.tipo_documento)),
       rg: c.rg ?? "",
       data_nascimento: c.data_nascimento ?? "",
       endereco: c.endereco ?? "",
@@ -151,13 +164,19 @@ export function ClientesClient() {
       toast.error("Informe o nome do cliente.");
       return;
     }
+    const documentoInvalido = validarDocumento(form.cpf ?? "", form.tipo_documento);
+    if (documentoInvalido) {
+      toast.error(documentoInvalido);
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
         nome: form.nome.trim(),
         email: form.email || null,
         telefone: form.telefone || null,
-        cpf: form.cpf || null,
+        tipo_documento: form.tipo_documento,
+        cpf: documentoParaSalvar(form.cpf ?? "", form.tipo_documento),
         rg: form.rg || null,
         data_nascimento: form.data_nascimento || null,
         endereco: form.endereco || null,
@@ -277,7 +296,9 @@ export function ClientesClient() {
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-secondary)]">
                       <span>{formatPhoneBR(c.telefone) || "—"}</span>
-                      {formatCpfCnpj(c.cpf) && <span className="font-mono">{formatCpfCnpj(c.cpf)}</span>}
+                      {formatDocumento(c.cpf, c.tipo_documento) && (
+                        <span className="font-mono">{formatDocumento(c.cpf, c.tipo_documento)}</span>
+                      )}
                       <span>Desde {formatDate(c.created_at)}</span>
                     </div>
                     <div className="mt-2 flex items-center justify-end gap-1 border-t border-[var(--border-subtle)] pt-2">
@@ -299,7 +320,7 @@ export function ClientesClient() {
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead className="hidden lg:table-cell">CPF</TableHead>
+                    <TableHead className="hidden lg:table-cell">Documento</TableHead>
                     <TableHead className="hidden lg:table-cell">Cadastro</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -318,7 +339,7 @@ export function ClientesClient() {
                       </TableCell>
                       <TableCell className="text-[var(--text-secondary)]">{c.email ?? "—"}</TableCell>
                       <TableCell>{formatPhoneBR(c.telefone) || "—"}</TableCell>
-                      <TableCell className="hidden font-mono text-xs lg:table-cell">{formatCpfCnpj(c.cpf) || "—"}</TableCell>
+                      <TableCell className="hidden font-mono text-xs lg:table-cell">{formatDocumento(c.cpf, c.tipo_documento) || "—"}</TableCell>
                       <TableCell className="hidden text-[var(--text-secondary)] lg:table-cell">{formatDate(c.created_at)}</TableCell>
                       <TableCell>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.status === "ativo" ? "bg-[var(--success-bg)] text-[var(--success-text)]" : "bg-[var(--danger-bg)] text-[var(--danger-text)]"}`}>
@@ -393,10 +414,12 @@ export function ClientesClient() {
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input id="telefone" value={form.telefone ?? ""} onChange={f("telefone")} placeholder="(11) 99999-9999" />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cpf">CPF</Label>
-                <Input id="cpf" value={form.cpf ?? ""} onChange={f("cpf")} placeholder="000.000.000-00" />
-              </div>
+              <DocumentoClienteField
+                tipo={form.tipo_documento}
+                value={form.cpf ?? ""}
+                onTipoChange={(tipo) => setForm((prev) => ({ ...prev, tipo_documento: tipo }))}
+                onValueChange={(cpf) => setForm((prev) => ({ ...prev, cpf }))}
+              />
               <div className="space-y-1.5">
                 <Label htmlFor="rg">RG</Label>
                 <Input id="rg" value={form.rg ?? ""} onChange={f("rg")} />

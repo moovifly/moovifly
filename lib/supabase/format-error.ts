@@ -1,7 +1,7 @@
 const CONSTRAINT_MESSAGES: Record<string, string> = {
   vendas_numero_venda_key:
     "Conflito ao gerar o número da venda. Clique em salvar uma vez e aguarde. Se a venda não aparecer na listagem, recarregue a página antes de tentar de novo.",
-  clientes_cpf_key: "Este CPF já está cadastrado para outro cliente.",
+  clientes_cpf_key: "Este documento já está cadastrado para outro cliente.",
   orcamentos_numero_orcamento_key: "Conflito ao gerar o número do orçamento. Tente salvar novamente.",
 };
 
