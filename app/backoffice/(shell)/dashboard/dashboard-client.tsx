@@ -347,7 +347,7 @@ async function loadComissaoEmpresa(profile: UserProfile, range: DateRange): Prom
 
   const { data: vendas, error } = await supabase
     .from("vendas")
-    .select("id, categoria_venda, valor_total, taxa_rav, taxa_du, forma_pagamento, fornecedor, status, comissoes(venda_id, valor_comissao, status)")
+    .select("id, categoria_venda, valor_total, taxa_rav, taxa_du, forma_pagamento, fornecedor, status, seguro_promocional, comissoes(venda_id, valor_comissao, status)")
     .gte("data_venda", start)
     .lte("data_venda", end)
     .in("status", ["confirmada", "concluida"]);
@@ -363,6 +363,7 @@ async function loadComissaoEmpresa(profile: UserProfile, range: DateRange): Prom
     forma_pagamento?: string | null;
     fornecedor?: string | null;
     status?: string | null;
+    seguro_promocional?: boolean | null;
     comissoes?: Array<{ venda_id?: string | null; valor_comissao?: number | string | null; status?: string | null }> | null;
   }>;
 

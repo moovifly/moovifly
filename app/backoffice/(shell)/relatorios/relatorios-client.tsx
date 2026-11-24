@@ -23,6 +23,7 @@ import { ComissaoEmpresaCard } from "@/components/financeiro/comissao-empresa-ca
 import {
   EMPTY_COMISSAO_EMPRESA,
   aggregateComissaoEmpresa,
+  percentualRepasseSeguro,
   type ComissaoVendedorEmpresa,
 } from "@/lib/financial/comissao-empresa";
 import { RelatoriosVendedor } from "./relatorios-vendedor";
@@ -52,6 +53,7 @@ type Venda = {
   categoria_venda: "aereo" | "seguro_viagem" | "servico" | null;
   forma_pagamento: string | null;
   fornecedor: string | null;
+  seguro_promocional?: boolean | null;
   clientes?: ClienteResumo | ClienteResumo[] | null;
   usuarios?: { nome: string } | { nome: string }[] | null;
 };
@@ -175,7 +177,7 @@ export function RelatoriosClient() {
     setLoading(true);
     try {
       const baseSelect =
-        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, clientes(nome, cpf, tipo_documento, endereco, cidade, estado, cep), usuarios(nome)";
+        "id, numero_venda, destino, tipo, valor_total, taxa_rav, taxa_du, status, data_venda, categoria_venda, forma_pagamento, fornecedor, seguro_promocional, clientes(nome, cpf, tipo_documento, endereco, cidade, estado, cep), usuarios(nome)";
       const adminSelect = `${baseSelect}, comissoes(venda_id, valor_comissao, status)`;
 
       const fetchVendas = (select: string) => {
@@ -248,7 +250,7 @@ export function RelatoriosClient() {
     if (!isAdmin) return 0;
     return items.reduce((sum, v) => {
       if (v.categoria_venda === "seguro_viagem") {
-        return sum + Number(v.valor_total ?? 0) * 0.4;
+        return sum + Number(v.valor_total ?? 0) * percentualRepasseSeguro(v.seguro_promocional);
       }
       // Aéreo e Serviço: soma de RAV + DU
       return sum + Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
@@ -419,7 +421,7 @@ export function RelatoriosClient() {
       const produto = categoriaLabel(v.categoria_venda);
       const pagamento = v.forma_pagamento ?? "—";
       const valor = v.categoria_venda === "seguro_viagem"
-        ? Number(v.valor_total ?? 0) * 0.4
+        ? Number(v.valor_total ?? 0) * percentualRepasseSeguro(v.seguro_promocional)
         : Number(v.taxa_rav ?? 0) + Number(v.taxa_du ?? 0);
       totalGeral += valor;
 

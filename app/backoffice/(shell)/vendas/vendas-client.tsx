@@ -63,6 +63,7 @@ type Venda = {
   status: string;
   forma_pagamento: string | null;
   fornecedor: string | null;
+  seguro_promocional?: boolean | null;
   observacoes?: string | null;
   voos?: Voo[] | null;
   passageiros_dados?: Passageiro[] | null;
@@ -131,10 +132,12 @@ function formaPagamentoSelectOptions(current: string): string[] {
   return FORMA_PAGAMENTO_OPTIONS;
 }
 
-function calcComissaoSeguro(valorTotal: number, percentualVendedor: number) {
-  const repasseFornecedor = Math.round(valorTotal * 40) / 100;
+/** Repasse da consolidadora: 40% do valor total (50% em vendas promocionais). */
+function calcComissaoSeguro(valorTotal: number, percentualVendedor: number, promocional = false) {
+  const percentualRepasse = promocional ? 50 : 40;
+  const repasseFornecedor = Math.round(valorTotal * percentualRepasse) / 100;
   const comissaoVendedor = Math.round(repasseFornecedor * percentualVendedor) / 100;
-  return { repasseFornecedor, comissaoVendedor, percentualVendedor };
+  return { repasseFornecedor, comissaoVendedor, percentualVendedor, percentualRepasse };
 }
 
 /** Admins e Sandra: 50%; demais vendedores: 40% sobre RAV+DU. */
@@ -188,6 +191,7 @@ type FormState = {
   passageiros_dados: Passageiro[];
   voos: Voo[];
   atribuido_a: string | null;
+  seguro_promocional: boolean;
 };
 
 const emptyForm = (): FormState => ({
@@ -213,6 +217,7 @@ const emptyForm = (): FormState => ({
   passageiros_dados: [emptyPassageiro()],
   voos: [emptyVoo("ida")],
   atribuido_a: null,
+  seguro_promocional: false,
 });
 
 export function VendasClient() {
@@ -356,6 +361,7 @@ export function VendasClient() {
         : [emptyPassageiro()],
       voos: voosFromVenda(v),
       atribuido_a: v.vendedor_id ?? null,
+      seguro_promocional: Boolean(v.seguro_promocional),
     });
     setViewMode(false);
     setActiveTab("dados");
@@ -391,6 +397,7 @@ export function VendasClient() {
         : [emptyPassageiro()],
       voos: voosFromVenda(v),
       atribuido_a: v.vendedor_id ?? null,
+      seguro_promocional: Boolean(v.seguro_promocional),
     });
     setViewMode(true);
     setActiveTab("dados");
@@ -441,6 +448,7 @@ export function VendasClient() {
         passageiros_dados: isServico ? null : (passageirosValidos.length > 0 ? passageirosValidos : null),
         passageiros: isServico ? 1 : Math.max(passageirosValidos.length, 1),
         voos: isSeguro || isServico ? [] : form.voos,
+        seguro_promocional: isSeguro ? form.seguro_promocional : false,
       };
       if (form.id) {
         const { error } = await supabase.from("vendas").update(payload).eq("id", form.id);
@@ -454,7 +462,7 @@ export function VendasClient() {
           const percentualSeguro = Number(
             userAtribuido?.comissao_seguro_percentual ?? (profile as { comissao_seguro_percentual?: number } | null)?.comissao_seguro_percentual ?? 0
           );
-          const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total, percentualSeguro);
+          const { repasseFornecedor, comissaoVendedor } = calcComissaoSeguro(form.valor_total, percentualSeguro, form.seguro_promocional);
           await supabase
             .from("comissoes")
             .update({ base_calculo: repasseFornecedor, percentual_comissao: percentualSeguro, valor_comissao: comissaoVendedor })
@@ -577,11 +585,16 @@ export function VendasClient() {
       const percentualSeguro = Number(
         userAtribuido?.comissao_seguro_percentual ?? (profile as { comissao_seguro_percentual?: number } | null)?.comissao_seguro_percentual ?? 0
       );
-      const { repasseFornecedor, comissaoVendedor, percentualVendedor } = calcComissaoSeguro(form.valor_total, percentualSeguro);
+      const { repasseFornecedor, comissaoVendedor, percentualVendedor, percentualRepasse } = calcComissaoSeguro(
+        form.valor_total,
+        percentualSeguro,
+        form.seguro_promocional,
+      );
       return {
         kind: "seguro" as const,
         valorTotal: form.valor_total,
         repasseFornecedor,
+        percentualRepasse,
         comissaoVendedor,
         percentualVendedor,
         nomeAtribuido,
@@ -618,7 +631,7 @@ export function VendasClient() {
     }
     const comissaoVendedor = percentualVendedor > 0 ? Math.round(baseComissao * percentualVendedor) / 100 : null;
     return { kind: "aereo" as const, base, taxaCartaoVal, baseComissao, comissaoVendedor, percentualVendedor, temTaxaCartao, nomeAtribuido };
-  }, [form.categoria_venda, form.valor_total, form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, form.atribuido_a, profile, usuarios, isAdminOrGerente]);
+  }, [form.categoria_venda, form.valor_total, form.taxa_rav, form.taxa_du, form.forma_pagamento, form.fornecedor, form.atribuido_a, form.seguro_promocional, profile, usuarios, isAdminOrGerente]);
 
   return (
     <>
@@ -871,6 +884,35 @@ export function VendasClient() {
               </DialogHeader>
               <form onSubmit={handleSave} className="space-y-4">
                 <fieldset disabled={viewMode} className="space-y-4 disabled:opacity-70">
+                {form.categoria_venda === "seguro_viagem" && (
+                  <div className="space-y-1.5">
+                    <Label>Promocional?</Label>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Promocional?">
+                      {([
+                        { value: true, label: "Sim" },
+                        { value: false, label: "Não" },
+                      ] as const).map((opt) => {
+                        const selected = form.seguro_promocional === opt.value;
+                        return (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setForm((prev) => ({ ...prev, seguro_promocional: opt.value }))}
+                            className={`h-10 rounded-md border text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input bg-background text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Cliente {viewMode ? "" : "*"}</Label>
                   <Autocomplete
@@ -1125,7 +1167,7 @@ export function VendasClient() {
                         {comissaoPreview.kind === "seguro" ? (
                           <>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Repasse fornecedor (40%)</span>
+                              <span className="text-muted-foreground">Repasse fornecedor ({comissaoPreview.percentualRepasse}%{form.seguro_promocional ? " · promocional" : ""})</span>
                               <span className="font-medium">{formatCurrency(comissaoPreview.repasseFornecedor)}</span>
                             </div>
                             <div className="flex justify-between border-t pt-1.5">

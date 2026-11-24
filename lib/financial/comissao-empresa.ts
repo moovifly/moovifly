@@ -21,7 +21,13 @@ export type VendaComissaoEmpresa = {
   forma_pagamento?: string | null;
   fornecedor?: string | null;
   status?: string | null;
+  seguro_promocional?: boolean | null;
 };
+
+/** Repasse da consolidadora no Seguro Viagem: 40% do valor total (50% se promocional). */
+export function percentualRepasseSeguro(promocional: boolean | null | undefined): number {
+  return promocional ? 0.5 : 0.4;
+}
 
 export type ComissaoVendedorEmpresa = {
   venda_id?: string | null;
@@ -65,7 +71,7 @@ export function isVendaConfirmada(status: string | null | undefined): boolean {
 /** Comissão bruta da agência e taxa de cartão de uma venda, no mesmo critério do trigger. */
 export function comissaoBrutaETaxa(venda: VendaComissaoEmpresa): { bruto: number; taxa: number } {
   if (venda.categoria_venda === "seguro_viagem") {
-    return { bruto: round2(n(venda.valor_total) * 0.4), taxa: 0 };
+    return { bruto: round2(n(venda.valor_total) * percentualRepasseSeguro(venda.seguro_promocional)), taxa: 0 };
   }
 
   const bruto = round2(n(venda.taxa_rav) + n(venda.taxa_du));
